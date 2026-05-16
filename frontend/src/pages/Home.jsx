@@ -157,7 +157,7 @@ const Btn = ({ onClick, primary, children, full }) => (
 );
 
 const Logo = ({ size = 120, onClick }) => (
-  <img src="https://i.postimg.cc/DZLCn6Sb/Chat-GPT-Image-May-11-2026-02-56-29-PM.png" alt="QalbAudio"
+  <img src="https://i.postimg.cc/wMj8BDkS/Chat-GPT-Image-May-11-2026-02-56-29-PM.png" alt="QalbAudio"
     style={{ height: size, width: "auto", objectFit: "contain", cursor: onClick ? "pointer" : "default" }}
     onClick={onClick} />
 );
@@ -316,7 +316,7 @@ export default function Home() {
       <section style={{ padding: mob ? "64px 16px" : "96px 5%", background: "radial-gradient(circle at top,rgba(var(--app-accent-rgb),.12) 0%,transparent 45%),var(--app-shell-bg-alt)", display: "flex", justifyContent: "center" }}>
         <div style={{ width: "100%", maxWidth: 820, padding: mob ? "36px 20px" : "56px 48px", borderRadius: 24, background: "var(--app-surface)", border: "1px solid var(--app-border)", boxShadow: "0 20px 60px rgba(0,0,0,.45)", textAlign: "center" }}>
           <Fade>
-            <img src="https://i.postimg.cc/DZLCn6Sb/Chat-GPT-Image-May-11-2026-02-56-29-PM.png" alt="QalbAudio"
+            <img src="https://i.postimg.cc/wMj8BDkS/Chat-GPT-Image-May-11-2026-02-56-29-PM.png" alt="QalbAudio"
               style={{ width: mob ? 200 : 240, height: "auto", marginBottom: 28, animation: "float 4s ease-in-out infinite", filter: "drop-shadow(0 10px 25px rgba(var(--app-accent-rgb),.25))" }} />
             <h2 style={{ fontSize: "clamp(28px,5vw,50px)", fontWeight: 900, marginBottom: 16, lineHeight: 1.15 }}>
               {user ? "Welcome Back!" : "Ready to Listen?"}

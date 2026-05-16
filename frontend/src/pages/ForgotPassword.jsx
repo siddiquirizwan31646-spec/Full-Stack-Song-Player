@@ -50,7 +50,7 @@ const ForgotPassword = () => {
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 14 }}><img
-                                src="https://i.postimg.cc/DZLCn6Sb/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
+                                src="https://i.postimg.cc/wMj8BDkS/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
                                 alt="QalbAudio"
                                 style={{
                                     height: 180,

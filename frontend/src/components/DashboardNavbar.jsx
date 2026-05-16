@@ -222,7 +222,7 @@ const DashboardNavbar = () => {
           <Link to={brandTarget} style={{ textDecoration: "none", flexShrink: 0 }}>
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.2 }}>
               <img
-                src="https://i.postimg.cc/DZLCn6Sb/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
+                src="https://i.postimg.cc/wMj8BDkS/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
                 alt="QalbAudio"
                 className="nav-logo"
                 style={{ width: "auto", objectFit: "contain", display: "block" }}

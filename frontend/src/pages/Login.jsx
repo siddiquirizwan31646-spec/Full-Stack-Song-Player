@@ -11,7 +11,7 @@ const API = import.meta.env.VITE_API_URL
 const Logo = () => (
   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%" }}>
     <img
-      src="https://i.postimg.cc/DZLCn6Sb/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
+      src="https://i.postimg.cc/wMj8BDkS/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
       alt="QalbAudio"
       style={{ height: 100, width: "auto", maxWidth: "80%", objectFit: "contain", display: "block" }}
     />

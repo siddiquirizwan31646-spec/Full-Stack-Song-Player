@@ -107,7 +107,7 @@ const ChangePassword = () => {
         {/* Logo + icon */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 24 }}>
           <img
-            src="https://i.postimg.cc/DZLCn6Sb/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
+            src="https://i.postimg.cc/wMj8BDkS/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
             alt="QalbAudio"
             style={{ height: 52, width: "auto", objectFit: "contain", marginBottom: 14 }}
           />
