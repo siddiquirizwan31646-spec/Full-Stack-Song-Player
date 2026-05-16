@@ -1,0 +1,450 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { toast } from "sonner";
+import { Heart, LogOut, Music2, Settings, Upload, User, ChevronDown } from "lucide-react";
+import { useUser } from "@/context/userContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Button } from "./ui/button";
+const API = import.meta.env.VITE_API_URL
+const MENU_ITEMS = [
+  { icon: User, label: "Profile", path: "/profile" },
+  { icon: Music2, label: "Playlists", path: "/playlists" },
+  { icon: Heart, label: "Favorites", path: "/favorites" },
+  { icon: Upload, label: "Upload Audio", path: "/upload" },
+  { icon: Settings, label: "Settings", path: "/settings" },
+];
+
+const PingDot = ({ color = "var(--app-accent)" }) => (
+  <span style={{ position: "relative", display: "inline-flex", width: 8, height: 8 }}>
+    <span style={{
+      position: "absolute", inset: 0, borderRadius: "50%", background: color,
+      opacity: 0.75, animation: "navPing 1.4s cubic-bezier(0, 0, 0.2, 1) infinite",
+    }} />
+    <span style={{ width: 8, height: 8, borderRadius: "50%", background: color, display: "inline-block" }} />
+  </span>
+);
+
+const DashboardNavbar = () => {
+  const { user, setUser, preferences } = useUser();
+  const navigate = useNavigate();
+  const [scrolled, setScrolled] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  // Use CSS media query hook-free approach — window resize listener
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" ? window.innerWidth < 760 : false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    const onResize = () => setIsMobile(window.innerWidth < 760);
+    window.addEventListener("scroll", onScroll);
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
+
+  const logoutHandle = async () => {
+    const accessToken = localStorage.getItem("accessToken");
+    try {
+      await axios.post(`${API}/user/logout`, {}, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+    } catch (error) {
+      console.log("Logout error:", error.response?.data);
+    } finally {
+      setUser(null);
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("user");
+      toast.success("Logged out successfully");
+      navigate("/");
+    }
+  };
+
+  const avatarLetter = user?.username?.[0]?.toUpperCase() || "U";
+  const radius = useMemo(() => Math.max(16, Math.min(28, preferences?.roundedCorners || 24)), [preferences?.roundedCorners]);
+  const brandTarget = user ? "/hero" : "/";
+
+  return (
+    <>
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+      <style>{`
+        @keyframes navPing {
+          75%, 100% { transform: scale(2); opacity: 0; }
+        }
+        .nav-dropdown-item:hover {
+          background: rgba(var(--app-accent-rgb), 0.1) !important;
+          color: var(--app-text-main) !important;
+        }
+        .avatar-btn:hover {
+          border-color: rgba(var(--app-accent-rgb), 0.46) !important;
+          box-shadow: 0 0 0 4px rgba(var(--app-accent-rgb), 0.08) !important;
+        }
+        .nav-outline-btn:hover {
+          border-color: rgba(var(--app-accent-rgb), 0.46) !important;
+          color: var(--app-text-main) !important;
+          background: rgba(var(--app-accent-rgb), 0.08) !important;
+        }
+        .nav-primary-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 14px 30px rgba(var(--app-accent-rgb), 0.28) !important;
+        }
+
+        /* NAV SHELL */
+        .dashboard-nav-shell {
+          max-width: 1280px;
+          margin: 0 auto;
+          padding: 0 28px;
+          min-height: 64px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          position: relative;
+        }
+
+        /* LOGO */
+        .nav-logo {
+          height: 88px;
+        }
+
+        /* GREETING — hide on small screens */
+        .dashboard-greeting {
+          font-size: 13px;
+          color: var(--app-text-muted);
+          font-family: 'DM Sans', sans-serif;
+          font-weight: 500;
+          white-space: nowrap;
+        }
+
+        /* RAMADAN BADGE — hide on small screens */
+        .dashboard-ramadan-badge {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(251,191,36,0.12);
+          border: 1px solid rgba(251,191,36,0.22);
+          border-radius: 999px;
+          padding: 6px 11px;
+          color: #fbbf24;
+          font-size: 11px;
+          font-weight: 700;
+          font-family: 'DM Sans', sans-serif;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+
+        /* Auth buttons */
+        .nav-auth-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 760px) {
+          .dashboard-nav-shell {
+            padding: 8px 14px;
+            min-height: 54px;
+            gap: 10px;
+          }
+          .nav-logo {
+            height: 52px;
+          }
+          .dashboard-greeting {
+            display: none !important;
+          }
+          .dashboard-ramadan-badge {
+            display: none !important;
+          }
+          /* Right side: keep avatar + chevron compact */
+          .nav-user-row {
+            gap: 6px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .dashboard-nav-shell {
+            padding: 6px 12px;
+          }
+          .nav-logo {
+            height: 44px;
+          }
+          .nav-auth-row {
+            gap: 7px;
+          }
+          /* Make auth buttons fill a bit but not full-width in the top bar */
+          .nav-auth-row button {
+            padding: 8px 14px !important;
+            font-size: 12.5px !important;
+          }
+        }
+      `}</style>
+
+      <motion.nav
+        initial={{ y: -72, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+          width: "100%",
+          background: scrolled ? "var(--app-surface-solid)" : "var(--app-surface)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          borderBottom: scrolled
+            ? "1px solid rgba(var(--app-accent-rgb), 0.18)"
+            : "1px solid rgba(var(--app-accent-rgb), 0.08)",
+          transition: "all 0.35s ease",
+          boxShadow: scrolled ? "0 16px 40px rgba(0,0,0,0.18)" : "none",
+        }}
+      >
+        {/* Top accent line */}
+        <div style={{
+          position: "absolute", top: 0, left: 0, right: 0, height: 2,
+          background: "linear-gradient(90deg,transparent 0%,rgba(var(--app-accent-rgb),0) 10%,rgba(var(--app-accent-rgb),0.55) 35%,var(--app-accent) 50%,rgba(var(--app-accent-rgb),0.55) 65%,rgba(var(--app-accent-rgb),0) 90%,transparent 100%)",
+          pointerEvents: "none",
+        }} />
+
+        <div className="dashboard-nav-shell">
+
+          {/* ── LOGO ── */}
+          <Link to={brandTarget} style={{ textDecoration: "none", flexShrink: 0 }}>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.2 }}>
+              <img
+                src="https://i.postimg.cc/DZLCn6Sb/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
+                alt="QalbAudio"
+                className="nav-logo"
+                style={{ width: "auto", objectFit: "contain", display: "block" }}
+              />
+            </motion.div>
+          </Link>
+
+          {/* ── RIGHT SIDE ── */}
+          <motion.div
+            initial={{ opacity: 0, x: 18 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.22, duration: 0.42 }}
+            style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}
+          >
+            {user ? (
+              <div className="nav-user-row" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+
+                {/* Ramadan badge — hidden on mobile via CSS */}
+                <div className="dashboard-ramadan-badge">Ramadan</div>
+
+                {/* Greeting — hidden on mobile via CSS */}
+                {preferences?.showGreeting !== false && (
+                  <span className="dashboard-greeting">
+                    Assalamu Alaikum,{" "}
+                    <span style={{
+                      fontWeight: 800,
+                      background: "linear-gradient(90deg,var(--app-text-main),var(--app-accent))",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      backgroundClip: "text",
+                    }}>
+                      {user.username || "User"}
+                    </span>
+                  </span>
+                )}
+
+                {/* Avatar dropdown */}
+                <DropdownMenu onOpenChange={setDropdownOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="avatar-btn"
+                      style={{
+                        background: "rgba(var(--app-accent-rgb),0.08)",
+                        border: "1px solid rgba(var(--app-accent-rgb),0.24)",
+                        borderRadius: 999,
+                        padding: isMobile ? "4px" : "4px 10px 4px 4px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        cursor: "pointer",
+                        transition: "all 0.25s ease",
+                        height: "auto",
+                      }}
+                    >
+                      {/* Avatar */}
+                      <div style={{ position: "relative" }}>
+                        <Avatar style={{ width: 34, height: 34 }}>
+                          <AvatarImage src="" alt={user.username || "User"} />
+                          <AvatarFallback style={{
+                            background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))",
+                            color: "#041307", fontSize: 13, fontWeight: 800, fontFamily: "'DM Sans',sans-serif",
+                          }}>
+                            {avatarLetter}
+                          </AvatarFallback>
+                        </Avatar>
+                        {/* Online dot */}
+                        <div style={{
+                          position: "absolute", bottom: 0, right: 0,
+                          width: 10, height: 10, borderRadius: "50%",
+                          background: "#22c55e", border: "2px solid var(--app-surface-solid)",
+                        }} />
+                      </div>
+
+                      {/* Username + chevron — desktop only */}
+                      {!isMobile && (
+                        <>
+                          <span style={{
+                            fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 700,
+                            color: "var(--app-text-main)", maxWidth: 96,
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          }}>
+                            {user.username}
+                          </span>
+                          <motion.div animate={{ rotate: dropdownOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                            <ChevronDown size={14} color="var(--app-text-muted)" />
+                          </motion.div>
+                        </>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuContent
+                    align="end"
+                    sideOffset={12}
+                    style={{
+                      background: "var(--app-surface-solid)",
+                      border: "1px solid rgba(var(--app-accent-rgb),0.18)",
+                      borderRadius: radius,
+                      boxShadow: "0 24px 70px rgba(0,0,0,0.26)",
+                      minWidth: 240,
+                      width: isMobile ? "min(260px,calc(100vw - 32px))" : "auto",
+                      maxWidth: "calc(100vw - 32px)",
+                      padding: 8,
+                    }}
+                  >
+                    {/* User header */}
+                    <div style={{
+                      padding: "12px 14px", display: "flex", alignItems: "center", gap: 12,
+                      borderBottom: "1px solid rgba(var(--app-accent-rgb),0.1)", marginBottom: 6,
+                    }}>
+                      <div style={{
+                        width: 44, height: 44, borderRadius: "50%",
+                        background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 16, fontWeight: 800, color: "#041307",
+                        boxShadow: "0 10px 24px rgba(var(--app-accent-rgb),0.28)", flexShrink: 0,
+                      }}>
+                        {avatarLetter}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{
+                          fontFamily: "'DM Sans',sans-serif", fontWeight: 800, fontSize: 14,
+                          color: "var(--app-text-main)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        }}>
+                          {user.username}
+                        </div>
+                        <div style={{
+                          fontFamily: "'DM Sans',sans-serif", fontSize: 12, color: "var(--app-text-muted)",
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2,
+                        }}>
+                          {user.email}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+                          <PingDot />
+                          <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 11, color: "var(--app-accent)", fontWeight: 700 }}>
+                            Active Session
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <DropdownMenuGroup>
+                      {MENU_ITEMS.map(({ icon: Icon, label, path }) => (
+                        <DropdownMenuItem
+                          key={label}
+                          className="nav-dropdown-item"
+                          onClick={() => navigate(path)}
+                          style={{
+                            color: "var(--app-text-main)", fontFamily: "'DM Sans',sans-serif",
+                            cursor: "pointer", borderRadius: Math.max(12, radius - 10),
+                            padding: "10px 12px", fontSize: 13.5, gap: 10,
+                            margin: "2px 0", transition: "all 0.15s ease",
+                          }}
+                        >
+                          <Icon size={14} color="var(--app-accent)" />
+                          {label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuGroup>
+
+                    <div style={{ height: 1, background: "rgba(var(--app-accent-rgb),0.1)", margin: "6px 0" }} />
+
+                    <DropdownMenuItem
+                      onClick={logoutHandle}
+                      className="nav-dropdown-item"
+                      style={{
+                        color: "#f87171", fontFamily: "'DM Sans',sans-serif",
+                        cursor: "pointer", borderRadius: Math.max(12, radius - 10),
+                        padding: "10px 12px", fontSize: 13.5, gap: 10, margin: "2px 0",
+                      }}
+                    >
+                      <LogOut size={14} />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+            ) : (
+              /* Not logged in */
+              <div className="nav-auth-row">
+                <Link to="/login" style={{ textDecoration: "none" }}>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="nav-outline-btn"
+                    style={{
+                      padding: "9px 20px", borderRadius: 999,
+                      border: "1px solid rgba(var(--app-accent-rgb),0.24)",
+                      background: "transparent", color: "var(--app-text-main)",
+                      fontFamily: "'DM Sans',sans-serif", fontWeight: 700,
+                      fontSize: 13.5, cursor: "pointer", transition: "all 0.2s ease",
+                    }}
+                  >
+                    Login
+                  </motion.button>
+                </Link>
+                <Link to="/signup" style={{ textDecoration: "none" }}>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="nav-primary-btn"
+                    style={{
+                      padding: "9px 22px", borderRadius: 999, border: "none",
+                      background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))",
+                      color: "#041307", fontFamily: "'DM Sans',sans-serif",
+                      fontWeight: 800, fontSize: 13.5, cursor: "pointer",
+                      boxShadow: "0 10px 22px rgba(var(--app-accent-rgb),0.24)",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    Get Started
+                  </motion.button>
+                </Link>
+              </div>
+            )}
+          </motion.div>
+        </div>
+      </motion.nav>
+    </>
+  );
+};
+
+export default DashboardNavbar;
