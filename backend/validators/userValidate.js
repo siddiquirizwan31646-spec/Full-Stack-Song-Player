@@ -18,7 +18,6 @@ export const userSchema = yup.object({
         .min(8, 'Password must be at least 8 characters')
         .required()
 })
-
 export const validateUser = (schema) => async (req, res, next) => {
     try {
         await schema.validate(req.body)
