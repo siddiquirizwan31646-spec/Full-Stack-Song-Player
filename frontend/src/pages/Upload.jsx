@@ -106,8 +106,21 @@ function AdminGate() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = () => {
-    setError("This account is not allowed to access uploads.")
-  };
+    const adminUser = import.meta.env.VITE_UPLOAD_ADMIN_USERNAME
+    const adminPass = import.meta.env.VITE_UPLOAD_ADMIN_PASSWORD
+
+    if (!username.trim() || !password.trim()) {
+        setError("Please enter username and password.")
+        return
+    }
+
+    if (username.trim() === adminUser && password === adminPass) {
+        navigate("/upload")
+        window.location.reload()
+    } else {
+        setError("Invalid username or password.")
+    }
+}
 
   return (
     <div style={{
