@@ -179,7 +179,7 @@ function AdminGate() {
           {/* Logo + icon */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 24 }}>
             <img
-              src="https://i.postimg.cc/DZLCn6Sb/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
+              src="https://i.postimg.cc/wMj8BDkS/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
               alt="QalbAudio"
               style={{ height: 52, width: "auto", objectFit: "contain", marginBottom: 14 }}
             />
@@ -606,7 +606,7 @@ function UploadCenter({ navigate, displayName, onLock }) {
         {/* SIDEBAR */}
         <div className={`sidebar${sidebarOpen ? " open" : ""}`}>
           <div style={{ padding: "14px 12px 10px", borderBottom: "1px solid rgba(var(--app-accent-rgb),0.08)", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <img src="https://i.postimg.cc/DZLCn6Sb/Chat-GPT-Image-May-11-2026-02-56-29-PM.png" alt="QalbAudio" onClick={() => { navigate("/"); setSidebarOpen(false); }} style={{ height: 60, width: "auto", maxWidth: "88%", objectFit: "contain", cursor: "pointer", display: "block" }} />
+            <img src="https://i.postimg.cc/wMj8BDkS/Chat-GPT-Image-May-11-2026-02-56-29-PM.png" alt="QalbAudio" onClick={() => { navigate("/"); setSidebarOpen(false); }} style={{ height: 60, width: "auto", maxWidth: "88%", objectFit: "contain", cursor: "pointer", display: "block" }} />
             <div style={{ fontSize: 11, color: "var(--app-text-muted)", textAlign: "center" }}>
               <span style={{ color: "var(--app-accent)", fontWeight: 600 }}>{displayName}</span>
             </div>
