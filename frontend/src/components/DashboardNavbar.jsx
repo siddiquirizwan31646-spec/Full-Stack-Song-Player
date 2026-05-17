@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
-const API = import.meta.env.VITE_API_URL
+import { API_URL } from "@/lib/config";
 const MENU_ITEMS = [
   { icon: User, label: "Profile", path: "/profile" },
   { icon: Music2, label: "Playlists", path: "/playlists" },
@@ -55,7 +55,7 @@ const DashboardNavbar = () => {
   const logoutHandle = async () => {
     const accessToken = localStorage.getItem("accessToken");
     try {
-      await axios.post(`${API}/user/logout`, {}, {
+      await axios.post(`${API_URL}/user/logout`, {}, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
     } catch (error) {

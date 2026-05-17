@@ -7,7 +7,7 @@ import FavoriteButton from "@/components/FavoriteButton"
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 const H = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" }
-const API = import.meta.env.VITE_API_URL
+import { API_URL } from "@/lib/config"
 const getToken = () => localStorage.getItem("accessToken")
 const authH = (ct = true) => { const h = {}; if (ct) h["Content-Type"] = "application/json"; const t = getToken(); if (t) h.Authorization = `Bearer ${t}`; return h }
 const fmt = (s) => (!s || isNaN(s)) ? "0:00" : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`
@@ -77,7 +77,7 @@ function AddToPlaylistDropdown({ song, userId, onClose }) {
 
   useEffect(() => {
     if (!userId || !getToken()) { setLoading(false); return }
-    fetch(`${API}/playlists`, { headers: authH(false) })
+    fetch(`${API_URL}/playlists`, { headers: authH(false) })
       .then(r => r.json()).then(d => { if (d.success) setPlaylists(d.playlists) }).catch(console.error).finally(() => setLoading(false))
   }, [userId])
 
@@ -90,7 +90,7 @@ function AddToPlaylistDropdown({ song, userId, onClose }) {
   const add = async (pl) => {
     setAdding(pl._id)
     try {
-      const r = await fetch(`${API}/playlists/${pl._id}/songs`, {
+      const r = await fetch(`${API_URL}/playlists/${pl._id}/songs`, {
         method: "POST", headers: authH(),
         body: JSON.stringify({ songId: String(song.id), songName: song.name, artist: song.artist, cover_url: song.cover_url, mp3_url: song.mp3_url, duration: song.duration })
       })

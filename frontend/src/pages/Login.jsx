@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import axios from 'axios'
 import { useNavigate, Link } from 'react-router-dom'
 import { useUser } from '@/context/userContext'
-const API = import.meta.env.VITE_API_URL
+import { API_URL } from '@/lib/config'
 
 const Logo = () => (
   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%" }}>
@@ -53,7 +53,7 @@ export default function Login() {
   e.preventDefault()
   try {
     setLoading(true)
-    const res = await axios.post(`${API}/user/login`, form, { headers:{ "Content-Type":"application/json" } })
+    const res = await axios.post(`${API_URL}/user/login`, form, { headers:{ "Content-Type":"application/json" } })
     if (res.data.success) {
       localStorage.setItem("accessToken", res.data.accessToken)
       localStorage.setItem("user", JSON.stringify(res.data.user))
@@ -93,7 +93,7 @@ export default function Login() {
           <div style={{ display:"grid", gap:5 }}>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
               <label style={{ fontSize:13, fontWeight:600, color:"rgba(229,231,235,.7)" }}>Password</label>
-              <Link to="/ForgotPassword" style={{ fontSize:12, color:"var(--app-accent)", fontWeight:600, textDecoration:"none" }}>Forgot Password?</Link>
+              <Link to="/forgot-password" style={{ fontSize:12, color:"var(--app-accent)", fontWeight:600, textDecoration:"none" }}>Forgot Password?</Link>
             </div>
             <div className="relative">
               <Input name="password" value={form.password} onChange={handleChange} placeholder="Enter your password"

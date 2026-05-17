@@ -5,8 +5,7 @@ import {
     normalizeFavoriteSong,
     readFavoriteSongs,
 } from "@/lib/favorites";
-
-const API = import.meta.env.VITE_API_URL
+import { API_URL } from "@/lib/config";
 
 // Auto-logout when access token expires or is invalid
 axios.interceptors.response.use(
@@ -255,7 +254,7 @@ export const UserProvider = ({ children }) => {
             return null
         }
 
-        const response = await axios.get(`${API}/user/profile`, {
+        const response = await axios.get(`${API_URL}/user/profile`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
             },
@@ -275,7 +274,7 @@ export const UserProvider = ({ children }) => {
             return DEFAULT_PREFERENCES
         }
 
-        const response = await axios.get(`${API}/user/preferences`, {
+        const response = await axios.get(`${API_URL}/user/preferences`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
             },
@@ -292,7 +291,7 @@ export const UserProvider = ({ children }) => {
             throw new Error("Please log in to save settings.")
         }
 
-        const response = await axios.put(`${API}/user/preferences`, updates, {
+        const response = await axios.put(`${API_URL}/user/preferences`, updates, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 "Content-Type": "application/json",

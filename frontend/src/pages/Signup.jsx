@@ -5,7 +5,7 @@ import { Eye, Loader2, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
-const API = import.meta.env.VITE_API_URL
+import { API_URL } from '@/lib/config'
 // ── REGEX RULES ──────────────────────────────────────────────
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
 
@@ -87,11 +87,11 @@ const Signup = () => {
 
         try {
             setIsLoading(true)
-            const res = await axios.post(`${API}/user/register`, formData, {
+            const res = await axios.post(`${API_URL}/user/register`, formData, {
                 headers: { "Content-Type": "application/json" }
             })
             if (res.data.success) {
-                navigate('/verify')
+                navigate('/verify-email')
                 toast.success(res.data.message)
             }
         } catch (error) {

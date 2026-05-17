@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import DashboardNavbar from "@/components/DashboardNavbar";
 import { useUser } from "@/context/userContext";
+import { canAccessUploadCenter } from "@/lib/config";
 
 const SUPABASE_URL =
   import.meta.env.VITE_SUPABASE_URL || "https://bnxahrapojygsulzfqpw.supabase.co";
@@ -38,9 +39,6 @@ const IMAGE_PREFIX = import.meta.env.VITE_SUPABASE_IMAGE_PREFIX || "covers";
 const MAX_LOG_ENTRIES = 320;
 const MAX_QUEUE_PREVIEW = 140;
 const UPLOAD_CONCURRENCY = 3;
-
-const ADMIN_USERNAME = "Rizwan31646";
-const ADMIN_PASSWORD = "Rizwan31646";
 
 const ACCEPTED_AUDIO_EXTENSIONS = new Set(["mp3"]);
 const ACCEPTED_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp"]);
@@ -100,7 +98,7 @@ const trimLogs = (logs) => logs.slice(0,MAX_LOG_ENTRIES);
 
 // ── ADMIN GATE ───────────────────────────────────────────────────────────────
 
-function AdminGate({ onUnlock }) {
+function AdminGate() {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -108,17 +106,7 @@ function AdminGate({ onUnlock }) {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = () => {
-    setError("");
-    if (!username || !password) { setError("Please fill in both fields."); return; }
-    setLoading(true);
-    setTimeout(() => {
-      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-        onUnlock();
-      } else {
-        setError("Invalid admin credentials.");
-      }
-      setLoading(false);
-    }, 600);
+    setError("This account is not allowed to access uploads.")
   };
 
   return (
@@ -202,7 +190,7 @@ function AdminGate({ onUnlock }) {
 
           <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--app-text-main)", textAlign: "center", margin: "0 0 6px" }}>Admin Access</h2>
           <p style={{ fontSize: 13, color: "var(--app-text-muted)", textAlign: "center", margin: "0 0 22px", lineHeight: 1.6 }}>
-            Upload Center is restricted to administrators only.
+            This account cannot access the upload center. Set `VITE_UPLOAD_ADMIN_EMAILS` on Vercel to limit upload access by email.
           </p>
 
           {/* Divider */}
@@ -335,12 +323,9 @@ export default function UploadPage() {
   const { user } = useUser();
   const displayName = user?.username || "Guest";
 
-  const [adminUnlocked, setAdminUnlocked] = useState(false);
+  if (!canAccessUploadCenter(user)) return <AdminGate />;
 
-  // Show gate if not unlocked
-  if (!adminUnlocked) return <AdminGate onUnlock={() => setAdminUnlocked(true)} />;
-
-  return <UploadCenter navigate={navigate} displayName={displayName} onLock={() => setAdminUnlocked(false)} />;
+  return <UploadCenter navigate={navigate} displayName={displayName} onLock={() => {}} />;
 }
 
 function UploadCenter({ navigate, displayName, onLock }) {

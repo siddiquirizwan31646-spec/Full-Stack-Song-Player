@@ -1,51 +1,69 @@
-import axios from 'axios'
-import React, { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import axios from "axios"
+import React, { useEffect, useState } from "react"
+import { useNavigate, useParams } from "react-router-dom"
+import { API_URL } from "@/lib/config"
 
 const Logo = () => (
   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%" }}>
-    <img src="https://i.postimg.cc/DZLCn6Sb/Chat-GPT-Image-May-11-2026-02-56-29-PM.png" alt="QalbAudio"
-      style={{ height: 100, width: "auto", maxWidth: "80%", objectFit: "contain", display: "block" }} />
+    <img
+      src="https://i.postimg.cc/DZLCn6Sb/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
+      alt="QalbAudio"
+      style={{ height: 100, width: "auto", maxWidth: "80%", objectFit: "contain", display: "block" }}
+    />
   </div>
 )
-const API = import.meta.env.VITE_API_URL
+
 const Verify = () => {
   const { token } = useParams()
   const [status, setStatus] = useState("Verifying...")
   const navigate = useNavigate()
 
   useEffect(() => {
-    const VerifyEmail = async () => {
+    const verifyEmail = async () => {
       try {
-        const decodedToken = decodeURIComponent(token)  // ✅ add this
-        const res = await axios.post(`${API}/user/verify`, {}, {
+        const decodedToken = decodeURIComponent(token)
+        const res = await axios.post(`${API_URL}/user/verify`, {}, {
           headers: {
-            Authorization: `Bearer ${decodedToken}`    // ✅ use decodedToken
-          }
+            Authorization: `Bearer ${decodedToken}`,
+          },
         })
-        if (res.data.success) {
-          setStatus("✅ Email Verified Successfully")
-          setTimeout(() => {
-            navigate('/login')
-          }, 2000);
-        } else {
-          setStatus("❌ Invalid Or Expired Token")
-        }
-      } catch (error) {
-        console.log(error);
-        setStatus("❌ Verification Failed. Please Try Again")
-      }
-    };
 
-    VerifyEmail()
+        if (res.data.success) {
+          setStatus(res.data.message || "Email verified successfully")
+          setTimeout(() => {
+            navigate("/login")
+          }, 2000)
+          return
+        }
+
+        setStatus("Invalid or expired token")
+      } catch (error) {
+        setStatus(error?.response?.data?.message || "Verification failed. Please try again")
+      }
+    }
+
+    if (token) {
+      verifyEmail()
+    } else {
+      setStatus("Verification token is missing")
+    }
   }, [token, navigate])
 
   return (
-    <div style={{
-      minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-      padding: "16px", position: "relative", overflow: "hidden", fontFamily: "'DM Sans', sans-serif",
-      background: "radial-gradient(ellipse at 60% 30%,rgba(var(--app-accent-rgb),.1) 0%,transparent 55%),radial-gradient(ellipse at 20% 80%,rgba(217,119,6,.07) 0%,transparent 50%),var(--app-shell-bg)",
-    }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "16px",
+        position: "relative",
+        overflow: "hidden",
+        fontFamily: "'DM Sans', sans-serif",
+        background:
+          "radial-gradient(ellipse at 60% 30%,rgba(var(--app-accent-rgb),.1) 0%,transparent 55%),radial-gradient(ellipse at 20% 80%,rgba(217,119,6,.07) 0%,transparent 50%),var(--app-shell-bg)",
+      }}
+    >
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&display=swap');`}</style>
 
       <div style={{ position: "fixed", top: -80, right: -80, width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle,rgba(var(--app-accent-rgb),.08) 0%,transparent 70%)", pointerEvents: "none" }} />
@@ -61,14 +79,21 @@ const Verify = () => {
           <div style={{ height: 2, background: "linear-gradient(90deg,transparent,var(--app-accent),var(--app-accent-strong),transparent)" }} />
 
           <div style={{ padding: "40px 32px" }}>
-            <div style={{
-              width: 64, height: 64, borderRadius: "50%",
-              background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 24px", fontSize: 26,
-              boxShadow: "0 4px 24px rgba(var(--app-accent-rgb),.3)",
-            }}>
-              🔗
+            <div
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: "50%",
+                background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 24px",
+                fontSize: 26,
+                boxShadow: "0 4px 24px rgba(var(--app-accent-rgb),.3)",
+              }}
+            >
+              Link
             </div>
 
             <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--app-text-main)", margin: 0 }}>
@@ -77,7 +102,7 @@ const Verify = () => {
           </div>
         </div>
 
-        <p style={{ textAlign: "center", marginTop: 20, color: "rgba(217,119,6,.5)", fontSize: 18, fontFamily: "serif" }}>بِسْمِ اللَّهِ</p>
+        <p style={{ textAlign: "center", marginTop: 20, color: "rgba(217,119,6,.5)", fontSize: 18, fontFamily: "serif" }}>Bismillah</p>
       </div>
     </div>
   )

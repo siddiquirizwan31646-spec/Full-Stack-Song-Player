@@ -4,7 +4,7 @@ import { useUser } from "@/context/userContext";
 import axios from "axios";
 import { toast } from "sonner";
 import useViewport from "@/hooks/useViewport";
-const API = import.meta.env.VITE_API_URL
+import { API_URL } from "@/lib/config"
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;900&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -194,7 +194,7 @@ export default function Home() {
 
   const handleLogout = async () => {
     try {
-      await axios.post(`${API}/user/logout`, {}, { headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` } });
+      await axios.post(`${API_URL}/user/logout`, {}, { headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` } });
     } catch {}
     setUser(null);
     localStorage.removeItem("accessToken");
@@ -231,7 +231,7 @@ export default function Home() {
             ) : (
               <div style={{ display: "flex", gap: 8, width: mob ? "100%" : "auto" }}>
                 <Btn onClick={() => navigate("/signup")} full={mob}>Sign Up</Btn>
-                <Btn onClick={() => navigate("/Login")} primary full={mob}>Login</Btn>
+                <Btn onClick={() => navigate("/login")} primary full={mob}>Login</Btn>
               </div>
             )}
           </div>
@@ -267,7 +267,7 @@ export default function Home() {
               <Btn primary onClick={() => navigate("/hero")} full={mob}>Open Player →</Btn>
             ) : (
               <>
-                <Btn primary onClick={() => navigate("/Login")} full={mob}>Start Listening →</Btn>
+                <Btn primary onClick={() => navigate("/login")} full={mob}>Start Listening →</Btn>
                 <Btn onClick={() => navigate("/signup")} full={mob}>Create Account</Btn>
               </>
             )}

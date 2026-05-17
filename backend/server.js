@@ -1,38 +1,43 @@
 import express from "express"
-import 'dotenv/config'
+import "dotenv/config"
+import cors from "cors"
 import connectDB from "./database/db.js"
 import userRoute from "./routes/userRoute.js"
 import playlistRoute from "./routes/playlistRoutes.js"
-import cors from 'cors'
 
 const app = express()
 const PORT = process.env.PORT || 3000
 
-// ✅ Middleware FIRST
+const normalizeOrigin = (value = "") => value.trim().replace(/\/+$/, "")
+
 const allowedOrigins = [
-    process.env.FRONTEND_URL,       // e.g. https://your-app.vercel.app
-    'http://localhost:5173',         // local dev
-].filter(Boolean)
+    process.env.FRONTEND_URL,
+    process.env.APP_URL,
+    ...(process.env.FRONTEND_URLS || "").split(","),
+    "https://qalbaudio.vercel.app",
+    "http://localhost:5173",
+].map(normalizeOrigin).filter(Boolean)
 
 app.use(cors({
     origin: (origin, callback) => {
-        // allow requests with no origin (mobile apps, curl, Render health checks)
-        if (!origin || allowedOrigins.includes(origin)) {
+        const normalizedOrigin = normalizeOrigin(origin)
+
+        if (!origin || allowedOrigins.includes(normalizedOrigin)) {
             callback(null, true)
-        } else {
-            callback(new Error(`CORS: origin ${origin} not allowed`))
+            return
         }
+
+        callback(new Error(`CORS: origin ${origin} not allowed`))
     },
     methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true
+    credentials: true,
 }))
 app.use(express.json())
 
-// ✅ Routes AFTER
-app.get('/', (req, res) => res.json({ success: true, message: 'QalbAudio API is running 🎵' }))
-app.get('/health', (req, res) => res.json({ status: 'ok' }))
-app.use('/user', userRoute)
-app.use('/playlists', playlistRoute)
+app.get("/", (req, res) => res.json({ success: true, message: "QalbAudio API is running" }))
+app.get("/health", (req, res) => res.json({ status: "ok" }))
+app.use("/user", userRoute)
+app.use("/playlists", playlistRoute)
 
 connectDB().then(() => {
     app.listen(PORT, () => {

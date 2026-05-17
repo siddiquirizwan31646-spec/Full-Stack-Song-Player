@@ -1,16 +1,15 @@
-import nodemailer from "nodemailer"
-import 'dotenv/config'
+import "dotenv/config"
 import fs from "fs"
 import path from "path"
 import { fileURLToPath } from "url"
 import handlebars from "handlebars"
-
+import { sendMail } from "./mailer.js"
 
 const __filename = fileURLToPath(import.meta.url)
-const  __dirname = path.dirname(__filename)
+const __dirname = path.dirname(__filename)
 
-export const verifyMail = async(token, email) =>{
-
+export const verifyMail = async (token, email) => {
+    const appUrl = (process.env.FRONTEND_URL || process.env.APP_URL || "https://qalbaudio.vercel.app").replace(/\/+$/, "")
 
     const emailTemplateSource = fs.readFileSync(
         path.join(__dirname, "template.hbs"),
@@ -18,31 +17,13 @@ export const verifyMail = async(token, email) =>{
     )
 
     const template = handlebars.compile(emailTemplateSource)
-    const htmlToSend = template({token: encodeURIComponent(token)})
+    const verificationUrl = `${appUrl}/verify/${encodeURIComponent(token)}`
+    const htmlToSend = template({ verificationUrl })
 
-
-
-    const transporter = nodemailer.createTransport({
-        service:'gmail',
-        auth:{
-            user:process.env.MAIL_USER,
-            pass:process.env.MAIL_PASS
-        }
-    })
-
-    const mailConfigurations = {
-        from: `"QalbAudio - Islamic Audio Platform" <${process.env.MAIL_USER}>`,
+    return sendMail({
         to: email,
-        subject: 'Email Verification',
+        subject: "Email Verification - QalbAudio",
         html: htmlToSend,
-    }
-
-    transporter.sendMail(mailConfigurations, function(error, info){
-        if(error){
-            throw new Error(error)
-        }
-        console.log('Email sent sucessfullly');
-        console.log(info)
-        
+        text: `Verify your QalbAudio account: ${verificationUrl}`,
     })
 }

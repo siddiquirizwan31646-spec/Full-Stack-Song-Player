@@ -53,6 +53,7 @@ const userSchema = new mongoose.Schema({
     token: { type: String, default: null },
     otp: { type: String, default: null },
     otpExpiry: { type: Date, default: null },
+    passwordResetVerifiedAt: { type: Date, default: null },
     activePlan: { type: String, enum: ["Basic", "Standard", "Premium"], default: null },
     planActivatedAt: { type: Date, default: null },
     preferences: {

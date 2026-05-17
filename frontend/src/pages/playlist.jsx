@@ -9,7 +9,7 @@ import DashboardNavbar from "@/components/DashboardNavbar";
 import FavoriteButton from "@/components/FavoriteButton";
 import { useUser } from "@/context/userContext";
 
-const API = import.meta.env.VITE_API_URL;
+import { API_URL } from "@/lib/config";
 
 const fmt = (s) =>
   !s || isNaN(s) ? "0:00" : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
@@ -169,7 +169,7 @@ export default function PlaylistPage() {
       if (!token) { handleUnauthorized(); return; }
       try {
         setLoadingPlaylists(true);
-        const res  = await fetch(`${API}/playlists`, { headers: getAuthHeaders(false) });
+        const res  = await fetch(`${API_URL}/playlists`, { headers: getAuthHeaders(false) });
         if (res.status === 401 || res.status === 400) { handleUnauthorized(); return; }
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.message || "Failed to load playlists");
@@ -225,7 +225,7 @@ const playPrev = () => {
     if (!newName.trim()) { toast.error("Enter a playlist name"); return; }
     try {
       setCreating(true);
-      const res  = await fetch(`${API}/playlists`, {
+      const res  = await fetch(`${API_URL}/playlists`, {
         method: "POST", headers: getAuthHeaders(),
         body: JSON.stringify({ name: newName.trim() }),
       });
@@ -242,7 +242,7 @@ const playPrev = () => {
 
   const deletePlaylist = async (pl) => {
     try {
-      const res  = await fetch(`${API}/playlists/${pl._id}`, { method: "DELETE", headers: getAuthHeaders(false) });
+      const res  = await fetch(`${API_URL}/playlists/${pl._id}`, { method: "DELETE", headers: getAuthHeaders(false) });
       if (res.status === 401 || res.status === 400) { handleUnauthorized(); return; }
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || "Failed");
@@ -273,7 +273,7 @@ const iconBtn = {
     if (!selected) return;
     try {
       setRemoving(song.id);
-      const res  = await fetch(`${API}/playlists/${selected._id}/songs/${song.id}`, {
+      const res  = await fetch(`${API_URL}/playlists/${selected._id}/songs/${song.id}`, {
         method: "DELETE", headers: getAuthHeaders(false),
       });
       if (res.status === 401 || res.status === 400) { handleUnauthorized(); return; }

@@ -1,19 +1,21 @@
-import yup, { Schema } from "yup"
+import yup from "yup"
 
 
 export const userSchema = yup.object({
     username: yup
         .string()
         .trim()
-        .min(6, 'Username must be atleast of 6 characters')
+        .min(2, 'Username must be at least 2 characters')
         .required(),
     email: yup
         .string()
+        .trim()
+        .lowercase()
         .email('The email is not valid one')
         .required(),
     password: yup
         .string()
-        .min(6, 'Password must br atleast 6 charaters')
+        .min(8, 'Password must be at least 8 characters')
         .required()
 })
 

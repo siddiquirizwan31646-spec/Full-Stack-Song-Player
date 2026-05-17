@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import Home from './pages/Home'
 import Hero from './components/ui/Hero'
 import Signup from './pages/Signup'
@@ -24,7 +24,8 @@ import Setting from './components/ui/Setting'
 const router = createBrowserRouter([
     { path: '/', element: <Home /> },
     { path: '/signup', element: <Signup /> },
-    { path: '/verify', element: <VerifyEmail /> },
+    { path: '/verify', element: <Navigate to="/verify-email" replace /> },
+    { path: '/verify-email', element: <VerifyEmail /> },
     { path: '/verify/:token', element: <Verify /> },
     { path: '/login', element: <Login /> },
     { path: '/nasheed', element: <Nasheed /> },
@@ -65,9 +66,19 @@ const router = createBrowserRouter([
         ),
     },
     { path: '/ForgotPassword', element: <ForgotPassword /> },
+    { path: '/forgot-password', element: <ForgotPassword /> },
     { path: '/verify-OTP/:email', element: <VerifyOTP /> },
-    { path: '/upload', element: <Upload /> },
+    { path: '/verify-otp/:email', element: <VerifyOTP /> },
+    {
+        path: '/upload',
+        element: (
+            <ProtectedRoute>
+                <Upload />
+            </ProtectedRoute>
+        ),
+    },
     { path: '/naat', element: <Naat /> },
+    { path: '/change-Password/:email', element: <ChangePassword /> },
     { path: '/change-password/:email', element: <ChangePassword /> },
     {
         path: '/hero', 
