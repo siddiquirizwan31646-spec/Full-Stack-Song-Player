@@ -78,7 +78,7 @@ export default function VerifyOTP() {
 
       <div style={{ width: "100%", maxWidth: 420, position: "relative", zIndex: 1 }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <img src="https://i.postimg.cc/DZLCn6Sb/Chat-GPT-Image-May-11-2026-02-56-29-PM.png" alt="QalbAudio" style={{ height: 160, width: "auto", objectFit: "contain" }} />
+          <img src="https://i.postimg.cc/wMj8BDkS/Chat-GPT-Image-May-11-2026-02-56-29-PM.png" alt="QalbAudio" style={{ height: 160, width: "auto", objectFit: "contain" }} />
         </div>
 
         <div style={{ background: "var(--app-surface)", backdropFilter: "blur(20px)", border: "1px solid rgba(var(--app-accent-rgb),.15)", borderRadius: 20, boxShadow: "0 8px 40px rgba(0,0,0,.5)", overflow: "hidden" }}>
