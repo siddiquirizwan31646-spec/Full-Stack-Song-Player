@@ -7,8 +7,26 @@ const SMTP_HOST = process.env.SMTP_HOST
 const SMTP_PORT = Number(process.env.SMTP_PORT || 587)
 const SMTP_SECURE = String(process.env.SMTP_SECURE || "").toLowerCase() === "true" || SMTP_PORT === 465
 const MAIL_SERVICE = process.env.MAIL_SERVICE || "gmail"
+const MAIL_TIMEOUT_MS = Number(process.env.MAIL_TIMEOUT_MS || 15000)
 
 let transporterPromise
+
+const withTimeout = async (promise, label) => {
+    let timeoutId
+
+    try {
+        return await Promise.race([
+            promise,
+            new Promise((_, reject) => {
+                timeoutId = setTimeout(() => {
+                    reject(new Error(`${label} timed out after ${MAIL_TIMEOUT_MS}ms`))
+                }, MAIL_TIMEOUT_MS)
+            }),
+        ])
+    } finally {
+        clearTimeout(timeoutId)
+    }
+}
 
 const createTransporter = async () => {
     if (!SMTP_USER || !SMTP_PASS) {
@@ -24,6 +42,9 @@ const createTransporter = async () => {
                 user: SMTP_USER,
                 pass: SMTP_PASS,
             },
+            connectionTimeout: MAIL_TIMEOUT_MS,
+            greetingTimeout: MAIL_TIMEOUT_MS,
+            socketTimeout: MAIL_TIMEOUT_MS,
         })
         : nodemailer.createTransport({
             service: MAIL_SERVICE,
@@ -31,9 +52,12 @@ const createTransporter = async () => {
                 user: SMTP_USER,
                 pass: SMTP_PASS,
             },
+            connectionTimeout: MAIL_TIMEOUT_MS,
+            greetingTimeout: MAIL_TIMEOUT_MS,
+            socketTimeout: MAIL_TIMEOUT_MS,
         })
 
-    await transporter.verify()
+    await withTimeout(transporter.verify(), "Mail transport verification")
     return transporter
 }
 
@@ -53,8 +77,17 @@ export const getFromAddress = () =>
 
 export const sendMail = async (options) => {
     const transporter = await getTransporter()
-    return transporter.sendMail({
-        from: getFromAddress(),
-        ...options,
-    })
+
+    try {
+        return await withTimeout(
+            transporter.sendMail({
+                from: getFromAddress(),
+                ...options,
+            }),
+            `Mail send to ${options?.to || "recipient"}`
+        )
+    } catch (error) {
+        console.error("Mail send failed:", error.message)
+        throw error
+    }
 }

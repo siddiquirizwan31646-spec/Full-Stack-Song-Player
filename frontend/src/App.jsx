@@ -20,7 +20,6 @@ import IslamicNewsSection from './pages/exprole'
 import Profile from './pages/Profile'
 import ProtectedRoute from './components/ui/ProtectedRoute'
 import Setting from './components/ui/Setting'
-
 const router = createBrowserRouter([
     { path: '/', element: <Home /> },
     { path: '/signup', element: <Signup /> },

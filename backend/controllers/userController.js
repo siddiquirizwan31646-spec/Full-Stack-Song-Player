@@ -83,6 +83,8 @@ export const registerUser = async (req, res) => {
         const email = normalizeEmail(req.body?.email)
         const password = String(req.body?.password || "")
 
+        console.log(`[register] request received for ${email}`)
+
         if (!username || !email || !password) {
             return res.status(400).json({ success: false, message: "All fields are required" })
         }
@@ -116,6 +118,7 @@ export const registerUser = async (req, res) => {
             newUser.token = token
             await newUser.save()
         } catch (mailError) {
+            console.error(`[register] verification email failed for ${email}:`, mailError.message)
             await User.findByIdAndDelete(newUser._id)
             throw new Error(`Unable to send verification email: ${mailError.message}`)
         }
@@ -126,6 +129,7 @@ export const registerUser = async (req, res) => {
             data: sanitizeUser(newUser),
         })
     } catch (error) {
+        console.error("[register] failed:", error.message)
         return res.status(500).json({ success: false, message: error.message })
     }
 }
@@ -229,6 +233,7 @@ export const logoutUser = async (req, res) => {
 export const forgotPassword = async (req, res) => {
     try {
         const email = normalizeEmail(req.body?.email)
+        console.log(`[forgot-password] request received for ${email}`)
         const user = await User.findOne({ email })
         if (!user) return res.status(404).json({ success: false, message: "User not found" })
 
@@ -242,6 +247,7 @@ export const forgotPassword = async (req, res) => {
         try {
             await sendOtpMail(email, otp)
         } catch (mailError) {
+            console.error(`[forgot-password] otp email failed for ${email}:`, mailError.message)
             user.otp = null
             user.otpExpiry = null
             user.passwordResetVerifiedAt = null
@@ -251,6 +257,7 @@ export const forgotPassword = async (req, res) => {
 
         return res.status(200).json({ success: true, message: "OTP sent successfully" })
     } catch (error) {
+        console.error("[forgot-password] failed:", error.message)
         return res.status(500).json({ success: false, message: error.message })
     }
 }
