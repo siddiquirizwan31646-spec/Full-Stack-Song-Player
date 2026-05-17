@@ -355,7 +355,6 @@ export default function Explore() {
       <div className={`mob-overlay${sidebarOpen ? " visible" : ""}`} onClick={() => setSidebarOpen(false)} />
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-
         {/* ── SIDEBAR ── */}
         <div className={`sidebar${sidebarOpen ? " open" : ""}`}>
           {/* Logo header — matches hero page */}
