@@ -215,7 +215,6 @@ const DashboardNavbar = () => {
           background: "linear-gradient(90deg,transparent 0%,rgba(var(--app-accent-rgb),0) 10%,rgba(var(--app-accent-rgb),0.55) 35%,var(--app-accent) 50%,rgba(var(--app-accent-rgb),0.55) 65%,rgba(var(--app-accent-rgb),0) 90%,transparent 100%)",
           pointerEvents: "none",
         }} />
-
         <div className="dashboard-nav-shell">
 
           {/* ── LOGO ── */}
