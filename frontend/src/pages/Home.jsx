@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/context/userContext";
+import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import { toast } from "sonner";
 import useViewport from "@/hooks/useViewport";
@@ -180,7 +181,8 @@ const STATS = [
 
 export default function Home() {
   const navigate = useNavigate();
-  const { user, setUser } = useUser();
+  const { user } = useUser();
+  const { logout } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const vw = useViewport();
   const mob = vw < 768;
@@ -193,13 +195,8 @@ export default function Home() {
   }, []);
 
   const handleLogout = async () => {
-    try {
-      await axios.post(`${API_URL}/user/logout`, {}, { headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` } });
-    } catch {}
-    setUser(null);
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("user");
     toast.success("Logged out successfully");
+    await logout();
   };
 
   const px = mob ? "0 16px" : "0 5%";

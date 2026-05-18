@@ -4,9 +4,21 @@ import cors from "cors"
 import connectDB from "./database/db.js"
 import userRoute from "./routes/userRoute.js"
 import playlistRoute from "./routes/playlistRoutes.js"
+import admin from "firebase-admin"
 
 const app = express()
 const PORT = process.env.PORT || 3000
+
+// ── Firebase Admin Init ───────────────────────────────────────────────────────
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId:   process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey:  process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    }),
+  })
+}
 
 const normalizeOrigin = (value = "") => value.trim().replace(/\/+$/, "")
 
@@ -21,12 +33,10 @@ const allowedOrigins = [
 app.use(cors({
     origin: (origin, callback) => {
         const normalizedOrigin = normalizeOrigin(origin)
-
         if (!origin || allowedOrigins.includes(normalizedOrigin)) {
             callback(null, true)
             return
         }
-
         callback(new Error(`CORS: origin ${origin} not allowed`))
     },
     methods: ["GET", "POST", "PUT", "DELETE"],

@@ -6,6 +6,7 @@ import {
     readFavoriteSongs,
 } from "@/lib/favorites";
 import { API_URL } from "@/lib/config";
+import { useAuth } from "@/context/AuthContext";
 
 // Auto-logout when access token expires or is invalid
 axios.interceptors.response.use(
@@ -26,6 +27,7 @@ axios.interceptors.response.use(
         return Promise.reject(error)
     }
 )
+
 export const UserContext = createContext(null)
 
 export const DEFAULT_PREFERENCES = {
@@ -144,30 +146,33 @@ const applyPreferencesToDocument = (preferences) => {
 }
 
 export const UserProvider = ({ children }) => {
-    const [user, setUser] = useState(null)
-    const [loading, setLoading] = useState(true)
+    // ── Single source of truth: AuthContext ───────────────────────────────────
+    // UserContext no longer reads localStorage itself. It mirrors AuthContext.user
+    // so all components using useUser() always see the same logged-in state.
+    const { user: authUser, loading: authLoading } = useAuth()
+
+    const [preferences, setPreferences] = useState(DEFAULT_PREFERENCES)
     const [favoriteSongs, setFavoriteSongs] = useState([])
     const [favoritesReady, setFavoritesReady] = useState(false)
-    const [preferences, setPreferences] = useState(DEFAULT_PREFERENCES)
+
+    // Derive user & loading directly from AuthContext
+    const user = authUser
+    const loading = authLoading
+
+    // Dummy setUser for legacy compatibility (Home.jsx etc. might still call it)
+    // It's a no-op now — auth state is owned by AuthContext
+    const setUser = () => {}
 
     const favoriteStorageKey = getFavoritesStorageKey(user?._id)
 
+    // Sync preferences when authUser changes (login / logout)
     useEffect(() => {
-        const token = localStorage.getItem("accessToken")
-        const savedUser = localStorage.getItem("user")
-        if (token && savedUser) {
-            const parsedUser = JSON.parse(savedUser)
-            setUser(parsedUser)
-            setPreferences(normalizePreferences(parsedUser.preferences))
-        }
-        setLoading(false)
-    }, [])
-
-    useEffect(() => {
-        if (!user) {
+        if (authUser) {
+            setPreferences(normalizePreferences(authUser.preferences))
+        } else {
             setPreferences(DEFAULT_PREFERENCES)
         }
-    }, [user])
+    }, [authUser])
 
     useEffect(() => {
         applyPreferencesToDocument(preferences)
@@ -183,7 +188,6 @@ export const UserProvider = ({ children }) => {
         if (!favoritesReady) {
             return
         }
-
         localStorage.setItem(favoriteStorageKey, JSON.stringify(favoriteSongs))
     }, [favoriteSongs, favoriteStorageKey, favoritesReady])
 
@@ -226,42 +230,22 @@ export const UserProvider = ({ children }) => {
             localStorage.removeItem("user")
             return
         }
-
         localStorage.setItem("user", JSON.stringify(nextUser))
     }
 
     const syncUserPreferences = (nextPreferences) => {
         setPreferences(nextPreferences)
-        setUser((currentUser) => {
-            if (!currentUser) {
-                return currentUser
-            }
-
-            const updatedUser = {
-                ...currentUser,
-                preferences: nextPreferences,
-            }
-
-            updateStoredUser(updatedUser)
-            return updatedUser
-        })
     }
 
     const refreshCurrentUser = async () => {
         const accessToken = localStorage.getItem("accessToken")
-
         if (!accessToken) {
             return null
         }
-
         const response = await axios.get(`${API_URL}/user/profile`, {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            },
+            headers: { Authorization: `Bearer ${accessToken}` },
         })
-
         const nextUser = response.data.user
-        setUser(nextUser)
         updateStoredUser(nextUser)
         setPreferences(normalizePreferences(nextUser?.preferences))
         return nextUser
@@ -269,15 +253,11 @@ export const UserProvider = ({ children }) => {
 
     const refreshPreferences = async () => {
         const accessToken = localStorage.getItem("accessToken")
-
         if (!accessToken) {
             return DEFAULT_PREFERENCES
         }
-
         const response = await axios.get(`${API_URL}/user/preferences`, {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            },
+            headers: { Authorization: `Bearer ${accessToken}` },
         })
         const nextPreferences = normalizePreferences(response.data.preferences)
         syncUserPreferences(nextPreferences)
@@ -286,11 +266,9 @@ export const UserProvider = ({ children }) => {
 
     const savePreferences = async (updates) => {
         const accessToken = localStorage.getItem("accessToken")
-
         if (!accessToken) {
             throw new Error("Please log in to save settings.")
         }
-
         const response = await axios.put(`${API_URL}/user/preferences`, updates, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,

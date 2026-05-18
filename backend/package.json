@@ -18,12 +18,13 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "firebase-admin": "^13.10.0",
     "handlebars": "^4.7.9",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.4.1",
     "nodemailer": "^8.0.5",
-    "yup": "^1.7.1",
-    "resend": "^3.2.0"
+    "resend": "^3.2.0",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

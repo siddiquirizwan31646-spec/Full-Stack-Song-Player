@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
+import admin from "firebase-admin"
 import { sendOtpMail } from "../emailVerify/sendOtpMail.js"
 import { verifyMail } from "../emailVerify/verifyMail.js"
 import { User } from "../models/userModel.js"
@@ -372,6 +373,93 @@ export const updateUserPreferences = async (req, res) => {
             user: sanitizeUser(user),
         })
     } catch (error) {
+        return res.status(500).json({ success: false, message: error.message })
+    }
+}
+
+// ── Google Login ──────────────────────────────────────────────────────────────
+export const googleLogin = async (req, res) => {
+    try {
+        const { idToken, name, email, photo, uid } = req.body
+
+        if (!idToken) {
+            return res.status(400).json({ success: false, message: "Firebase ID token is required" })
+        }
+
+        console.log(`[google-login] request received for ${email}`)
+
+        // 1. Verify Firebase ID token
+        let decoded
+        try {
+            decoded = await admin.auth().verifyIdToken(idToken)
+        } catch (err) {
+            console.error("[google-login] token verification failed:", err.message)
+            if (err.code === "auth/id-token-expired") {
+                return res.status(401).json({ success: false, message: "Session expired. Please sign in again." })
+            }
+            return res.status(401).json({ success: false, message: "Invalid authentication token." })
+        }
+
+        if (decoded.uid !== uid) {
+            return res.status(401).json({ success: false, message: "Token UID mismatch." })
+        }
+
+        const verifiedEmail = normalizeEmail(decoded.email || email)
+        if (!verifiedEmail) {
+            return res.status(400).json({ success: false, message: "No email found in Google account." })
+        }
+
+        // 2. Find or create user in MongoDB
+        let user = await User.findOne({ email: verifiedEmail })
+
+        if (user) {
+            // Existing user — update Google fields if missing
+            let changed = false
+            if (!user.googleId)             { user.googleId      = uid;        changed = true }
+            if (!user.photo && photo)        { user.photo         = photo;      changed = true }
+            if (!user.authProvider)          { user.authProvider  = "google";   changed = true }
+            if (user.isVerified !== true)    { user.isVerified    = true;       changed = true }
+            if (changed) await user.save()
+        } else {
+            // New Google user — no password required
+            user = await User.create({
+                username:     name || verifiedEmail.split("@")[0],
+                email:        verifiedEmail,
+                googleId:     uid,
+                photo:        photo || "",
+                authProvider: "google",
+                isVerified:   true,
+                isLoggedIn:   true,
+                preferences:  DEFAULT_PREFERENCES,
+            })
+        }
+
+        // 3. Create session (same as email login)
+        await Session.deleteMany({ userId: user._id })
+        await Session.create({ userId: user._id })
+
+        user.isLoggedIn = true
+        await user.save()
+
+        // 4. Generate tokens (same as email login)
+        const accessToken = createAccessToken(user._id)
+        const refreshToken = jwt.sign(
+            { id: user._id },
+            process.env.REFRESH_TOKEN_SECRET || process.env.SECRET_KEY,
+            { expiresIn: process.env.REFRESH_TOKEN_EXPIRY || "7d" }
+        )
+
+        console.log(`[google-login] success for ${verifiedEmail}`)
+
+        return res.status(200).json({
+            success:      true,
+            message:      `Welcome ${user.username}`,
+            accessToken,
+            refreshToken,
+            user:         sanitizeUser(user),
+        })
+    } catch (error) {
+        console.error("[google-login] failed:", error.message)
         return res.status(500).json({ success: false, message: error.message })
     }
 }
