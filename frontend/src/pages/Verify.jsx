@@ -1,6 +1,7 @@
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { API_URL } from '@/lib/config'
 
 const Logo = () => (
   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%" }}>
@@ -8,7 +9,6 @@ const Logo = () => (
       style={{ height: 100, width: "auto", maxWidth: "80%", objectFit: "contain", display: "block" }} />
   </div>
 )
-const API = import.meta.env.VITE_API_URL
 const Verify = () => {
   const { token } = useParams()
   const [status, setStatus] = useState("Verifying...")
@@ -18,7 +18,7 @@ const Verify = () => {
     const VerifyEmail = async () => {
       try {
         const decodedToken = decodeURIComponent(token)  // ✅ add this
-        const res = await axios.post(`${API}/user/verify`, {}, {
+        const res = await axios.post(`${API_URL}/user/verify`, {}, {
           headers: {
             Authorization: `Bearer ${decodedToken}`    // ✅ use decodedToken
           }

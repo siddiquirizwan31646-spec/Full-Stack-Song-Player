@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/DashboardNavbar";
 import FavoriteButton from "@/components/FavoriteButton";
 import { useUser } from "@/context/userContext";
+import { usePersistentSongPlayer } from "@/hooks/usePersistentSongPlayer";
 
 const fmt = (s) =>
   !s || isNaN(s) ? "0:00" : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
@@ -69,73 +70,24 @@ export default function FavoritePage() {
   const displayName = user?.username || "Guest";
   const userId = user?._id;
 
-  const [currentSong, setCurrentSong] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(0.8);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const audioRef = useRef(null);
-  const playNextRef = useRef(null);
-
-  const playSong = useCallback((song) => {
-    setCurrentSong(song);
-    if (audioRef.current) {
-      audioRef.current.src = song.mp3_url;
-      audioRef.current.volume = volume;
-      audioRef.current.play().catch(() => {});
-      setIsPlaying(true);
-    }
-  }, [volume]);
-
-  const togglePlay = () => {
-    if (!currentSong || !audioRef.current) return;
-    if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); }
-    else { audioRef.current.play().catch(() => {}); setIsPlaying(true); }
-  };
-
-  const playNext = useCallback(() => {
-    const idx = favoriteSongs.findIndex(s => String(s.id) === String(currentSong?.id));
-    if (idx >= 0 && idx < favoriteSongs.length - 1) playSong(favoriteSongs[idx + 1]);
-  }, [currentSong?.id, favoriteSongs, playSong]);
-
-  const playPrev = () => {
-    const idx = favoriteSongs.findIndex(s => String(s.id) === String(currentSong?.id));
-    if (idx > 0) playSong(favoriteSongs[idx - 1]);
-  };
-
-  useEffect(() => { playNextRef.current = playNext; }, [playNext]);
-
-  useEffect(() => {
-    const a = audioRef.current; if (!a) return;
-    const onTime = () => setCurrentTime(a.currentTime);
-    const onMeta = () => setDuration(a.duration);
-    const onEnd = () => playNextRef.current?.();
-    a.addEventListener("timeupdate", onTime);
-    a.addEventListener("loadedmetadata", onMeta);
-    a.addEventListener("ended", onEnd);
-    return () => {
-      a.removeEventListener("timeupdate", onTime);
-      a.removeEventListener("loadedmetadata", onMeta);
-      a.removeEventListener("ended", onEnd);
-    };
-  }, []);
-
-  // Stop if current song removed from favorites
-  useEffect(() => {
-    if (!currentSong) return;
-    const exists = favoriteSongs.some(s => String(s.id) === String(currentSong.id));
-    if (!exists) {
-      audioRef.current?.pause();
-      if (audioRef.current) audioRef.current.src = "";
-      setCurrentSong(null); setIsPlaying(false); setCurrentTime(0); setDuration(0);
-    }
-  }, [currentSong, favoriteSongs]);
-
-  const progressPct = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const {
+    currentSong,
+    isPlaying,
+    currentTime,
+    duration,
+    volume,
+    progressPct,
+    playSongFromList,
+    togglePlay,
+    playNext,
+    playPrev,
+    seekTo,
+    setVolume,
+  } = usePersistentSongPlayer(favoriteSongs);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "var(--app-shell-bg)", color: "var(--app-text-main)", fontFamily: "'DM Sans',sans-serif", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "var(--app-shell-bg)", color: "var(--app-text-main)", fontFamily: "'DM Sans',sans-serif", overflow: "hidden" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       <style>{`
         *{box-sizing:border-box}
@@ -165,7 +117,7 @@ export default function FavoritePage() {
         }
 
         /* PLAYER */
-        .player-bar{background:var(--app-shell-bg-alt);border-top:1px solid rgba(var(--app-accent-rgb),0.18);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-shrink:0;position:relative;overflow:hidden}
+        .player-bar{background:var(--app-shell-bg-alt);border-top:1px solid rgba(var(--app-accent-rgb),0.18);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-shrink:0;position:sticky;bottom:0;z-index:20;overflow:hidden}
         .player-progress-line{position:absolute;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--app-accent-strong),var(--app-accent));transition:width 0.5s linear;pointer-events:none}
         .player-track{display:flex;align-items:center;gap:10px;flex:0 0 auto;width:200px;min-width:0}
         .player-wave{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -250,7 +202,7 @@ export default function FavoritePage() {
             <div style={{ flex: 1 }} />
             {favoriteSongs.length > 0 && (
               <button
-                onClick={() => playSong(favoriteSongs[0])}
+                onClick={() => playSongFromList(favoriteSongs[0])}
                 style={{ padding: "7px 14px", borderRadius: 8, border: "none", cursor: "pointer", background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))", color: "#000", fontWeight: 700, fontSize: 12, fontFamily: "'DM Sans',sans-serif", whiteSpace: "nowrap" }}>
                 ▶ Play All
               </button>
@@ -292,7 +244,7 @@ export default function FavoritePage() {
                     className={`song-row${isActive ? " active-row" : ""}`}
                     style={{ animation: `fadeUp .2s ${index * 0.022}s both` }}
                   >
-                    <div onClick={() => playSong(song)} style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+                    <div onClick={() => playSongFromList(song)} style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
                       {/* Index */}
                       <div style={{ width: 18, textAlign: "center", flexShrink: 0, fontSize: 11, color: isActive ? "var(--app-accent)" : "var(--app-text-muted)", fontFamily: "monospace" }}>
                         {isActive && isPlaying ? <span style={{ fontSize: 8 }}>▶</span> : index + 1}
@@ -329,7 +281,7 @@ export default function FavoritePage() {
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                       <FavoriteButton song={song} />
                       <button
-                        onClick={(e) => { e.stopPropagation(); playSong(song); }}
+                        onClick={(e) => { e.stopPropagation(); playSongFromList(song); }}
                         style={{ width: 28, height: 28, borderRadius: "50%", border: "none", cursor: "pointer", background: isActive ? "var(--app-accent)" : "rgba(var(--app-accent-rgb),0.15)", color: isActive ? "#000" : "var(--app-accent)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 10 }}>
                         ▶
                       </button>
@@ -389,7 +341,7 @@ export default function FavoritePage() {
         {/* Seek */}
         <div className="player-seek">
           <input type="range" min={0} max={duration || 0} value={currentTime}
-            onChange={e => { if (audioRef.current) audioRef.current.currentTime = Number(e.target.value); }}
+            onChange={e => seekTo(Number(e.target.value))}
             style={{ width: "100%", background: `linear-gradient(to right,var(--app-accent) ${progressPct}%,var(--app-border) 0%)` }}
           />
           <div style={{ display: "flex", justifyContent: "space-between", color: "var(--app-text-muted)", fontSize: 10 }}>
@@ -401,13 +353,11 @@ export default function FavoritePage() {
         <div className="player-vol">
           <span style={{ color: "var(--app-text-muted)", fontSize: 14, flexShrink: 0 }}>🔊</span>
           <input type="range" min={0} max={1} step={0.01} value={volume}
-            onChange={e => { const v = Number(e.target.value); setVolume(v); if (audioRef.current) audioRef.current.volume = v; }}
+            onChange={e => setVolume(Number(e.target.value))}
             style={{ width: 70, background: `linear-gradient(to right,var(--app-accent) ${volume * 100}%,var(--app-border) 0%)` }}
           />
         </div>
       </div>
-
-      <audio ref={audioRef} />
     </div>
   );
 }

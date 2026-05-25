@@ -186,6 +186,13 @@ export const loginUser = async (req, res) => {
             return res.status(401).json({ success: false, message: "Invalid email or password" })
         }
 
+        if (user.authProvider === "google" && !user.password) {
+            return res.status(400).json({
+                success: false,
+                message: "This account uses Google sign-in. Please continue with Google.",
+            })
+        }
+
         const passwordCheck = await bcrypt.compare(password, user.password)
         if (!passwordCheck) {
             return res.status(401).json({ success: false, message: "Invalid email or password" })

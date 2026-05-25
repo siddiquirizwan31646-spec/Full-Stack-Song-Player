@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom"
 import DashboardNavbar from "@/components/DashboardNavbar"
 import FavoriteButton from "@/components/FavoriteButton"
 import { useUser } from "@/context/userContext"
+import { usePersistentSongPlayer } from "@/hooks/usePersistentSongPlayer"
 
 const SUPABASE_URL = "https://bnxahrapojygsulzfqpw.supabase.co"
 const SUPABASE_KEY =
@@ -193,16 +194,23 @@ export default function Explore() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [currentSong, setCurrentSong] = useState(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(0)
-  const [volume, setVolume] = useState(0.8)
   const [page, setPage] = useState(0)
 
-  const audioRef = useRef(null)
   const searchTimer = useRef(null)
-  const playNextRef = useRef(null)
+  const {
+    currentSong,
+    isPlaying,
+    currentTime,
+    duration,
+    volume,
+    progressPct,
+    playSongFromList,
+    togglePlay,
+    playNext,
+    playPrev,
+    seekTo,
+    setVolume,
+  } = usePersistentSongPlayer(songs)
 
   const fetchSongs = useCallback(async (q = "", p = 0, append = false) => {
     setLoading(true)
@@ -229,56 +237,11 @@ export default function Explore() {
     searchTimer.current = setTimeout(() => fetchSongs(val, 0, false), 400)
   }
 
-  const playSong = useCallback((song) => {
-    setCurrentSong(song)
-    if (audioRef.current) {
-      audioRef.current.src = song.mp3_url
-      audioRef.current.volume = volume
-      audioRef.current.play()
-      setIsPlaying(true)
-    }
-  }, [volume])
-
-  const togglePlay = () => {
-    if (!currentSong || !audioRef.current) return
-    if (isPlaying) { audioRef.current.pause(); setIsPlaying(false) }
-    else { audioRef.current.play(); setIsPlaying(true) }
-  }
-
-  const playNext = useCallback(() => {
-    const idx = songs.findIndex(s => s.id === currentSong?.id)
-    if (idx < songs.length - 1) playSong(songs[idx + 1])
-  }, [songs, currentSong, playSong])
-
-  const playPrev = () => {
-    const idx = songs.findIndex(s => s.id === currentSong?.id)
-    if (idx > 0) playSong(songs[idx - 1])
-  }
-
-  useEffect(() => { playNextRef.current = playNext }, [playNext])
-
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
-    const onTime = () => setCurrentTime(audio.currentTime)
-    const onMeta = () => setDuration(audio.duration)
-    const onEnd = () => playNextRef.current?.()
-    audio.addEventListener("timeupdate", onTime)
-    audio.addEventListener("loadedmetadata", onMeta)
-    audio.addEventListener("ended", onEnd)
-    return () => {
-      audio.removeEventListener("timeupdate", onTime)
-      audio.removeEventListener("loadedmetadata", onMeta)
-      audio.removeEventListener("ended", onEnd)
-    }
-  }, [])
-
-  const progressPct = duration > 0 ? (currentTime / duration) * 100 : 0
-  const cardProps = { currentSong, isPlaying, onPlay: playSong, currentTime, duration }
+  const cardProps = { currentSong, isPlaying, onPlay: playSongFromList, currentTime, duration }
 
   return (
     <div style={{
-      display: "flex", flexDirection: "column", height: "100vh",
+      display: "flex", flexDirection: "column", height: "100dvh",
       background: "var(--app-shell-bg)", color: "var(--app-text-main)",
       overflow: "hidden", fontFamily: "'DM Sans',sans-serif",
     }}>
@@ -309,7 +272,7 @@ export default function Explore() {
         @media(max-width:768px){.mob-overlay.visible{display:block}}
 
         /* PLAYER */
-        .player-bar{background:var(--app-shell-bg-alt);border-top:1px solid rgba(var(--app-accent-rgb),0.18);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-shrink:0;position:relative;overflow:hidden}
+        .player-bar{background:var(--app-shell-bg-alt);border-top:1px solid rgba(var(--app-accent-rgb),0.18);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-shrink:0;position:sticky;bottom:0;z-index:20;overflow:hidden}
         .player-progress-line{position:absolute;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--app-accent-strong),var(--app-accent));transition:width 0.5s linear;pointer-events:none}
         .player-track{display:flex;align-items:center;gap:10px;flex:0 0 auto;width:200px;min-width:0}
         .player-wave{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -554,7 +517,7 @@ export default function Explore() {
         {/* Seek */}
         <div className="player-seek">
           <input type="range" min={0} max={duration || 0} value={currentTime}
-            onChange={e => { if (audioRef.current) audioRef.current.currentTime = Number(e.target.value) }}
+            onChange={e => seekTo(Number(e.target.value))}
             style={{ width: "100%", background: `linear-gradient(to right,var(--app-accent) ${progressPct}%,var(--app-border) 0%)` }}
           />
           <div style={{ display: "flex", justifyContent: "space-between", color: "var(--app-text-muted)", fontSize: 10 }}>
@@ -566,13 +529,11 @@ export default function Explore() {
         <div className="player-vol">
           <span style={{ color: "var(--app-text-muted)", fontSize: 14, flexShrink: 0 }}>🔊</span>
           <input type="range" min={0} max={1} step={0.01} value={volume}
-            onChange={e => { const v = Number(e.target.value); setVolume(v); if (audioRef.current) audioRef.current.volume = v }}
+            onChange={e => setVolume(Number(e.target.value))}
             style={{ width: 70, background: `linear-gradient(to right,var(--app-accent) ${volume * 100}%,var(--app-border) 0%)` }}
           />
         </div>
       </div>
-
-      <audio ref={audioRef} />
     </div>
   )
 }

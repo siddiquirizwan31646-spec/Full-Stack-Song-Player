@@ -2,10 +2,9 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { signInWithPopup, signOut as firebaseSignOut } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
+import { API_URL } from "@/lib/config";
 
 const AuthContext = createContext(null);
-
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null);
@@ -56,7 +55,7 @@ export function AuthProvider({ children }) {
       const firebaseUser = result.user;
       const idToken      = await firebaseUser.getIdToken();
 
-      const res = await fetch(`${API_BASE}/user/google-login`, {
+      const res = await fetch(`${API_URL}/user/google-login`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -95,7 +94,7 @@ export function AuthProvider({ children }) {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/user/login`, {
+      const res = await fetch(`${API_URL}/user/login`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -116,7 +115,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     try {
       if (token) {
-        await fetch(`${API_BASE}/user/logout`, {
+        await fetch(`${API_URL}/user/logout`, {
           method:  "POST",
           headers: {
             "Content-Type":  "application/json",

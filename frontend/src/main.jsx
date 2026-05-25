@@ -6,6 +6,7 @@ import App from './App.jsx'
 import { Toaster } from 'sonner'
 import { UserProvider } from './context/userContext'
 import { AuthProvider } from './context/AuthContext'
+import { PlayerProvider } from './context/PlayerContext'
 
 // AuthProvider must be OUTSIDE UserProvider so UserProvider can
 // optionally read from AuthContext if needed, and so both share
@@ -13,10 +14,12 @@ import { AuthProvider } from './context/AuthContext'
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProvider>
-      <UserProvider>
-        <App />
-        <Toaster richColors position="top-right" />
-      </UserProvider>
+      <PlayerProvider>
+        <UserProvider>
+          <App />
+          <Toaster richColors position="top-right" />
+        </UserProvider>
+      </PlayerProvider>
     </AuthProvider>
   </StrictMode>,
 )

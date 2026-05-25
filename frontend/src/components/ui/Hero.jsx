@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import DashboardNavbar from "@/components/DashboardNavbar"
 import { useUser } from "@/context/userContext"
 import FavoriteButton from "@/components/FavoriteButton"
+import { usePersistentSongPlayer } from "@/hooks/usePersistentSongPlayer"
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -232,16 +233,23 @@ export default function QalbAudio() {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
-  const [currentSong, setCurrentSong] = useState(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(0)
-  const [volume, setVolume] = useState(0.8)
   const [page, setPage] = useState(0)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const audioRef = useRef(null)
   const searchTimer = useRef(null)
-  const playNextRef = useRef(null)
+  const {
+    currentSong,
+    isPlaying,
+    currentTime,
+    duration,
+    volume,
+    progressPct,
+    playSongFromList,
+    togglePlay,
+    playNext,
+    playPrev,
+    seekTo,
+    setVolume,
+  } = usePersistentSongPlayer(songs)
 
   const fetchSongs = useCallback(async (q = "", p = 0, append = false) => {
     setLoading(true)
@@ -266,43 +274,10 @@ export default function QalbAudio() {
     searchTimer.current = setTimeout(() => fetchSongs(val, 0, false), 400)
   }
 
-  const playSong = useCallback((song) => {
-    setCurrentSong(song)
-    if (audioRef.current) { audioRef.current.src = song.mp3_url; audioRef.current.volume = volume; audioRef.current.play(); setIsPlaying(true) }
-  }, [volume])
-
-  const togglePlay = () => {
-    if (!currentSong || !audioRef.current) return
-    if (isPlaying) { audioRef.current.pause(); setIsPlaying(false) }
-    else { audioRef.current.play(); setIsPlaying(true) }
-  }
-
-  const playNext = useCallback(() => {
-    const idx = songs.findIndex(s => s.id === currentSong?.id)
-    if (idx < songs.length - 1) playSong(songs[idx + 1])
-  }, [songs, currentSong, playSong])
-
-  const playPrev = () => {
-    const idx = songs.findIndex(s => s.id === currentSong?.id)
-    if (idx > 0) playSong(songs[idx - 1])
-  }
-
-  useEffect(() => { playNextRef.current = playNext }, [playNext])
-
-  useEffect(() => {
-    const a = audioRef.current; if (!a) return
-    const onTime = () => setCurrentTime(a.currentTime)
-    const onMeta = () => setDuration(a.duration)
-    const onEnd = () => playNextRef.current?.()
-    a.addEventListener("timeupdate", onTime); a.addEventListener("loadedmetadata", onMeta); a.addEventListener("ended", onEnd)
-    return () => { a.removeEventListener("timeupdate", onTime); a.removeEventListener("loadedmetadata", onMeta); a.removeEventListener("ended", onEnd) }
-  }, [])
-
   const cardProps = { currentTime, duration, userId }
-  const progressPct = duration > 0 ? (currentTime / duration) * 100 : 0
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "var(--app-shell-bg)", color: "var(--app-text-main)", fontFamily: "'DM Sans',sans-serif", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "var(--app-shell-bg)", color: "var(--app-text-main)", fontFamily: "'DM Sans',sans-serif", overflow: "hidden" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       <style>{`
         *{box-sizing:border-box}
@@ -347,7 +322,7 @@ export default function QalbAudio() {
         @media(max-width:768px){.mob-overlay.visible{display:block}}
 
         /* PLAYER */
-        .player-bar{background:var(--app-shell-bg-alt);border-top:1px solid rgba(var(--app-accent-rgb),0.18);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-shrink:0;position:relative;overflow:hidden}
+        .player-bar{background:var(--app-shell-bg-alt);border-top:1px solid rgba(var(--app-accent-rgb),0.18);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-shrink:0;position:sticky;bottom:0;z-index:20;overflow:hidden}
         .player-progress-line{position:absolute;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--app-accent-strong),var(--app-accent));transition:width 0.5s linear;pointer-events:none}
         .player-track{display:flex;align-items:center;gap:10px;flex:0 0 auto;width:200px;min-width:0}
         .player-wave{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -454,7 +429,7 @@ export default function QalbAudio() {
                     <div key={i} className="skeleton" style={{ borderRadius: 14, height: 78 }} />
                   ))
                   : songs.slice(0, 4).map(s => (
-                    <SongCard key={s.id} song={s} isActive={currentSong?.id === s.id} onPlay={playSong} compact {...cardProps} />
+                    <SongCard key={s.id} song={s} isActive={currentSong?.id === s.id} onPlay={playSongFromList} compact {...cardProps} />
                   ))}
               </div>
             </Section>
@@ -466,7 +441,7 @@ export default function QalbAudio() {
                   <div className="h-scroll">
                     {(loading ? Array.from({ length: 4 }) : songs.slice(...sl)).map((s, i) =>
                       s
-                        ? <SongCard key={s.id} song={s} isActive={currentSong?.id === s.id} onPlay={playSong} {...cardProps} />
+                        ? <SongCard key={s.id} song={s} isActive={currentSong?.id === s.id} onPlay={playSongFromList} {...cardProps} />
                         : <div key={i} className="skeleton" style={{ width: 138, height: 190, borderRadius: 14, flexShrink: 0 }} />
                     )}
                   </div>
@@ -487,7 +462,7 @@ export default function QalbAudio() {
               const active = currentSong?.id === song.id
               return (
                 <div key={song.id} className={`song-row${active ? " active-row" : ""}`}>
-                  <div onClick={() => playSong(song)} style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+                  <div onClick={() => playSongFromList(song)} style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
                     {/* Cover with animation */}
                     <div style={{ width: 44, height: 44, borderRadius: 9, overflow: "hidden", background: "var(--app-surface)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, position: "relative", transition: "box-shadow 0.2s", boxShadow: active ? "0 0 14px rgba(var(--app-accent-rgb),0.35)" : "none" }}>
                       {song.cover_url ? <img src={song.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🎵"}
@@ -627,7 +602,7 @@ export default function QalbAudio() {
         {/* Seek bar */}
         <div className="player-seek">
           <input type="range" min={0} max={duration || 0} value={currentTime}
-            onChange={e => { if (audioRef.current) audioRef.current.currentTime = Number(e.target.value) }}
+            onChange={e => seekTo(Number(e.target.value))}
             style={{ width: "100%", background: `linear-gradient(to right,var(--app-accent) ${progressPct}%,var(--app-border) 0%)` }}
           />
           <div style={{ display: "flex", justifyContent: "space-between", color: "var(--app-text-muted)", fontSize: 10 }}>
@@ -639,13 +614,11 @@ export default function QalbAudio() {
         <div className="player-vol">
           <span style={{ color: "var(--app-text-muted)", fontSize: 14, flexShrink: 0 }}>🔊</span>
           <input type="range" min={0} max={1} step={0.01} value={volume}
-            onChange={e => { const v = Number(e.target.value); setVolume(v); if (audioRef.current) audioRef.current.volume = v }}
+            onChange={e => setVolume(Number(e.target.value))}
             style={{ width: 70, background: `linear-gradient(to right,var(--app-accent) ${volume * 100}%,var(--app-border) 0%)` }}
           />
         </div>
       </div>
-
-      <audio ref={audioRef} />
     </div>
   )
 }

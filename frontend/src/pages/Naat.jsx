@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/DashboardNavbar";
 import FavoriteButton from "@/components/FavoriteButton";
 import { useUser } from "@/context/userContext";
+import { usePersistentSongPlayer } from "@/hooks/usePersistentSongPlayer";
 
 const SUPABASE_URL = "https://bnxahrapojygsulzfqpw.supabase.co";
 const SUPABASE_KEY =
@@ -94,18 +95,25 @@ export default function NaatPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [currentSong, setCurrentSong] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(0.8);
   const [page, setPage] = useState(0);
   const [view, setView] = useState("grid");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const audioRef = useRef(null);
   const searchTimer = useRef(null);
-  const playNextRef = useRef(null);
+  const {
+    currentSong,
+    isPlaying,
+    currentTime,
+    duration,
+    volume,
+    progressPct,
+    playSongFromList,
+    togglePlay,
+    playNext,
+    playPrev,
+    seekTo,
+    setVolume,
+  } = usePersistentSongPlayer(songs);
 
   const fetchNaats = useCallback(async (q = "", p = 0, append = false) => {
     setLoading(true);
@@ -132,55 +140,9 @@ export default function NaatPage() {
     searchTimer.current = setTimeout(() => fetchNaats(val, 0, false), 400);
   };
 
-  const playSong = useCallback((song) => {
-    setCurrentSong(song);
-    if (audioRef.current) {
-      audioRef.current.src = song.mp3_url;
-      audioRef.current.volume = volume;
-      audioRef.current.play();
-      setIsPlaying(true);
-    }
-  }, [volume]);
-
-  const togglePlay = () => {
-    if (!currentSong || !audioRef.current) return;
-    if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); }
-    else { audioRef.current.play(); setIsPlaying(true); }
-  };
-
-  const playNext = useCallback(() => {
-    const idx = songs.findIndex((s) => s.id === currentSong?.id);
-    if (idx < songs.length - 1) playSong(songs[idx + 1]);
-  }, [songs, currentSong, playSong]);
-
-  const playPrev = () => {
-    const idx = songs.findIndex((s) => s.id === currentSong?.id);
-    if (idx > 0) playSong(songs[idx - 1]);
-  };
-
-  useEffect(() => { playNextRef.current = playNext; }, [playNext]);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const onTime = () => setCurrentTime(audio.currentTime);
-    const onMeta = () => setDuration(audio.duration);
-    const onEnd = () => playNextRef.current?.();
-    audio.addEventListener("timeupdate", onTime);
-    audio.addEventListener("loadedmetadata", onMeta);
-    audio.addEventListener("ended", onEnd);
-    return () => {
-      audio.removeEventListener("timeupdate", onTime);
-      audio.removeEventListener("loadedmetadata", onMeta);
-      audio.removeEventListener("ended", onEnd);
-    };
-  }, []);
-
-  const progressPct = duration > 0 ? (currentTime / duration) * 100 : 0;
-
   return (
     <div style={{
-      display: "flex", flexDirection: "column", height: "100vh",
+      display: "flex", flexDirection: "column", height: "100dvh",
       background: "var(--app-shell-bg)", color: "var(--app-text-main)",
       fontFamily: "'DM Sans', sans-serif", overflow: "hidden",
     }}>
@@ -211,7 +173,7 @@ export default function NaatPage() {
         @media(max-width:768px){.mob-overlay.visible{display:block}}
 
         /* PLAYER */
-        .player-bar{background:var(--app-shell-bg-alt);border-top:1px solid rgba(var(--app-accent-rgb),0.18);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-shrink:0;position:relative;overflow:hidden}
+        .player-bar{background:var(--app-shell-bg-alt);border-top:1px solid rgba(var(--app-accent-rgb),0.18);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-shrink:0;position:sticky;bottom:0;z-index:20;overflow:hidden}
         .player-progress-line{position:absolute;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--app-accent-strong),var(--app-accent));transition:width 0.5s linear;pointer-events:none}
         .player-track{display:flex;align-items:center;gap:10px;flex:0 0 auto;width:200px;min-width:0}
         .player-wave{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -386,7 +348,7 @@ export default function NaatPage() {
                     const progress = isActive && duration > 0 ? currentTime / duration : 0;
                     return (
                       <div key={song.id} className="song-card-wrap">
-                        <div onClick={() => playSong(song)} style={{
+                        <div onClick={() => playSongFromList(song)} style={{
                           background: isActive ? "rgba(var(--app-accent-rgb),0.08)" : "var(--app-surface)",
                           border: `1px solid ${isActive ? "rgba(var(--app-accent-rgb),0.35)" : "var(--app-border)"}`,
                           borderRadius: 14, overflow: "hidden", cursor: "pointer",
@@ -435,7 +397,7 @@ export default function NaatPage() {
                     return (
                       <div key={song.id}
                         className={`song-row${isActive ? " active-row" : ""}`}
-                        onClick={() => playSong(song)}
+                        onClick={() => playSongFromList(song)}
                         style={{
                           display: "flex", alignItems: "center", gap: 12, padding: "10px 12px",
                           borderRadius: 10, cursor: "pointer", marginBottom: 2,
@@ -469,7 +431,7 @@ export default function NaatPage() {
                         </div>
                         <div className="song-duration" style={{ color: "var(--app-text-muted)", fontSize: 12, fontFamily: "monospace", flexShrink: 0 }}>{fmt(song.duration)}</div>
                         <FavoriteButton song={song} />
-                        <button onClick={e => { e.stopPropagation(); playSong(song); }} style={{
+                        <button onClick={e => { e.stopPropagation(); playSongFromList(song); }} style={{
                           background: isActive ? "var(--app-accent)" : "rgba(var(--app-accent-rgb),0.15)",
                           border: "none", borderRadius: "50%", width: 30, height: 30,
                           display: "flex", alignItems: "center", justifyContent: "center",
@@ -549,7 +511,7 @@ export default function NaatPage() {
         {/* Seek */}
         <div className="player-seek">
           <input type="range" min={0} max={duration || 0} value={currentTime}
-            onChange={e => { if (audioRef.current) audioRef.current.currentTime = Number(e.target.value); }}
+            onChange={e => seekTo(Number(e.target.value))}
             style={{ width: "100%", background: `linear-gradient(to right,var(--app-accent) ${progressPct}%,var(--app-border) 0%)` }}
           />
           <div style={{ display: "flex", justifyContent: "space-between", color: "var(--app-text-muted)", fontSize: 10 }}>
@@ -561,13 +523,11 @@ export default function NaatPage() {
         <div className="player-vol">
           <span style={{ color: "var(--app-text-muted)", fontSize: 14, flexShrink: 0 }}>🔊</span>
           <input type="range" min={0} max={1} step={0.01} value={volume}
-            onChange={e => { const v = Number(e.target.value); setVolume(v); if (audioRef.current) audioRef.current.volume = v; }}
+            onChange={e => setVolume(Number(e.target.value))}
             style={{ width: 70, background: `linear-gradient(to right,var(--app-accent) ${volume * 100}%,var(--app-border) 0%)` }}
           />
         </div>
       </div>
-
-      <audio ref={audioRef} />
     </div>
   );
 }

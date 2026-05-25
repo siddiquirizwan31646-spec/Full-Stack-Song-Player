@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import DashboardNavbar from "@/components/DashboardNavbar";
 import FavoriteButton from "@/components/FavoriteButton";
 import { useUser } from "@/context/userContext";
+import { usePersistentSongPlayer } from "@/hooks/usePersistentSongPlayer";
 
 import { API_URL } from "@/lib/config";
 
@@ -115,12 +116,6 @@ export default function PlaylistPage() {
 
   const [playlists,        setPlaylists]        = useState([]);
   const [selectedId,       setSelectedId]       = useState(null);
-  const [currentSong,      setCurrentSong]      = useState(null);
-  const [isPlaying,        setIsPlaying]        = useState(false);
-  const [currentTime,      setCurrentTime]      = useState(0);
-  const [duration,         setDuration]         = useState(0);
-  const [volume,           setVolume]           = useState(0.8);
-  const progressPct = duration > 0 ? (currentTime / duration) * 100 : 0;
   const [showCreate,       setShowCreate]       = useState(false);
   const [newName,          setNewName]          = useState("");
   const [creating,         setCreating]         = useState(false);
@@ -131,10 +126,23 @@ export default function PlaylistPage() {
   const [sidebarOpen,  setSidebarOpen]  = useState(false); // main nav
   const [playlistOpen, setPlaylistOpen] = useState(false); // playlist panel
 
-  const audioRef = useRef(null);
-
   const selected = playlists.find(p => p._id === selectedId) || null;
   const songs    = (selected?.songs || []).map(mapPlaylistSong);
+  const {
+    currentSong,
+    isPlaying,
+    currentTime,
+    duration,
+    volume,
+    progressPct,
+    playSongFromList,
+    togglePlay,
+    playNext,
+    playPrev,
+    seekTo,
+    setVolume,
+    resetPlayer,
+  } = usePersistentSongPlayer(songs);
 
   const goTo = useCallback((path) => {
     setSidebarOpen(false);
@@ -149,16 +157,6 @@ export default function PlaylistPage() {
     toast.error("Please login to manage your playlists");
     navigate("/login", { replace: true });
   }, [navigate, setUser]);
-
-  const playSong = useCallback((song) => {
-    setCurrentSong(song);
-    setCurrentTime(0);
-    if (audioRef.current) {
-      audioRef.current.src = song.mp3_url;
-      audioRef.current.volume = volume;
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
-    }
-  }, [volume]);
 
   useEffect(() => {
     if (loading) return;
@@ -188,39 +186,6 @@ export default function PlaylistPage() {
     return () => { ignore = true; };
   }, [handleUnauthorized, loading, navigate, user]);
 
-  useEffect(() => {
-    const audio = audioRef.current; if (!audio) return;
-    const onTime = () => setCurrentTime(audio.currentTime);
-    const onMeta = () => setDuration(audio.duration);
-    const onEnd  = () => {
-      const idx = songs.findIndex(s => s.id === currentSong?.id);
-      if (idx >= 0 && idx < songs.length - 1) playSong(songs[idx + 1]);
-      else setIsPlaying(false);
-    };
-    audio.addEventListener("timeupdate", onTime);
-    audio.addEventListener("loadedmetadata", onMeta);
-    audio.addEventListener("ended", onEnd);
-    return () => {
-      audio.removeEventListener("timeupdate", onTime);
-      audio.removeEventListener("loadedmetadata", onMeta);
-      audio.removeEventListener("ended", onEnd);
-    };
-  }, [currentSong, playSong, songs]);
-
-  const togglePlay = () => {
-    if (!currentSong || !audioRef.current) return;
-    if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); }
-    else audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
-  };
-const playNext = () => {
-  const idx = songs.findIndex(s => s.id === currentSong?.id);
-  if (idx >= 0 && idx < songs.length - 1) playSong(songs[idx + 1]);
-};
-
-const playPrev = () => {
-  const idx = songs.findIndex(s => s.id === currentSong?.id);
-  if (idx > 0) playSong(songs[idx - 1]);
-};
   const createPlaylist = async () => {
     if (!newName.trim()) { toast.error("Enter a playlist name"); return; }
     try {
@@ -252,9 +217,7 @@ const playPrev = () => {
         return rest;
       });
       if (selectedId === pl._id) {
-        audioRef.current?.pause();
-        if (audioRef.current) audioRef.current.src = "";
-        setCurrentSong(null); setIsPlaying(false); setCurrentTime(0); setDuration(0);
+        resetPlayer();
       }
       toast.success("Playlist deleted");
     } catch (e) { toast.error(e.message || "Unable to delete"); }
@@ -284,9 +247,7 @@ const iconBtn = {
         return { ...pl, songs: (pl.songs || []).filter(s => String(s.songId) !== String(song.id)) };
       }));
       if (currentSong?.id === song.id) {
-        audioRef.current?.pause();
-        if (audioRef.current) audioRef.current.src = "";
-        setCurrentSong(null); setIsPlaying(false); setCurrentTime(0); setDuration(0);
+        resetPlayer();
       }
       toast.success("Song removed");
     } catch (e) { toast.error(e.message || "Unable to remove"); }
@@ -297,7 +258,7 @@ const iconBtn = {
 
   return (
     <div style={{
-      display: "flex", flexDirection: "column", height: "100vh",
+      display: "flex", flexDirection: "column", height: "100dvh",
       background: "var(--app-shell-bg)", color: "var(--app-text-main)",
       fontFamily: "'DM Sans','Segoe UI',system-ui,sans-serif", overflow: "hidden",
     }}>
@@ -574,7 +535,7 @@ const iconBtn = {
             <div style={{ flex: 1 }} />
 
             {selected && songs.length > 0 && (
-              <button onClick={() => playSong(songs[0])}
+              <button onClick={() => playSongFromList(songs[0])}
                 style={{
                   padding: "7px 14px", borderRadius: 8, border: "none", cursor: "pointer",
                   background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))",
@@ -608,7 +569,7 @@ const iconBtn = {
     <div
       key={song.id}
       className="song-row"
-      onClick={() => playSong(song)}
+      onClick={() => playSongFromList(song)}
       style={{
         display: "grid",
         gridTemplateColumns: "28px 46px 1fr auto",
@@ -1030,11 +991,7 @@ const iconBtn = {
               min={0}
               max={duration || 0}
               value={currentTime}
-              onChange={e => {
-                const t = Number(e.target.value);
-                setCurrentTime(t);
-                if (audioRef.current) audioRef.current.currentTime = t;
-              }}
+              onChange={e => seekTo(Number(e.target.value))}
               style={{
                 background: `linear-gradient(to right,var(--app-accent) ${progressPct}%,rgba(var(--app-accent-rgb),.18) 0%)`,
               }}
@@ -1055,11 +1012,7 @@ const iconBtn = {
               className="pbar-vol-range"
               min={0} max={1} step={0.01}
               value={volume}
-              onChange={e => {
-                const v = Number(e.target.value);
-                setVolume(v);
-                if (audioRef.current) audioRef.current.volume = v;
-              }}
+              onChange={e => setVolume(Number(e.target.value))}
               style={{
                 background: `linear-gradient(to right,var(--app-accent) ${volume * 100}%,rgba(var(--app-accent-rgb),.18) 0%)`,
               }}
@@ -1076,8 +1029,6 @@ const iconBtn = {
           </button>
         </div>
       </footer>
-
-      <audio ref={audioRef} />
     </div>
   );
 }
