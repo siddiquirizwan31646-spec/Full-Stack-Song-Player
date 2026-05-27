@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
-import { Heart, LogOut, Music2, Settings, Upload, User, ChevronDown } from "lucide-react";
+import { Heart, LogOut, Music2, Settings, Upload, User, ChevronDown, Bot, X } from "lucide-react";
 import { useUser } from "@/context/userContext";
 import {
   DropdownMenu,
@@ -15,6 +15,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { API_URL } from "@/lib/config";
+import ChatBotPopup from "./ChatBotPopup"; // <-- Import the chatbot popup
+
 const MENU_ITEMS = [
   { icon: User, label: "Profile", path: "/profile" },
   { icon: Music2, label: "Playlists", path: "/playlists" },
@@ -38,7 +40,7 @@ const DashboardNavbar = () => {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  // Use CSS media query hook-free approach — window resize listener
+  const [chatOpen, setChatOpen] = useState(false); // <-- ChatBot state
   const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" ? window.innerWidth < 760 : false);
 
   useEffect(() => {
@@ -80,6 +82,10 @@ const DashboardNavbar = () => {
         @keyframes navPing {
           75%, 100% { transform: scale(2); opacity: 0; }
         }
+        @keyframes chatbotGlow {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(var(--app-accent-rgb), 0.4); }
+          50% { box-shadow: 0 0 0 8px rgba(var(--app-accent-rgb), 0); }
+        }
         .nav-dropdown-item:hover {
           background: rgba(var(--app-accent-rgb), 0.1) !important;
           color: var(--app-text-main) !important;
@@ -96,6 +102,43 @@ const DashboardNavbar = () => {
         .nav-primary-btn:hover {
           transform: translateY(-1px);
           box-shadow: 0 14px 30px rgba(var(--app-accent-rgb), 0.28) !important;
+        }
+        .chatbot-icon-btn {
+          position: relative;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: rgba(var(--app-accent-rgb), 0.1);
+          border: 1px solid rgba(var(--app-accent-rgb), 0.28);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.25s ease;
+          flex-shrink: 0;
+        }
+        .chatbot-icon-btn:hover {
+          background: rgba(var(--app-accent-rgb), 0.18) !important;
+          border-color: rgba(var(--app-accent-rgb), 0.55) !important;
+          transform: scale(1.06);
+        }
+        .chatbot-icon-btn.active {
+          background: linear-gradient(135deg, var(--app-accent-strong), var(--app-accent));
+          border-color: transparent;
+          animation: chatbotGlow 2s ease-in-out infinite;
+        }
+        .chatbot-icon-btn.active svg {
+          color: #041307 !important;
+        }
+        .chatbot-badge {
+          position: absolute;
+          top: -2px;
+          right: -2px;
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: var(--app-accent);
+          border: 2px solid var(--app-surface-solid);
         }
 
         /* NAV SHELL */
@@ -116,7 +159,7 @@ const DashboardNavbar = () => {
           height: 88px;
         }
 
-        /* GREETING — hide on small screens */
+        /* GREETING */
         .dashboard-greeting {
           font-size: 13px;
           color: var(--app-text-muted);
@@ -125,7 +168,7 @@ const DashboardNavbar = () => {
           white-space: nowrap;
         }
 
-        /* RAMADAN BADGE — hide on small screens */
+        /* RAMADAN BADGE */
         .dashboard-ramadan-badge {
           display: flex;
           align-items: center;
@@ -150,43 +193,24 @@ const DashboardNavbar = () => {
           gap: 10px;
         }
 
-        /* ── RESPONSIVE ── */
         @media (max-width: 760px) {
           .dashboard-nav-shell {
             padding: 8px 14px;
             min-height: 54px;
             gap: 10px;
           }
-          .nav-logo {
-            height: 52px;
-          }
-          .dashboard-greeting {
-            display: none !important;
-          }
-          .dashboard-ramadan-badge {
-            display: none !important;
-          }
-          /* Right side: keep avatar + chevron compact */
-          .nav-user-row {
-            gap: 6px !important;
-          }
+          .nav-logo { height: 52px; }
+          .dashboard-greeting { display: none !important; }
+          .dashboard-ramadan-badge { display: none !important; }
+          .nav-user-row { gap: 6px !important; }
+          .chatbot-icon-btn { width: 34px; height: 34px; }
         }
 
         @media (max-width: 480px) {
-          .dashboard-nav-shell {
-            padding: 6px 12px;
-          }
-          .nav-logo {
-            height: 44px;
-          }
-          .nav-auth-row {
-            gap: 7px;
-          }
-          /* Make auth buttons fill a bit but not full-width in the top bar */
-          .nav-auth-row button {
-            padding: 8px 14px !important;
-            font-size: 12.5px !important;
-          }
+          .dashboard-nav-shell { padding: 6px 12px; }
+          .nav-logo { height: 44px; }
+          .nav-auth-row { gap: 7px; }
+          .nav-auth-row button { padding: 8px 14px !important; font-size: 12.5px !important; }
         }
       `}</style>
 
@@ -215,8 +239,8 @@ const DashboardNavbar = () => {
           background: "linear-gradient(90deg,transparent 0%,rgba(var(--app-accent-rgb),0) 10%,rgba(var(--app-accent-rgb),0.55) 35%,var(--app-accent) 50%,rgba(var(--app-accent-rgb),0.55) 65%,rgba(var(--app-accent-rgb),0) 90%,transparent 100%)",
           pointerEvents: "none",
         }} />
-        <div className="dashboard-nav-shell">
 
+        <div className="dashboard-nav-shell">
           {/* ── LOGO ── */}
           <Link to={brandTarget} style={{ textDecoration: "none", flexShrink: 0 }}>
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.2 }}>
@@ -239,10 +263,10 @@ const DashboardNavbar = () => {
             {user ? (
               <div className="nav-user-row" style={{ display: "flex", alignItems: "center", gap: 12 }}>
 
-                {/* Ramadan badge — hidden on mobile via CSS */}
+                {/* Ramadan badge */}
                 <div className="dashboard-ramadan-badge">Ramadan</div>
 
-                {/* Greeting — hidden on mobile via CSS */}
+                {/* Greeting */}
                 {preferences?.showGreeting !== false && (
                   <span className="dashboard-greeting">
                     Assalamu Alaikum,{" "}
@@ -257,6 +281,21 @@ const DashboardNavbar = () => {
                     </span>
                   </span>
                 )}
+
+                {/* ── CHATBOT ICON BUTTON ── */}
+                <motion.button
+                  whileTap={{ scale: 0.92 }}
+                  className={`chatbot-icon-btn ${chatOpen ? "active" : ""}`}
+                  onClick={() => setChatOpen(prev => !prev)}
+                  title="QalbAudio Assistant"
+                >
+                  {chatOpen ? (
+                    <X size={17} color="var(--app-accent)" />
+                  ) : (
+                    <Bot size={17} color="var(--app-accent)" />
+                  )}
+                  {!chatOpen && <span className="chatbot-badge" />}
+                </motion.button>
 
                 {/* Avatar dropdown */}
                 <DropdownMenu onOpenChange={setDropdownOpen}>
@@ -277,7 +316,6 @@ const DashboardNavbar = () => {
                         height: "auto",
                       }}
                     >
-                      {/* Avatar */}
                       <div style={{ position: "relative" }}>
                         <Avatar style={{ width: 34, height: 34 }}>
                           <AvatarImage src="" alt={user.username || "User"} />
@@ -288,7 +326,6 @@ const DashboardNavbar = () => {
                             {avatarLetter}
                           </AvatarFallback>
                         </Avatar>
-                        {/* Online dot */}
                         <div style={{
                           position: "absolute", bottom: 0, right: 0,
                           width: 10, height: 10, borderRadius: "50%",
@@ -296,7 +333,6 @@ const DashboardNavbar = () => {
                         }} />
                       </div>
 
-                      {/* Username + chevron — desktop only */}
                       {!isMobile && (
                         <>
                           <span style={{
@@ -328,7 +364,6 @@ const DashboardNavbar = () => {
                       padding: 8,
                     }}
                   >
-                    {/* User header */}
                     <div style={{
                       padding: "12px 14px", display: "flex", alignItems: "center", gap: 12,
                       borderBottom: "1px solid rgba(var(--app-accent-rgb),0.1)", marginBottom: 6,
@@ -402,7 +437,6 @@ const DashboardNavbar = () => {
               </div>
 
             ) : (
-              /* Not logged in */
               <div className="nav-auth-row">
                 <Link to="/login" style={{ textDecoration: "none" }}>
                   <motion.button
@@ -442,6 +476,16 @@ const DashboardNavbar = () => {
           </motion.div>
         </div>
       </motion.nav>
+
+      {/* ── CHATBOT POPUP ── */}
+      <AnimatePresence>
+        {chatOpen && (
+          <ChatBotPopup
+            onClose={() => setChatOpen(false)}
+            user={user}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 };
