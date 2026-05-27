@@ -10,45 +10,96 @@ const SUGGESTIONS = [
   { icon: Sparkles,   label: "Ramadan playlist ideas", prompt: "Suggest a Ramadan playlist idea for me." },
 ];
 
-// ─── System prompt ────────────────────────────────────────────────────────────
-const SYSTEM_PROMPT = `You are the QalbAudio Assistant — a warm, knowledgeable Islamic audio guide for the QalbAudio platform.
+// ─── If/else reply logic ──────────────────────────────────────────────────────
+const getReply = (message) => {
+  const lower = message.toLowerCase().trim();
 
-Your role:
-- Help users discover Nasheeds, Quran recitations, Islamic lectures, du'a recordings, and spiritual audio content.
-- Recommend well-known reciters and nasheed artists (e.g. Maher Zain, Sami Yusuf, Mishary Rashid Alafasy, Abdul Rahman Al-Sudais).
-- Suggest playlists for occasions like Ramadan, Fajr, travel, or study.
-- Answer questions about Islamic audio etiquette and listening practices.
-- Be concise, friendly, and spiritually uplifting in tone.
-- Use occasional relevant emojis (🌙, 📖, 🤲, ✨) to keep the conversation warm — but don't overdo it.
-- Always greet with Islamic phrases when appropriate (Assalamu Alaikum, Alhamdulillah, etc.).
-- Keep responses concise — 2–4 sentences unless a detailed answer is truly needed.
-- Do not answer questions unrelated to Islamic audio, spirituality, or the QalbAudio platform. Politely redirect.`;
+  // Greetings
+  if (lower.includes("assalamu") || lower.includes("salam") || lower.includes("hello") || lower.includes("hi") || lower.includes("hey"))
+    return "Wa Alaikum Assalam! 🌙 Welcome to QalbAudio. How can I help you discover beautiful Islamic audio today?";
 
-// ─── Real Anthropic API call ──────────────────────────────────────────────────
-const getAIReply = async (conversationHistory) => {
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1000,
-      system: SYSTEM_PROMPT,
-      messages: conversationHistory,
-    }),
-  });
+  // Nasheed recommendations
+  if (lower.includes("nasheed") && (lower.includes("recommend") || lower.includes("suggest") || lower.includes("best") || lower.includes("beautiful")))
+    return "I'd recommend starting with Maher Zain's 'Rahmatun Lil'Alameen' or Sami Yusuf's 'Al-Mu'allim' — both are spiritually uplifting and beautifully composed. 🌙";
 
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
-  }
+  if (lower.includes("nasheed"))
+    return "QalbAudio has a wide collection of Nasheeds from artists like Maher Zain, Sami Yusuf, Mesut Kurtis, and Harris J. You can browse by artist or mood! 🎵";
 
-  const data = await response.json();
-  const text = data.content
-    .map((item) => (item.type === "text" ? item.text : ""))
-    .filter(Boolean)
-    .join("\n");
-  return text;
+  // Quran / recitation
+  if ((lower.includes("quran") || lower.includes("recitation") || lower.includes("recite")) && lower.includes("tip"))
+    return "For improving your Quran listening experience, try following along with a Mushaf while listening. Sheikh Mishary Rashid Alafasy and Sheikh Abdul Rahman Al-Sudais are highly recommended reciters. 📖";
+
+  if (lower.includes("quran") || lower.includes("recitation") || lower.includes("surah") || lower.includes("ayah"))
+    return "You can find beautiful Quran recitations on QalbAudio by reciters like Mishary Alafasy, Maher Al-Mueaqly, and Abdul Basit Abdus-Samad. 📖 Which surah are you looking for?";
+
+  // Ramadan
+  if (lower.includes("ramadan"))
+    return "A perfect Ramadan playlist: start with Quranic recitations at Fajr, peaceful Nasheeds during the day, and calming du'a recordings before Iftar. 🌙✨ Ramadan Mubarak!";
+
+  // Du'a
+  if (lower.includes("dua") || lower.includes("du'a") || lower.includes("supplication"))
+    return "QalbAudio features a collection of beautiful du'a recordings for morning, evening, after salah, and special occasions. 🤲 They're perfect for daily listening.";
+
+  // Lectures / scholars
+  if (lower.includes("lecture") || lower.includes("scholar") || lower.includes("sheikh") || lower.includes("talk"))
+    return "We have Islamic lectures from renowned scholars including Nouman Ali Khan, Mufti Menk, Omar Suleiman, and many more. You can filter by topic or scholar. ✨";
+
+  // Playlist
+  if (lower.includes("playlist"))
+    return "You can create custom playlists on QalbAudio! Try a 'Morning Adhkar' playlist, a 'Ramadan Nights' collection, or a 'Peaceful Recitations' set for focused listening. 🎵";
+
+  // Fajr / morning
+  if (lower.includes("fajr") || lower.includes("morning"))
+    return "For Fajr, we recommend soft Quran recitations of Surah Al-Mulk or Al-Waqi'ah, followed by morning adhkar recordings. A peaceful way to start your day! 🌅";
+
+  // Sleep / night
+  if (lower.includes("sleep") || lower.includes("night") || lower.includes("isha"))
+    return "For a calm night, try Surah Al-Baqarah recitation or gentle Nasheeds. Listening to Ayatul Kursi before sleep is a beautiful Sunnah. 🌙";
+
+  // Travel
+  if (lower.includes("travel") || lower.includes("journey") || lower.includes("car"))
+    return "For travel, I suggest a mix of short surahs recited by Mishary Alafasy and upbeat Nasheeds by Maher Zain — perfect for keeping your spirit high on the road! 🚗✨";
+
+  // Study / focus
+  if (lower.includes("study") || lower.includes("focus") || lower.includes("concentrate"))
+    return "For studying, soft Quran recitations without translation work beautifully as background audio. Try Surah Al-Kahf or short surahs on loop. 📚";
+
+  // Audio topics / what's available
+  if (lower.includes("topic") || lower.includes("available") || lower.includes("content") || lower.includes("what") && lower.includes("audio"))
+    return "QalbAudio features: Quran recitations 📖, Islamic Nasheeds 🎵, scholar lectures ✨, du'a recordings 🤲, and adhkar collections. What would you like to explore?";
+
+  // Artists / reciters
+  if (lower.includes("maher zain"))
+    return "Maher Zain is one of the most beloved nasheed artists! His songs like 'Ya Nabi Salam Alayka', 'Insha Allah', and 'Rahmatun Lil'Alameen' are all available on QalbAudio. 🌙";
+
+  if (lower.includes("sami yusuf"))
+    return "Sami Yusuf's soulful voice is iconic in Islamic music! Check out 'Al-Mu'allim', 'Supplication', and 'You Came to Me' on QalbAudio. 🎵";
+
+  if (lower.includes("mishary") || lower.includes("alafasy"))
+    return "Sheikh Mishary Rashid Alafasy is one of the most respected Quran reciters. His recitation of the full Quran is available on QalbAudio with beautiful clarity. 📖";
+
+  // How to use / search
+  if (lower.includes("how") && (lower.includes("search") || lower.includes("find") || lower.includes("use")))
+    return "You can search QalbAudio by artist name, surah, topic, or mood. Use the search bar at the top or browse by category to discover new content! 🔍";
+
+  // Favourites / save
+  if (lower.includes("favourite") || lower.includes("favorite") || lower.includes("save") || lower.includes("bookmark"))
+    return "You can save any audio to your Favourites by tapping the heart icon ❤️. Access all your saved content anytime from your profile page.";
+
+  // Upload
+  if (lower.includes("upload"))
+    return "Registered users can upload Islamic audio content to QalbAudio! Head to the Upload section from your profile menu to share beneficial content with the community. 📤";
+
+  // Thanks
+  if (lower.includes("thank") || lower.includes("jazak") || lower.includes("shukran"))
+    return "Wa iyyakum! 🤲 Jazak Allahu Khayran for using QalbAudio. May Allah bless your listening experience. Is there anything else I can help you with?";
+
+  // Goodbye
+  if (lower.includes("bye") || lower.includes("goodbye") || lower.includes("assalamualaikum wa rahmatullah"))
+    return "Wa Alaikum Assalam wa Rahmatullah! 🌙 May Allah bless you. Come back anytime to QalbAudio for more Islamic audio. Fee Amanillah! 🤲";
+
+  // Default
+  return "Assalamu Alaikum! 🤲 I'm here to help you discover Islamic audio on QalbAudio. You can ask me about Nasheeds, Quran recitations, scholars, playlists, or anything Islamic audio-related!";
 };
 
 // ─── Message bubble ───────────────────────────────────────────────────────────
@@ -101,87 +152,6 @@ const MessageBubble = ({ msg }) => {
   );
 };
 
-// ─── Typing indicator ─────────────────────────────────────────────────────────
-const TypingDots = () => (
-  <motion.div
-    initial={{ opacity: 0, y: 6 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0 }}
-    style={{ display: "flex", alignItems: "flex-end", gap: 8, marginBottom: 10 }}
-  >
-    <div style={{
-      width: 28, height: 28, borderRadius: "50%",
-      background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      flexShrink: 0,
-    }}>
-      <Bot size={14} color="#041307" />
-    </div>
-    <div style={{
-      padding: "12px 16px",
-      borderRadius: "18px 18px 18px 4px",
-      background: "rgba(var(--app-accent-rgb),0.08)",
-      border: "1px solid rgba(var(--app-accent-rgb),0.14)",
-      display: "flex", gap: 4, alignItems: "center",
-    }}>
-      {[0, 1, 2].map(i => (
-        <motion.span
-          key={i}
-          animate={{ y: [0, -4, 0] }}
-          transition={{ duration: 0.6, delay: i * 0.15, repeat: Infinity }}
-          style={{
-            width: 6, height: 6, borderRadius: "50%",
-            background: "var(--app-accent)", display: "block",
-          }}
-        />
-      ))}
-    </div>
-  </motion.div>
-);
-
-// ─── Error bubble ─────────────────────────────────────────────────────────────
-const ErrorBubble = ({ onRetry }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 6 }}
-    animate={{ opacity: 1, y: 0 }}
-    style={{ display: "flex", alignItems: "flex-end", gap: 8, marginBottom: 10 }}
-  >
-    <div style={{
-      width: 28, height: 28, borderRadius: "50%",
-      background: "linear-gradient(135deg,#f87171,#ef4444)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      flexShrink: 0,
-    }}>
-      <Bot size={14} color="#fff" />
-    </div>
-    <div style={{
-      padding: "10px 14px",
-      borderRadius: "18px 18px 18px 4px",
-      background: "rgba(248,113,113,0.08)",
-      border: "1px solid rgba(248,113,113,0.22)",
-      display: "flex", flexDirection: "column", gap: 6,
-    }}>
-      <span style={{ color: "#f87171", fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}>
-        Something went wrong. Please try again.
-      </span>
-      <button
-        onClick={onRetry}
-        style={{
-          background: "rgba(248,113,113,0.12)",
-          border: "1px solid rgba(248,113,113,0.28)",
-          borderRadius: 999, padding: "4px 12px",
-          color: "#f87171", fontSize: 11.5, fontWeight: 700,
-          fontFamily: "'DM Sans',sans-serif",
-          cursor: "pointer", alignSelf: "flex-start",
-          transition: "all 0.2s ease",
-        }}
-      >
-        Retry
-      </button>
-    </div>
-  </motion.div>
-);
-
 // ─── Initial greeting ─────────────────────────────────────────────────────────
 const getInitialMessages = (user) => ([
   {
@@ -194,8 +164,6 @@ const getInitialMessages = (user) => ([
 const ChatBotPopup = ({ onClose, user }) => {
   const [messages, setMessages] = useState(() => getInitialMessages(user));
   const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [hasError, setHasError] = useState(false);
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== "undefined" ? window.innerWidth < 600 : false
   );
@@ -210,50 +178,23 @@ const ChatBotPopup = ({ onClose, user }) => {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping, hasError]);
+  }, [messages]);
 
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 300);
   }, []);
 
-  const buildApiHistory = (msgs) =>
-    msgs.map((m) => ({ role: m.role, content: m.content }));
-
-  const sendMessage = async (text) => {
+  const sendMessage = (text) => {
     const trimmed = (text || input).trim();
-    if (!trimmed || isTyping) return;
+    if (!trimmed) return;
 
     setInput("");
-    setHasError(false);
-
-    const newMessages = [...messages, { role: "user", content: trimmed }];
-    setMessages(newMessages);
-    setIsTyping(true);
-
-    try {
-      const reply = await getAIReply(buildApiHistory(newMessages));
-      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
-    } catch (err) {
-      console.error("ChatBot API error:", err);
-      setHasError(true);
-    } finally {
-      setIsTyping(false);
-    }
-  };
-
-  const retryLast = async () => {
-    if (isTyping) return;
-    setHasError(false);
-    setIsTyping(true);
-    try {
-      const reply = await getAIReply(buildApiHistory(messages));
-      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
-    } catch (err) {
-      console.error("ChatBot retry error:", err);
-      setHasError(true);
-    } finally {
-      setIsTyping(false);
-    }
+    const reply = getReply(trimmed);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: trimmed },
+      { role: "assistant", content: reply },
+    ]);
   };
 
   const handleKeyDown = (e) => {
@@ -265,7 +206,6 @@ const ChatBotPopup = ({ onClose, user }) => {
 
   const clearChat = () => {
     setMessages(getInitialMessages(user));
-    setHasError(false);
     setInput("");
   };
 
@@ -356,7 +296,7 @@ const ChatBotPopup = ({ onClose, user }) => {
                 boxShadow: "0 0 6px #22c55e", display: "inline-block",
               }} />
               <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 11.5, color: "var(--app-text-muted)", fontWeight: 500 }}>
-                Online · Powered by Claude AI
+                Online · Islamic Audio Guide
               </span>
             </div>
           </div>
@@ -399,12 +339,6 @@ const ChatBotPopup = ({ onClose, user }) => {
           {messages.map((msg, i) => (
             <MessageBubble key={i} msg={msg} />
           ))}
-          <AnimatePresence>
-            {isTyping && <TypingDots />}
-          </AnimatePresence>
-          <AnimatePresence>
-            {hasError && !isTyping && <ErrorBubble onRetry={retryLast} />}
-          </AnimatePresence>
           <div ref={messagesEndRef} />
         </div>
 
@@ -463,7 +397,6 @@ const ChatBotPopup = ({ onClose, user }) => {
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask about Islamic audio..."
-              disabled={isTyping}
               style={{
                 flex: 1, background: "transparent", border: "none",
                 color: "var(--app-text-main)",
@@ -475,7 +408,7 @@ const ChatBotPopup = ({ onClose, user }) => {
               whileTap={{ scale: 0.92 }}
               className="chatbot-send-btn"
               onClick={() => sendMessage()}
-              disabled={!input.trim() || isTyping}
+              disabled={!input.trim()}
               style={{
                 width: 36, height: 36, borderRadius: "50%", border: "none", flexShrink: 0,
                 background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))",
