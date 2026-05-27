@@ -4,25 +4,51 @@ import { Bot, Send, X, Sparkles, RotateCcw, Music2, Headphones, BookOpen } from 
 
 // ─── Suggested prompts ────────────────────────────────────────────────────────
 const SUGGESTIONS = [
-  { icon: Music2,    label: "Recommend a Nasheed",      prompt: "Can you recommend a beautiful Nasheed for me?" },
-  { icon: Headphones, label: "Islamic audio topics",    prompt: "What Islamic audio topics are available?" },
-  { icon: BookOpen,  label: "Quran recitation tips",    prompt: "Give me tips on improving my Quran recitation listening." },
-  { icon: Sparkles,  label: "Ramadan playlist ideas",   prompt: "Suggest a Ramadan playlist idea for me." },
+  { icon: Music2,     label: "Recommend a Nasheed",    prompt: "Can you recommend a beautiful Nasheed for me?" },
+  { icon: Headphones, label: "Islamic audio topics",   prompt: "What Islamic audio topics are available?" },
+  { icon: BookOpen,   label: "Quran recitation tips",  prompt: "Give me tips on improving my Quran recitation listening." },
+  { icon: Sparkles,   label: "Ramadan playlist ideas", prompt: "Suggest a Ramadan playlist idea for me." },
 ];
 
-// ─── Fake AI reply (replace with real API call) ───────────────────────────────
-const getFakeReply = async (message) => {
-  await new Promise(r => setTimeout(r, 900 + Math.random() * 600));
-  const lower = message.toLowerCase();
-  if (lower.includes("nasheed"))
-    return "I'd recommend starting with Maher Zain's 'Rahmatun Lil'Alameen' or Sami Yusuf's 'Al-Mu'allim' — both are spiritually uplifting and beautifully composed. 🌙";
-  if (lower.includes("quran") || lower.includes("recitation"))
-    return "For improving your Quran listening experience, try following along with a Mushaf while listening. Sheikh Mishary Rashid Alafasy and Sheikh Abdul Rahman Al-Sudais are highly recommended reciters. 📖";
-  if (lower.includes("ramadan"))
-    return "A perfect Ramadan playlist could start with Quranic recitations at Fajr, move to Nasheeds during the day, and end with peaceful du'a recordings before Iftar. 🌙✨";
-  if (lower.includes("islamic") || lower.includes("audio"))
-    return "QalbAudio features Quran recitations, Islamic Nasheeds, lectures, and du'a recordings. You can browse by category or search for specific scholars and reciters.";
-  return "Assalamu Alaikum! I'm here to help you discover Islamic audio content on QalbAudio. Ask me about Nasheeds, Quran recitations, scholars, or anything Islamic! 🤲";
+// ─── System prompt ────────────────────────────────────────────────────────────
+const SYSTEM_PROMPT = `You are the QalbAudio Assistant — a warm, knowledgeable Islamic audio guide for the QalbAudio platform.
+
+Your role:
+- Help users discover Nasheeds, Quran recitations, Islamic lectures, du'a recordings, and spiritual audio content.
+- Recommend well-known reciters and nasheed artists (e.g. Maher Zain, Sami Yusuf, Mishary Rashid Alafasy, Abdul Rahman Al-Sudais).
+- Suggest playlists for occasions like Ramadan, Fajr, travel, or study.
+- Answer questions about Islamic audio etiquette and listening practices.
+- Be concise, friendly, and spiritually uplifting in tone.
+- Use occasional relevant emojis (🌙, 📖, 🤲, ✨) to keep the conversation warm — but don't overdo it.
+- Always greet with Islamic phrases when appropriate (Assalamu Alaikum, Alhamdulillah, etc.).
+- Keep responses concise — 2–4 sentences unless a detailed answer is truly needed.
+- Do not answer questions unrelated to Islamic audio, spirituality, or the QalbAudio platform. Politely redirect.`;
+
+// ─── Real Anthropic API call ──────────────────────────────────────────────────
+const getAIReply = async (conversationHistory) => {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      system: SYSTEM_PROMPT,
+      messages: conversationHistory,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const text = data.content
+    .map((item) => (item.type === "text" ? item.text : ""))
+    .filter(Boolean)
+    .join("\n");
+  return text;
 };
 
 // ─── Message bubble ───────────────────────────────────────────────────────────
@@ -41,7 +67,6 @@ const MessageBubble = ({ msg }) => {
         alignItems: "flex-end",
       }}
     >
-      {/* Bot avatar */}
       {!isUser && (
         <div style={{
           width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
@@ -53,7 +78,6 @@ const MessageBubble = ({ msg }) => {
           <Bot size={14} color="#041307" />
         </div>
       )}
-
       <div style={{
         maxWidth: "78%",
         padding: "10px 14px",
@@ -68,6 +92,8 @@ const MessageBubble = ({ msg }) => {
         fontFamily: "'DM Sans',sans-serif",
         fontWeight: isUser ? 600 : 400,
         boxShadow: isUser ? "0 6px 20px rgba(var(--app-accent-rgb),0.22)" : "none",
+        whiteSpace: "pre-wrap",
+        wordBreak: "break-word",
       }}>
         {msg.content}
       </div>
@@ -113,17 +139,66 @@ const TypingDots = () => (
   </motion.div>
 );
 
+// ─── Error bubble ─────────────────────────────────────────────────────────────
+const ErrorBubble = ({ onRetry }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 6 }}
+    animate={{ opacity: 1, y: 0 }}
+    style={{ display: "flex", alignItems: "flex-end", gap: 8, marginBottom: 10 }}
+  >
+    <div style={{
+      width: 28, height: 28, borderRadius: "50%",
+      background: "linear-gradient(135deg,#f87171,#ef4444)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      flexShrink: 0,
+    }}>
+      <Bot size={14} color="#fff" />
+    </div>
+    <div style={{
+      padding: "10px 14px",
+      borderRadius: "18px 18px 18px 4px",
+      background: "rgba(248,113,113,0.08)",
+      border: "1px solid rgba(248,113,113,0.22)",
+      display: "flex", flexDirection: "column", gap: 6,
+    }}>
+      <span style={{ color: "#f87171", fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}>
+        Something went wrong. Please try again.
+      </span>
+      <button
+        onClick={onRetry}
+        style={{
+          background: "rgba(248,113,113,0.12)",
+          border: "1px solid rgba(248,113,113,0.28)",
+          borderRadius: 999, padding: "4px 12px",
+          color: "#f87171", fontSize: 11.5, fontWeight: 700,
+          fontFamily: "'DM Sans',sans-serif",
+          cursor: "pointer", alignSelf: "flex-start",
+          transition: "all 0.2s ease",
+        }}
+      >
+        Retry
+      </button>
+    </div>
+  </motion.div>
+);
+
+// ─── Initial greeting ─────────────────────────────────────────────────────────
+const getInitialMessages = (user) => ([
+  {
+    role: "assistant",
+    content: `Assalamu Alaikum${user?.username ? `, ${user.username}` : ""}! 🌙\nI'm your QalbAudio assistant. How can I help you discover Islamic audio today?`,
+  }
+]);
+
 // ─── Main ChatBotPopup ────────────────────────────────────────────────────────
 const ChatBotPopup = ({ onClose, user }) => {
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      content: `Assalamu Alaikum${user?.username ? `, ${user.username}` : ""}! 🌙\nI'm your QalbAudio assistant. How can I help you discover Islamic audio today?`,
-    }
-  ]);
+  const [messages, setMessages] = useState(() => getInitialMessages(user));
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" ? window.innerWidth < 600 : false);
+  const [hasError, setHasError] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" ? window.innerWidth < 600 : false
+  );
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -135,21 +210,50 @@ const ChatBotPopup = ({ onClose, user }) => {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping]);
+  }, [messages, isTyping, hasError]);
 
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 300);
   }, []);
 
+  const buildApiHistory = (msgs) =>
+    msgs.map((m) => ({ role: m.role, content: m.content }));
+
   const sendMessage = async (text) => {
     const trimmed = (text || input).trim();
     if (!trimmed || isTyping) return;
+
     setInput("");
-    setMessages(prev => [...prev, { role: "user", content: trimmed }]);
+    setHasError(false);
+
+    const newMessages = [...messages, { role: "user", content: trimmed }];
+    setMessages(newMessages);
     setIsTyping(true);
-    const reply = await getFakeReply(trimmed);
-    setIsTyping(false);
-    setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+
+    try {
+      const reply = await getAIReply(buildApiHistory(newMessages));
+      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+    } catch (err) {
+      console.error("ChatBot API error:", err);
+      setHasError(true);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const retryLast = async () => {
+    if (isTyping) return;
+    setHasError(false);
+    setIsTyping(true);
+    try {
+      const reply = await getAIReply(buildApiHistory(messages));
+      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+    } catch (err) {
+      console.error("ChatBot retry error:", err);
+      setHasError(true);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -160,10 +264,9 @@ const ChatBotPopup = ({ onClose, user }) => {
   };
 
   const clearChat = () => {
-    setMessages([{
-      role: "assistant",
-      content: `Assalamu Alaikum${user?.username ? `, ${user.username}` : ""}! 🌙\nI'm your QalbAudio assistant. How can I help you discover Islamic audio today?`,
-    }]);
+    setMessages(getInitialMessages(user));
+    setHasError(false);
+    setInput("");
   };
 
   const showSuggestions = messages.length <= 1;
@@ -172,50 +275,21 @@ const ChatBotPopup = ({ onClose, user }) => {
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap');
-
-        .chatbot-popup-input::placeholder {
-          color: var(--app-text-muted);
-          opacity: 0.7;
-        }
-        .chatbot-popup-input:focus {
-          outline: none;
-        }
-        .chatbot-send-btn:hover {
-          transform: scale(1.06);
-          box-shadow: 0 8px 20px rgba(var(--app-accent-rgb),0.36) !important;
-        }
-        .chatbot-send-btn:disabled {
-          opacity: 0.45;
-          cursor: not-allowed;
-          transform: none !important;
-        }
-        .chatbot-suggestion-btn:hover {
-          background: rgba(var(--app-accent-rgb),0.14) !important;
-          border-color: rgba(var(--app-accent-rgb),0.45) !important;
-          transform: translateY(-1px);
-        }
-        .chatbot-clear-btn:hover {
-          background: rgba(var(--app-accent-rgb),0.1) !important;
-          color: var(--app-text-main) !important;
-        }
-        .chatbot-messages-scroll::-webkit-scrollbar {
-          width: 4px;
-        }
-        .chatbot-messages-scroll::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .chatbot-messages-scroll::-webkit-scrollbar-thumb {
-          background: rgba(var(--app-accent-rgb),0.22);
-          border-radius: 4px;
-        }
+        .chatbot-popup-input::placeholder { color: var(--app-text-muted); opacity: 0.7; }
+        .chatbot-popup-input:focus { outline: none; }
+        .chatbot-send-btn:hover { transform: scale(1.06); box-shadow: 0 8px 20px rgba(var(--app-accent-rgb),0.36) !important; }
+        .chatbot-send-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
+        .chatbot-suggestion-btn:hover { background: rgba(var(--app-accent-rgb),0.14) !important; border-color: rgba(var(--app-accent-rgb),0.45) !important; transform: translateY(-1px); }
+        .chatbot-clear-btn:hover { background: rgba(var(--app-accent-rgb),0.1) !important; color: var(--app-text-main) !important; }
+        .chatbot-messages-scroll::-webkit-scrollbar { width: 4px; }
+        .chatbot-messages-scroll::-webkit-scrollbar-track { background: transparent; }
+        .chatbot-messages-scroll::-webkit-scrollbar-thumb { background: rgba(var(--app-accent-rgb),0.22); border-radius: 4px; }
       `}</style>
 
       {/* Backdrop (mobile) */}
       {isMobile && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           onClick={onClose}
           style={{
             position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
@@ -238,8 +312,7 @@ const ChatBotPopup = ({ onClose, user }) => {
           width: isMobile ? "min(94vw, 420px)" : 400,
           height: isMobile ? "min(88vh, 600px)" : 560,
           zIndex: 201,
-          display: "flex",
-          flexDirection: "column",
+          display: "flex", flexDirection: "column",
           borderRadius: 24,
           background: "var(--app-surface-solid)",
           border: "1px solid rgba(var(--app-accent-rgb),0.22)",
@@ -255,13 +328,11 @@ const ChatBotPopup = ({ onClose, user }) => {
           display: "flex", alignItems: "center", gap: 12, flexShrink: 0,
           position: "relative",
         }}>
-          {/* Top accent line */}
           <div style={{
             position: "absolute", top: 0, left: 0, right: 0, height: 2,
             background: "linear-gradient(90deg,transparent,rgba(var(--app-accent-rgb),0.6) 40%,var(--app-accent) 50%,rgba(var(--app-accent-rgb),0.6) 60%,transparent)",
           }} />
 
-          {/* Bot icon */}
           <motion.div
             animate={{ rotate: [0, 8, -8, 0] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -276,29 +347,20 @@ const ChatBotPopup = ({ onClose, user }) => {
           </motion.div>
 
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontFamily: "'DM Sans',sans-serif", fontWeight: 800, fontSize: 15,
-              color: "var(--app-text-main)",
-            }}>
+            <div style={{ fontFamily: "'DM Sans',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--app-text-main)" }}>
               QalbAudio Assistant
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
               <span style={{
-                width: 7, height: 7, borderRadius: "50%",
-                background: "#22c55e",
-                boxShadow: "0 0 6px #22c55e",
-                display: "inline-block",
+                width: 7, height: 7, borderRadius: "50%", background: "#22c55e",
+                boxShadow: "0 0 6px #22c55e", display: "inline-block",
               }} />
-              <span style={{
-                fontFamily: "'DM Sans',sans-serif", fontSize: 11.5,
-                color: "var(--app-text-muted)", fontWeight: 500,
-              }}>
-                Online · Islamic Audio Guide
+              <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 11.5, color: "var(--app-text-muted)", fontWeight: 500 }}>
+                Online · Powered by Claude AI
               </span>
             </div>
           </div>
 
-          {/* Action buttons */}
           <div style={{ display: "flex", gap: 6 }}>
             <button
               className="chatbot-clear-btn"
@@ -332,20 +394,17 @@ const ChatBotPopup = ({ onClose, user }) => {
         {/* ── MESSAGES ── */}
         <div
           className="chatbot-messages-scroll"
-          style={{
-            flex: 1, overflowY: "auto",
-            padding: "16px 16px 8px",
-            display: "flex", flexDirection: "column",
-          }}
+          style={{ flex: 1, overflowY: "auto", padding: "16px 16px 8px", display: "flex", flexDirection: "column" }}
         >
           {messages.map((msg, i) => (
             <MessageBubble key={i} msg={msg} />
           ))}
-
           <AnimatePresence>
             {isTyping && <TypingDots />}
           </AnimatePresence>
-
+          <AnimatePresence>
+            {hasError && !isTyping && <ErrorBubble onRetry={retryLast} />}
+          </AnimatePresence>
           <div ref={messagesEndRef} />
         </div>
 
@@ -356,10 +415,7 @@ const ChatBotPopup = ({ onClose, user }) => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              style={{
-                padding: "0 14px 10px",
-                display: "flex", flexWrap: "wrap", gap: 6, flexShrink: 0,
-              }}
+              style={{ padding: "0 14px 10px", display: "flex", flexWrap: "wrap", gap: 6, flexShrink: 0 }}
             >
               {SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (
                 <button
@@ -368,8 +424,7 @@ const ChatBotPopup = ({ onClose, user }) => {
                   onClick={() => sendMessage(prompt)}
                   style={{
                     display: "flex", alignItems: "center", gap: 6,
-                    padding: "6px 11px",
-                    borderRadius: 999,
+                    padding: "6px 11px", borderRadius: 999,
                     background: "rgba(var(--app-accent-rgb),0.07)",
                     border: "1px solid rgba(var(--app-accent-rgb),0.2)",
                     color: "var(--app-text-main)",
@@ -398,8 +453,7 @@ const ChatBotPopup = ({ onClose, user }) => {
             display: "flex", alignItems: "center", gap: 8,
             background: "rgba(var(--app-accent-rgb),0.06)",
             border: "1px solid rgba(var(--app-accent-rgb),0.18)",
-            borderRadius: 999,
-            padding: "8px 8px 8px 16px",
+            borderRadius: 999, padding: "8px 8px 8px 16px",
             transition: "border-color 0.2s ease",
           }}>
             <input
@@ -409,6 +463,7 @@ const ChatBotPopup = ({ onClose, user }) => {
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask about Islamic audio..."
+              disabled={isTyping}
               style={{
                 flex: 1, background: "transparent", border: "none",
                 color: "var(--app-text-main)",
