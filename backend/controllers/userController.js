@@ -15,6 +15,7 @@ const DEFAULT_PREFERENCES = {
     animationsEnabled: true,
     showGreeting: true,
     roundedCorners: 24,
+    language: "en",
 }
 
 const RESET_WINDOW_MS = 15 * 60 * 1000
@@ -74,6 +75,10 @@ const normalizePreferences = (preferences = {}) => {
 
     if (Number.isFinite(preferences.roundedCorners))
         safePreferences.roundedCorners = Math.min(32, Math.max(12, preferences.roundedCorners))
+
+    const validLanguages = ["en", "hi", "ur", "ar", "zh", "bn", "ta", "te", "kn", "ru"]
+    if (validLanguages.includes(preferences.language))
+        safePreferences.language = preferences.language
 
     return safePreferences
 }
@@ -395,7 +400,6 @@ export const googleLogin = async (req, res) => {
 
         console.log(`[google-login] request received for ${email}`)
 
-        // 1. Verify Firebase ID token
         let decoded
         try {
             decoded = await admin.auth().verifyIdToken(idToken)
@@ -416,11 +420,9 @@ export const googleLogin = async (req, res) => {
             return res.status(400).json({ success: false, message: "No email found in Google account." })
         }
 
-        // 2. Find or create user in MongoDB
         let user = await User.findOne({ email: verifiedEmail })
 
         if (user) {
-            // Existing user — update Google fields if missing
             let changed = false
             if (!user.googleId)             { user.googleId      = uid;        changed = true }
             if (!user.photo && photo)        { user.photo         = photo;      changed = true }
@@ -428,7 +430,6 @@ export const googleLogin = async (req, res) => {
             if (user.isVerified !== true)    { user.isVerified    = true;       changed = true }
             if (changed) await user.save()
         } else {
-            // New Google user — no password required
             user = await User.create({
                 username:     name || verifiedEmail.split("@")[0],
                 email:        verifiedEmail,
@@ -441,14 +442,12 @@ export const googleLogin = async (req, res) => {
             })
         }
 
-        // 3. Create session (same as email login)
         await Session.deleteMany({ userId: user._id })
         await Session.create({ userId: user._id })
 
         user.isLoggedIn = true
         await user.save()
 
-        // 4. Generate tokens (same as email login)
         const accessToken = createAccessToken(user._id)
         const refreshToken = jwt.sign(
             { id: user._id },

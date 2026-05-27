@@ -39,6 +39,7 @@ export const DEFAULT_PREFERENCES = {
     animationsEnabled: true,
     showGreeting: true,
     roundedCorners: 24,
+    language: "en",
 }
 
 const normalizePreferences = (preferences = {}) => {
@@ -79,6 +80,9 @@ const normalizePreferences = (preferences = {}) => {
     if (Number.isFinite(preferences.roundedCorners)) {
         safePreferences.roundedCorners = Math.min(32, Math.max(12, preferences.roundedCorners))
     }
+    const validLanguages = ["en", "hi", "ur", "ar", "zh", "bn", "ta", "te", "kn", "ru"]
+    if (validLanguages.includes(preferences.language))
+        safePreferences.language = preferences.language
 
     return safePreferences
 }
@@ -161,7 +165,7 @@ export const UserProvider = ({ children }) => {
 
     // Dummy setUser for legacy compatibility (Home.jsx etc. might still call it)
     // It's a no-op now — auth state is owned by AuthContext
-    const setUser = () => {}
+    const setUser = () => { }
 
     const favoriteStorageKey = getFavoritesStorageKey(user?._id)
 
@@ -252,17 +256,23 @@ export const UserProvider = ({ children }) => {
     }
 
     const refreshPreferences = async () => {
-        const accessToken = localStorage.getItem("accessToken")
-        if (!accessToken) {
-            return DEFAULT_PREFERENCES
-        }
-        const response = await axios.get(`${API_URL}/user/preferences`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-        })
-        const nextPreferences = normalizePreferences(response.data.preferences)
-        syncUserPreferences(nextPreferences)
-        return nextPreferences
+    const accessToken = localStorage.getItem("accessToken")
+    if (!accessToken) {
+        return DEFAULT_PREFERENCES
     }
+    const response = await axios.get(`${API_URL}/user/preferences`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+    })
+    const nextPreferences = normalizePreferences(response.data.preferences)
+    syncUserPreferences(nextPreferences)
+
+    // ← ADD HERE
+    const RTL_LANGUAGES = ["ar", "ur"]
+    document.documentElement.setAttribute("lang", nextPreferences.language || "en")
+    document.documentElement.setAttribute("dir", RTL_LANGUAGES.includes(nextPreferences.language) ? "rtl" : "ltr")
+
+    return nextPreferences
+}
 
     const savePreferences = async (updates) => {
         const accessToken = localStorage.getItem("accessToken")
@@ -279,6 +289,7 @@ export const UserProvider = ({ children }) => {
         syncUserPreferences(nextPreferences)
         return nextPreferences
     }
+    
 
     return (
         <UserContext.Provider

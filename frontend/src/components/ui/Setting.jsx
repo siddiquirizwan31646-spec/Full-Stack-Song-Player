@@ -10,6 +10,7 @@ import {
     Save,
     Sparkles,
     SunMedium,
+    Globe,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import DashboardNavbar from "@/components/DashboardNavbar"
@@ -56,6 +57,21 @@ const cardStyleOptions = [
     { value: "glass", label: "Glass", description: "Soft transparent panels with more depth." },
     { value: "solid", label: "Solid", description: "Cleaner opaque panels with crisp borders." },
 ]
+
+// ── Language options ──────────────────────────────────────────────────────────
+const LANGUAGE_OPTIONS = [
+    { value: "en", label: "English",    nativeLabel: "English",     flag: "🇬🇧", dir: "ltr" },
+    { value: "hi", label: "Hindi",      nativeLabel: "हिन्दी",         flag: "🇮🇳", dir: "ltr" },
+    { value: "ur", label: "Urdu",       nativeLabel: "اردو",          flag: "🇵🇰", dir: "rtl" },
+    { value: "ar", label: "Arabic",     nativeLabel: "العربية",       flag: "🇸🇦", dir: "rtl" },
+    { value: "zh", label: "Chinese",    nativeLabel: "中文",          flag: "🇨🇳", dir: "ltr" },
+    { value: "bn", label: "Bengali",    nativeLabel: "বাংলা",         flag: "🇧🇩", dir: "ltr" },
+    { value: "ta", label: "Tamil",      nativeLabel: "தமிழ்",         flag: "🇮🇳", dir: "ltr" },
+    { value: "te", label: "Telugu",     nativeLabel: "తెలుగు",        flag: "🇮🇳", dir: "ltr" },
+    { value: "kn", label: "Kannada",    nativeLabel: "ಕನ್ನಡ",         flag: "🇮🇳", dir: "ltr" },
+    { value: "ru", label: "Russian",    nativeLabel: "Русский",       flag: "🇷🇺", dir: "ltr" },
+]
+// ─────────────────────────────────────────────────────────────────────────────
 
 const hexToRgb = (hex) => {
     const normalizedHex = hex.replace("#", "")
@@ -158,6 +174,117 @@ const ChoiceGroup = ({ options, selectedValue, onSelect }) => (
     </div>
 )
 
+// ── Language Picker ───────────────────────────────────────────────────────────
+const LanguagePicker = ({ selectedValue, onSelect, accentColor }) => {
+    const selectedLang = LANGUAGE_OPTIONS.find(l => l.value === selectedValue) || LANGUAGE_OPTIONS[0]
+
+    return (
+        <div>
+            {/* Selected language badge */}
+            <div style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "10px 14px", borderRadius: 12,
+                background: "rgba(var(--app-accent-rgb),0.08)",
+                border: "1px solid rgba(var(--app-accent-rgb),0.2)",
+                marginBottom: 14,
+            }}>
+                <Globe size={15} style={{ color: "var(--app-accent)", flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: "var(--app-text-muted)" }}>Current language:</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--app-text-main)" }}>
+                    {selectedLang.flag} {selectedLang.label}
+                </span>
+                <span style={{
+                    fontSize: 11, color: "var(--app-text-muted)",
+                    direction: selectedLang.dir, fontStyle: "italic", marginLeft: "auto",
+                }}>
+                    {selectedLang.nativeLabel}
+                </span>
+            </div>
+
+            {/* Language grid */}
+            <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+                gap: 8,
+            }}>
+                {LANGUAGE_OPTIONS.map(lang => {
+                    const isSelected = lang.value === selectedValue
+                    return (
+                        <button
+                            key={lang.value}
+                            type="button"
+                            onClick={() => onSelect(lang.value)}
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                                padding: "11px 13px",
+                                borderRadius: 11,
+                                border: isSelected
+                                    ? "1px solid var(--app-accent)"
+                                    : "1px solid var(--app-border)",
+                                background: isSelected
+                                    ? "rgba(var(--app-accent-rgb),0.12)"
+                                    : "var(--app-surface)",
+                                boxShadow: isSelected
+                                    ? `0 4px 16px ${withOpacity(accentColor, 0.18)}`
+                                    : "none",
+                                color: "var(--app-text-main)",
+                                cursor: "pointer",
+                                transition: "all 0.18s ease",
+                                fontFamily: "'DM Sans', sans-serif",
+                                textAlign: "left",
+                            }}
+                            onMouseEnter={e => {
+                                if (!isSelected) e.currentTarget.style.borderColor = "rgba(var(--app-accent-rgb),0.4)"
+                            }}
+                            onMouseLeave={e => {
+                                if (!isSelected) e.currentTarget.style.borderColor = "var(--app-border)"
+                            }}
+                        >
+                            <span style={{ fontSize: 20, flexShrink: 0, lineHeight: 1 }}>{lang.flag}</span>
+                            <div style={{ minWidth: 0 }}>
+                                <div style={{
+                                    fontSize: 12, fontWeight: 700,
+                                    color: isSelected ? "var(--app-accent)" : "var(--app-text-main)",
+                                    display: "flex", alignItems: "center", gap: 5,
+                                }}>
+                                    {lang.label}
+                                    {isSelected && <Check size={11} style={{ color: "var(--app-accent)", flexShrink: 0 }} />}
+                                </div>
+                                <div style={{
+                                    fontSize: 11, color: "var(--app-text-muted)",
+                                    direction: lang.dir, marginTop: 2,
+                                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                }}>
+                                    {lang.nativeLabel}
+                                </div>
+                            </div>
+                        </button>
+                    )
+                })}
+            </div>
+
+            {/* RTL notice */}
+            {(selectedLang.dir === "rtl") && (
+                <div style={{
+                    marginTop: 10, padding: "8px 12px", borderRadius: 9,
+                    background: "rgba(var(--app-accent-rgb),0.06)",
+                    border: "1px solid rgba(var(--app-accent-rgb),0.12)",
+                    fontSize: 11, color: "var(--app-text-muted)",
+                    display: "flex", alignItems: "center", gap: 6,
+                }}>
+                    <span>↔</span>
+                    <span>
+                        <strong style={{ color: "var(--app-text-main)" }}>{selectedLang.label}</strong> is a right-to-left language — layout will mirror on save.
+                    </span>
+                </div>
+            )}
+        </div>
+    )
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 const SectionLabel = ({ children }) => (
     <div style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 10 }}>
         <span style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{children}</span>
@@ -188,7 +315,6 @@ const Setting = () => {
                 if (isMounted) setDraft(latest)
             } catch (error) {
                 const status = error?.response?.status
-                // 400 expired / 401 unauthorized — interceptor will redirect to login
                 if (status !== 400 && status !== 401) {
                     toast.error("Unable to load your saved settings.")
                 }
@@ -211,6 +337,13 @@ const Setting = () => {
             await savePreferences(draft)
             setIsDirty(false)
             toast.success("Your settings were saved to your account.")
+
+            // Apply RTL direction immediately after save
+            const selectedLang = LANGUAGE_OPTIONS.find(l => l.value === draft.language)
+            if (selectedLang) {
+                document.documentElement.setAttribute("dir", selectedLang.dir)
+                document.documentElement.setAttribute("lang", draft.language)
+            }
         } catch (error) {
             toast.error(error.response?.data?.message || "Unable to save settings right now.")
         } finally {
@@ -234,6 +367,9 @@ const Setting = () => {
         ? `radial-gradient(circle at top left, ${withOpacity(draft.accentColor, 0.2)} 0%, transparent 40%), #071009`
         : `radial-gradient(circle at top left, ${withOpacity(draft.accentColor, 0.18)} 0%, transparent 38%), #f3faf4`
     const previewGap = draft.interfaceDensity === "compact" ? 10 : 16
+
+    // Current language info for summary card
+    const currentLangInfo = LANGUAGE_OPTIONS.find(l => l.value === (draft.language || "en")) || LANGUAGE_OPTIONS[0]
 
     return (
         <div style={{
@@ -433,6 +569,19 @@ const Setting = () => {
                                     />
                                 </div>
 
+                                {/* ── LANGUAGE SECTION ── */}
+                                <div className="settings-card" style={{ padding: "16px" }}>
+                                    <SectionLabel>🌐 Display Language</SectionLabel>
+                                    <p style={{ fontSize: 12, color: "var(--app-text-muted)", lineHeight: 1.6, marginBottom: 14, marginTop: 0 }}>
+                                        Choose your preferred language. This is saved to your account and loaded automatically every time you sign in.
+                                    </p>
+                                    <LanguagePicker
+                                        selectedValue={draft.language || "en"}
+                                        onSelect={v => updateDraft("language", v)}
+                                        accentColor={draft.accentColor}
+                                    />
+                                </div>
+
                                 {/* Toggles */}
                                 <div className="settings-card" style={{ padding: "16px", display: "grid", gap: 10 }}>
                                     <SectionLabel>Preferences</SectionLabel>
@@ -577,10 +726,11 @@ const Setting = () => {
                                     </div>
                                     <div style={{ display: "grid", gap: 8 }}>
                                         {[
-                                            { label: "Account", value: user?.email || "Signed in user" },
-                                            { label: "Accent", value: draft.accentColor },
-                                            { label: "Density", value: draft.interfaceDensity },
+                                            { label: "Account",  value: user?.email || "Signed in user" },
+                                            { label: "Accent",   value: draft.accentColor },
+                                            { label: "Density",  value: draft.interfaceDensity },
                                             { label: "Card style", value: draft.cardStyle },
+                                            { label: "Language", value: `${currentLangInfo.flag} ${currentLangInfo.label} (${currentLangInfo.nativeLabel})` },
                                         ].map(row => (
                                             <div key={row.label} style={{
                                                 display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,

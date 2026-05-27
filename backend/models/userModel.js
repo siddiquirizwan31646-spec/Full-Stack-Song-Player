@@ -40,32 +40,41 @@ const preferencesSchema = new Schema(
             max: 32,
             default: 24,
         },
+        // Inside preferencesSchema, after roundedCorners:
+        language: {
+            type: String,
+            enum: [
+                "en", "hi", "ur", "ar", "zh",
+                "bn", "ta", "te", "kn", "ru"
+            ],
+            default: "en",
+        },
     },
     { _id: false }
 )
 
 const userSchema = new mongoose.Schema({
-    username:   { type: String, required: true },
-    email:      { type: String, required: true, unique: true },
+    username: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
 
     // ── password is now optional for Google users ──────────────────────────
-    password:   { type: String, required: false, default: null },
+    password: { type: String, required: false, default: null },
 
     // ── Google Auth fields ─────────────────────────────────────────────────
-    googleId:     { type: String, default: null, sparse: true },
-    photo:        { type: String, default: "" },
+    googleId: { type: String, default: null, sparse: true },
+    photo: { type: String, default: "" },
     authProvider: { type: String, enum: ["local", "google"], default: "local" },
 
-    isVerified:              { type: Boolean, default: false },
-    isLoggedIn:              { type: Boolean, default: false },
-    token:                   { type: String,  default: null },
-    otp:                     { type: String,  default: null },
-    otpExpiry:               { type: Date,    default: null },
-    passwordResetVerifiedAt: { type: Date,    default: null },
-    activePlan:              { type: String,  enum: ["Basic", "Standard", "Premium"], default: null },
-    planActivatedAt:         { type: Date,    default: null },
+    isVerified: { type: Boolean, default: false },
+    isLoggedIn: { type: Boolean, default: false },
+    token: { type: String, default: null },
+    otp: { type: String, default: null },
+    otpExpiry: { type: Date, default: null },
+    passwordResetVerifiedAt: { type: Date, default: null },
+    activePlan: { type: String, enum: ["Basic", "Standard", "Premium"], default: null },
+    planActivatedAt: { type: Date, default: null },
     preferences: {
-        type:    preferencesSchema,
+        type: preferencesSchema,
         default: () => ({}),
     },
 }, { timestamps: true })
