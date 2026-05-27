@@ -14,92 +14,234 @@ const SUGGESTIONS = [
 const getReply = (message) => {
   const lower = message.toLowerCase().trim();
 
-  // Greetings
-  if (lower.includes("assalamu") || lower.includes("salam") || lower.includes("hello") || lower.includes("hi") || lower.includes("hey"))
-    return "Wa Alaikum Assalam! 🌙 Welcome to QalbAudio. How can I help you discover beautiful Islamic audio today?";
+  // ── Greetings ──
+  if (lower.includes("assalamu") || lower.includes("salam") || lower.includes("hello") || lower.includes("hi") || lower.includes("hey") || lower.includes("greetings") || lower.includes("marhaba"))
+    return "Wa Alaikum Assalam wa Rahmatullahi wa Barakatuh! 🌙 Welcome to QalbAudio — your spiritual audio companion. How can I help you discover beautiful Islamic content today?";
 
-  // Nasheed recommendations
-  if (lower.includes("nasheed") && (lower.includes("recommend") || lower.includes("suggest") || lower.includes("best") || lower.includes("beautiful")))
-    return "I'd recommend starting with Maher Zain's 'Rahmatun Lil'Alameen' or Sami Yusuf's 'Al-Mu'allim' — both are spiritually uplifting and beautifully composed. 🌙";
+  // ── Nasheeds — specific recommendations ──
+  if (lower.includes("nasheed") && (lower.includes("recommend") || lower.includes("suggest") || lower.includes("best") || lower.includes("beautiful") || lower.includes("top") || lower.includes("popular")))
+    return "Here are some top Nasheeds to start with 🌙:\n• Maher Zain — 'Rahmatun Lil'Alameen'\n• Sami Yusuf — 'Al-Mu'allim'\n• Mesut Kurtis — 'Burdah'\n• Harris J — 'Salam'\n• Ahmed Bukhatir — 'Forgive Me'\nAll available on QalbAudio!";
 
-  if (lower.includes("nasheed"))
-    return "QalbAudio has a wide collection of Nasheeds from artists like Maher Zain, Sami Yusuf, Mesut Kurtis, and Harris J. You can browse by artist or mood! 🎵";
+  // ── Nasheeds — general ──
+  if (lower.includes("nasheed") || lower.includes("anasheed"))
+    return "QalbAudio has a rich Nasheed library 🎵 featuring artists like Maher Zain, Sami Yusuf, Mesut Kurtis, Harris J, Ahmed Bukhatir, Humood AlKhudher, and many more. Browse by artist, mood, or language!";
 
-  // Quran / recitation
-  if ((lower.includes("quran") || lower.includes("recitation") || lower.includes("recite")) && lower.includes("tip"))
-    return "For improving your Quran listening experience, try following along with a Mushaf while listening. Sheikh Mishary Rashid Alafasy and Sheikh Abdul Rahman Al-Sudais are highly recommended reciters. 📖";
+  // ── Quran — tips ──
+  if ((lower.includes("quran") || lower.includes("recitation") || lower.includes("recite") || lower.includes("tilawah")) && (lower.includes("tip") || lower.includes("improve") || lower.includes("better") || lower.includes("learn") || lower.includes("how")))
+    return "Tips for a better Quran listening experience 📖:\n• Follow along with a Mushaf while listening\n• Listen in a quiet, clean space with wudu\n• Start with shorter surahs to build familiarity\n• Repeat verses you love for deeper reflection\n• Try reciters like Mishary Alafasy or Sudais for a moving experience";
 
-  if (lower.includes("quran") || lower.includes("recitation") || lower.includes("surah") || lower.includes("ayah"))
-    return "You can find beautiful Quran recitations on QalbAudio by reciters like Mishary Alafasy, Maher Al-Mueaqly, and Abdul Basit Abdus-Samad. 📖 Which surah are you looking for?";
+  // ── Quran — specific surahs ──
+  if (lower.includes("al-fatiha") || lower.includes("fatiha"))
+    return "Surah Al-Fatiha — the Opening — is recited in every prayer and is the most repeated surah in the Quran. 📖 Beautiful recitations by Mishary Alafasy and Maher Al-Mueaqly are available on QalbAudio.";
 
-  // Ramadan
+  if (lower.includes("al-baqarah") || lower.includes("baqarah"))
+    return "Surah Al-Baqarah is the longest surah in the Quran and a powerful protection. 📖 It's recommended to listen to it regularly. Find full recitations by Al-Sudais and Mishary Alafasy on QalbAudio.";
+
+  if (lower.includes("al-kahf") || lower.includes("kahf"))
+    return "Surah Al-Kahf is Sunnah to recite every Friday for protection from Dajjal. 📖 Listen to soul-stirring recitations by Abdul Rahman Al-Sudais and Mishary Alafasy on QalbAudio.";
+
+  if (lower.includes("al-mulk") || lower.includes("mulk") || lower.includes("tabarak"))
+    return "Surah Al-Mulk (Tabarak) is highly recommended before sleep — it intercedes for its reciter. 🌙 Find beautiful recitations on QalbAudio to listen to every night.";
+
+  if (lower.includes("yasin") || lower.includes("ya-sin") || lower.includes("ya sin"))
+    return "Surah Yasin is known as the 'Heart of the Quran'. 📖 It's often recited for the ill and the deceased. Listen to moving recitations by Mishary Alafasy on QalbAudio.";
+
+  if (lower.includes("ar-rahman") || lower.includes("rahman"))
+    return "Surah Ar-Rahman — 'Which of the favours of your Lord will you deny?' 🌿 Its beautiful rhythm makes it one of the most beloved surahs. Available in many recitation styles on QalbAudio.";
+
+  if (lower.includes("ayatul kursi") || lower.includes("ayat al kursi") || lower.includes("ayat kursi"))
+    return "Ayatul Kursi is one of the greatest ayahs in the Quran — recite it after every prayer and before sleep for protection. 🤲 Beautiful recitations are available on QalbAudio.";
+
+  // ── Quran — general ──
+  if (lower.includes("quran") || lower.includes("recitation") || lower.includes("surah") || lower.includes("ayah") || lower.includes("tilawah") || lower.includes("hafiz"))
+    return "QalbAudio has a complete Quran library 📖 with recitations by world-class qaris including Mishary Alafasy, Abdul Rahman Al-Sudais, Maher Al-Mueaqly, Abdul Basit Abdus-Samad, and Saad Al-Ghamdi. Which surah are you looking for?";
+
+  // ── Ramadan ──
+  if (lower.includes("ramadan") && (lower.includes("playlist") || lower.includes("audio") || lower.includes("listen")))
+    return "Perfect Ramadan audio journey 🌙:\n• Fajr: Quran recitation (Surah Al-Mulk / Al-Waqi'ah)\n• Morning: Adhkar & du'a recordings\n• Afternoon: Islamic lectures\n• Iftar: Nasheeds by Maher Zain\n• Tarawih: Full Quran recitation\n• Night: Surah Al-Baqarah for blessings";
+
   if (lower.includes("ramadan"))
-    return "A perfect Ramadan playlist: start with Quranic recitations at Fajr, peaceful Nasheeds during the day, and calming du'a recordings before Iftar. 🌙✨ Ramadan Mubarak!";
+    return "Ramadan Mubarak! 🌙✨ QalbAudio has a dedicated Ramadan collection including nightly Tarawih recitations, Ramadan Nasheeds, du'a for Iftar & Suhoor, and special lectures on the month of Quran. May Allah accept from us all!";
 
-  // Du'a
-  if (lower.includes("dua") || lower.includes("du'a") || lower.includes("supplication"))
-    return "QalbAudio features a collection of beautiful du'a recordings for morning, evening, after salah, and special occasions. 🤲 They're perfect for daily listening.";
+  // ── Du'a ──
+  if (lower.includes("dua") || lower.includes("du'a") || lower.includes("supplication") || lower.includes("pray") && lower.includes("audio"))
+    return "QalbAudio's Du'a collection 🤲 includes:\n• Morning & Evening Adhkar\n• Du'a after Salah\n• Du'a for forgiveness (Istighfar)\n• Du'a for anxiety & stress relief\n• Qunoot du'a\n• Du'a for rain, travel, and special occasions\nPerfect for daily spiritual routine!";
 
-  // Lectures / scholars
-  if (lower.includes("lecture") || lower.includes("scholar") || lower.includes("sheikh") || lower.includes("talk"))
-    return "We have Islamic lectures from renowned scholars including Nouman Ali Khan, Mufti Menk, Omar Suleiman, and many more. You can filter by topic or scholar. ✨";
+  // ── Adhkar ──
+  if (lower.includes("adhkar") || lower.includes("dhikr") || lower.includes("zikr") || lower.includes("remembrance"))
+    return "Dhikr is the nourishment of the heart! 💚 QalbAudio features morning & evening adhkar recordings, tasbeeh audio, istighfar collections, and salawat playlists. Regular dhikr is a Sunnah and brings immense tranquility.";
 
-  // Playlist
+  // ── Lectures / scholars ──
+  if (lower.includes("lecture") || lower.includes("scholar") || lower.includes("talk") || lower.includes("bayan") || lower.includes("khutbah") || lower.includes("sermon"))
+    return "QalbAudio features Islamic lectures from renowned scholars 🎓:\n• Nouman Ali Khan — Quran reflections\n• Mufti Menk — Life advice & fiqh\n• Omar Suleiman — History & spirituality\n• Yasmin Mogahed — Heart & soul\n• Bilal Philips — Aqeedah & basics\n• Hamza Yusuf — Classical Islamic sciences\nFilter by scholar, topic, or duration!";
+
+  // ── Specific scholars ──
+  if (lower.includes("nouman ali khan") || lower.includes("nouman"))
+    return "Nouman Ali Khan is famous for his deep yet accessible Quranic tafsir and Arabic grammar lessons. 📖 His lectures on Surah Al-Baqarah, Al-Kahf, and Yusuf are particularly beloved. Available on QalbAudio!";
+
+  if (lower.includes("mufti menk") || lower.includes("menk"))
+    return "Mufti Ismail Menk's warm, practical style has made him one of the most listened-to Islamic scholars globally. 🌙 His talks on relationships, mental health, and everyday Islam are on QalbAudio.";
+
+  if (lower.includes("omar suleiman"))
+    return "Sheikh Omar Suleiman's lectures on Islamic history, the Prophets, and social justice are deeply moving. ✨ His 'Stories of the Prophets' series is a must-listen — find it on QalbAudio!";
+
+  if (lower.includes("hamza yusuf"))
+    return "Sheikh Hamza Yusuf is a master of classical Islamic scholarship. His lectures on spirituality, Arabic poetry, and Islamic philosophy are available on QalbAudio. 📚";
+
+  if (lower.includes("yasmin mogahed"))
+    return "Yasmin Mogahed's talks on the heart, healing, and reconnecting with Allah are deeply powerful. 💚 Her lecture 'Reclaim Your Heart' is especially recommended. Available on QalbAudio!";
+
+  // ── Playlist ──
+  if (lower.includes("playlist") && (lower.includes("create") || lower.includes("make") || lower.includes("build")))
+    return "Creating a playlist on QalbAudio is easy! 🎵\n1. Browse or search for audio\n2. Tap the '+' icon on any track\n3. Select 'Add to Playlist'\n4. Name your playlist and save\nTry themes like 'Morning Blessings', 'Ramadan Nights', or 'Friday Nasheeds'!";
+
   if (lower.includes("playlist"))
-    return "You can create custom playlists on QalbAudio! Try a 'Morning Adhkar' playlist, a 'Ramadan Nights' collection, or a 'Peaceful Recitations' set for focused listening. 🎵";
+    return "QalbAudio playlists ideas 🎵:\n• 'Fajr Serenity' — Soft Quran recitations\n• 'Ramadan Nights' — Tarawih + Nasheeds\n• 'Road Trip Nasheeds' — Upbeat Islamic songs\n• 'Study Companion' — Quran on loop\n• 'Before Sleep' — Surah Al-Mulk + Adhkar\n• 'Friday Special' — Surah Al-Kahf + Salawat";
 
-  // Fajr / morning
-  if (lower.includes("fajr") || lower.includes("morning"))
-    return "For Fajr, we recommend soft Quran recitations of Surah Al-Mulk or Al-Waqi'ah, followed by morning adhkar recordings. A peaceful way to start your day! 🌅";
+  // ── Fajr / Morning ──
+  if (lower.includes("fajr") || (lower.includes("morning") && (lower.includes("audio") || lower.includes("listen") || lower.includes("recitation") || lower.includes("islamic"))))
+    return "Start your Fajr with these 🌅:\n• Surah Al-Mulk (protection & blessings)\n• Surah Al-Waqi'ah (barakah in rizq)\n• Morning Adhkar audio (15 mins)\n• Maher Zain's 'SubhanAllah'\nA blessed morning routine sets the tone for the whole day. Find all on QalbAudio!";
 
-  // Sleep / night
-  if (lower.includes("sleep") || lower.includes("night") || lower.includes("isha"))
-    return "For a calm night, try Surah Al-Baqarah recitation or gentle Nasheeds. Listening to Ayatul Kursi before sleep is a beautiful Sunnah. 🌙";
+  // ── Night / Sleep ──
+  if (lower.includes("sleep") || lower.includes("bedtime") || (lower.includes("night") && (lower.includes("audio") || lower.includes("listen") || lower.includes("recite"))))
+    return "Wind down your night with 🌙:\n• Ayatul Kursi — protection from Shaytan\n• Surah Al-Baqarah — fills the home with barakah\n• Last 2 ayahs of Al-Baqarah\n• Evening Adhkar recordings\n• Soft Nasheed: 'Allahu Allah' by Maher Zain\nAll available on QalbAudio for a peaceful night!";
 
-  // Travel
-  if (lower.includes("travel") || lower.includes("journey") || lower.includes("car"))
-    return "For travel, I suggest a mix of short surahs recited by Mishary Alafasy and upbeat Nasheeds by Maher Zain — perfect for keeping your spirit high on the road! 🚗✨";
+  // ── Isha ──
+  if (lower.includes("isha"))
+    return "After Isha is a beautiful time for Quran recitation and dhikr. 🌙 Listen to Surah Al-Mulk (Sunnah before sleep), Tarawih recitations in Ramadan, or calming Nasheeds to close your day in remembrance of Allah.";
 
-  // Study / focus
-  if (lower.includes("study") || lower.includes("focus") || lower.includes("concentrate"))
-    return "For studying, soft Quran recitations without translation work beautifully as background audio. Try Surah Al-Kahf or short surahs on loop. 📚";
+  // ── Jumu'ah / Friday ──
+  if (lower.includes("jumu'ah") || lower.includes("jumah") || lower.includes("friday") || lower.includes("jumuah"))
+    return "Blessed Friday Mubarak! 🕌 Recommended audio for Jumu'ah:\n• Surah Al-Kahf (Sunnah every Friday)\n• Salawat & Durood recordings\n• Friday Khutbah lectures\n• Nasheeds in praise of Prophet Muhammad ﷺ\nFind all on QalbAudio — may Allah accept your Jumu'ah!";
 
-  // Audio topics / what's available
-  if (lower.includes("topic") || lower.includes("available") || lower.includes("content") || lower.includes("what") && lower.includes("audio"))
-    return "QalbAudio features: Quran recitations 📖, Islamic Nasheeds 🎵, scholar lectures ✨, du'a recordings 🤲, and adhkar collections. What would you like to explore?";
+  // ── Travel ──
+  if (lower.includes("travel") || lower.includes("journey") || lower.includes("road trip") || lower.includes("car") || lower.includes("flight") || lower.includes("plane"))
+    return "Travel playlist for the road 🚗✨:\n• Short surahs by Mishary Alafasy\n• Upbeat Nasheeds: Maher Zain, Harris J\n• Du'a for travel (Safar du'a)\n• Islamic lectures on patience & gratitude\n• Humood AlKhudher's 'Kun Anta'\nMay Allah grant you safe travels!";
 
-  // Artists / reciters
+  // ── Study / Focus ──
+  if (lower.includes("study") || lower.includes("focus") || lower.includes("concentrate") || lower.includes("work") && lower.includes("background"))
+    return "Best audio for studying & focus 📚:\n• Quran recitation without translation (background)\n• Surah Al-Kahf on loop\n• Instrumental-style Nasheeds (acapella)\n• Short surahs repeated — Al-Ikhlas, Al-Falaq, An-Nas\nQuran as background audio has been shown to bring calm and barakah to your work!";
+
+  // ── Stress / anxiety / mental health ──
+  if (lower.includes("stress") || lower.includes("anxiety") || lower.includes("sad") || lower.includes("depressed") || lower.includes("mental health") || lower.includes("worried") || lower.includes("calm") || lower.includes("peace"))
+    return "May Allah bring ease to your heart. 🤲 For peace & relief:\n• Surah Ar-Rahman — Allah's mercy & gifts\n• Surah Ad-Duha — 'Your Lord has not forsaken you'\n• Du'a for anxiety: 'Allahumma inni a'udhu bika'\n• Yasmin Mogahed's talks on healing\n• Gentle Nasheeds: 'Insha Allah' by Maher Zain\n\nRemember: 'Verily, with hardship comes ease.' (94:5) 💚";
+
+  // ── Children / kids ──
+  if (lower.includes("child") || lower.includes("kid") || lower.includes("children") || lower.includes("baby") || lower.includes("toddler") || lower.includes("young"))
+    return "QalbAudio has wonderful content for children 🌟:\n• Short surah recitations (Al-Ikhlas, Al-Falaq, An-Nas)\n• Islamic children's Nasheeds\n• Storytelling of Prophets for kids\n• Alphabet & basic Islamic education audio\nA beautiful way to nurture young hearts with the love of Allah!";
+
+  // ── Wedding / Nikah ──
+  if (lower.includes("wedding") || lower.includes("nikah") || lower.includes("marriage") || lower.includes("walima"))
+    return "Mabrook on your Nikah! 💍🌙 Perfect Islamic wedding audio:\n• Nasheeds: 'Insha Allah' & 'Ya Nabi' by Maher Zain\n• Sami Yusuf's 'You Came to Me'\n• Mesut Kurtis — 'Lean On Me'\n• Du'a for the couple\n• Surah Ar-Rum recitation (on marriage)\nMay Allah bless your union!";
+
+  // ── Hajj / Umrah ──
+  if (lower.includes("hajj") || lower.includes("umrah") || lower.includes("mecca") || lower.includes("makkah") || lower.includes("madinah") || lower.includes("medina"))
+    return "SubhanAllah, may Allah accept your journey! 🕋\nPrepare spiritually with:\n• Talbiyah audio — 'Labbayk Allahumma Labbayk'\n• Duas for Hajj & Umrah\n• Lectures on the rituals by Bilal Philips\n• Quranic recitations from Masjid Al-Haram\n• Nasheeds about Makkah & Madinah\nAll available on QalbAudio. Hajj Mabroor!";
+
+  // ── Audio topics / what's available ──
+  if (lower.includes("topic") || lower.includes("available") || lower.includes("feature") || lower.includes("category") || (lower.includes("what") && lower.includes("audio")) || lower.includes("content") || lower.includes("collection"))
+    return "QalbAudio's full content library 🎧:\n📖 Quran — Full recitations, surah-by-surah\n🎵 Nasheeds — Arabic, English, Urdu & more\n🎓 Lectures — Scholars from around the world\n🤲 Du'a — Daily supplications & adhkar\n📚 Islamic Stories — Prophets & Sahaba\n🌙 Ramadan Specials — Tarawih & Night prayers\n🕌 Khutbahs — Friday sermons\nWhat would you like to explore?";
+
+  // ── Artists ──
   if (lower.includes("maher zain"))
-    return "Maher Zain is one of the most beloved nasheed artists! His songs like 'Ya Nabi Salam Alayka', 'Insha Allah', and 'Rahmatun Lil'Alameen' are all available on QalbAudio. 🌙";
+    return "Maher Zain is one of the most beloved Islamic artists worldwide 🌙 His top tracks on QalbAudio:\n• 'Rahmatun Lil'Alameen'\n• 'Ya Nabi Salam Alayka'\n• 'Insha Allah'\n• 'SubhanAllah'\n• 'Allahu Allah'\n• 'Number One for Me'\nHis music is available in Arabic, English & French!";
 
   if (lower.includes("sami yusuf"))
-    return "Sami Yusuf's soulful voice is iconic in Islamic music! Check out 'Al-Mu'allim', 'Supplication', and 'You Came to Me' on QalbAudio. 🎵";
+    return "Sami Yusuf's soulful voice has touched millions of hearts 🎵 His must-listen tracks on QalbAudio:\n• 'Al-Mu'allim'\n• 'Supplication'\n• 'You Came to Me'\n• 'Free'\n• 'Hasbi Rabbi'\n• 'The Creator'\nA truly legendary Islamic music artist!";
 
   if (lower.includes("mishary") || lower.includes("alafasy"))
-    return "Sheikh Mishary Rashid Alafasy is one of the most respected Quran reciters. His recitation of the full Quran is available on QalbAudio with beautiful clarity. 📖";
+    return "Sheikh Mishary Rashid Alafasy is one of the most revered Quran reciters in the world 📖 Find on QalbAudio:\n• Full Quran recitation (Hafs)\n• Individual surah recitations\n• Beautiful Nasheeds\n• Du'a & Adhkar recordings\nHis voice brings the Quran alive in the hearts of listeners!";
 
-  // How to use / search
-  if (lower.includes("how") && (lower.includes("search") || lower.includes("find") || lower.includes("use")))
-    return "You can search QalbAudio by artist name, surah, topic, or mood. Use the search bar at the top or browse by category to discover new content! 🔍";
+  if (lower.includes("sudais") || lower.includes("al-sudais"))
+    return "Sheikh Abdul Rahman Al-Sudais is the Imam of Masjid Al-Haram in Makkah 🕋 His powerful recitations on QalbAudio:\n• Full Quran recitation\n• Tarawih prayers\n• Friday Khutbahs\n• Special du'a recordings\nListening to his recitation is a truly immersive experience!";
 
-  // Favourites / save
-  if (lower.includes("favourite") || lower.includes("favorite") || lower.includes("save") || lower.includes("bookmark"))
-    return "You can save any audio to your Favourites by tapping the heart icon ❤️. Access all your saved content anytime from your profile page.";
+  if (lower.includes("mesut kurtis"))
+    return "Mesut Kurtis is a British-Macedonian nasheed artist with a deeply moving voice 🌙 His top tracks:\n• 'Burdah'\n• 'Lean On Me'\n• 'Salawat'\n• 'Wherever I Am'\nHis classical Arabic and Bosnian-influenced style is unique on QalbAudio!";
 
-  // Upload
-  if (lower.includes("upload"))
-    return "Registered users can upload Islamic audio content to QalbAudio! Head to the Upload section from your profile menu to share beneficial content with the community. 📤";
+  if (lower.includes("harris j"))
+    return "Harris J is a British-Malaysian nasheed artist known for his youthful, modern sound 🎵 Listen to:\n• 'Salam'\n• 'You Are My World'\n• 'Love Who You Are'\n• 'Beautiful Names'\nA great artist for younger listeners on QalbAudio!";
 
-  // Thanks
-  if (lower.includes("thank") || lower.includes("jazak") || lower.includes("shukran"))
-    return "Wa iyyakum! 🤲 Jazak Allahu Khayran for using QalbAudio. May Allah bless your listening experience. Is there anything else I can help you with?";
+  if (lower.includes("humood") || lower.includes("alkhudher") || lower.includes("kun anta"))
+    return "Humood AlKhudher's 'Kun Anta' became a global Islamic music sensation! 🌟 Find on QalbAudio:\n• 'Kun Anta' (Be Yourself)\n• 'Alhamdulillah'\n• 'Lughat Al-Aalam'\n• 'Tabassam'\nHis upbeat, positive style is perfect for any time of day!";
 
-  // Goodbye
-  if (lower.includes("bye") || lower.includes("goodbye") || lower.includes("assalamualaikum wa rahmatullah"))
-    return "Wa Alaikum Assalam wa Rahmatullah! 🌙 May Allah bless you. Come back anytime to QalbAudio for more Islamic audio. Fee Amanillah! 🤲";
+  if (lower.includes("ahmed bukhatir") || lower.includes("bukhatir"))
+    return "Ahmed Bukhatir is a UAE nasheed legend known for his emotional, classical Arabic style 🌙 His iconic track 'Forgive Me' has brought many to tears. Find his full collection on QalbAudio!";
 
-  // Default
-  return "Assalamu Alaikum! 🤲 I'm here to help you discover Islamic audio on QalbAudio. You can ask me about Nasheeds, Quran recitations, scholars, playlists, or anything Islamic audio-related!";
+  if (lower.includes("bilal philips") || lower.includes("bilal"))
+    return "Dr. Bilal Philips is a Canadian Islamic scholar known for making Islamic education accessible 📚 His lectures on Tawheed, Fiqh, and Islamic history are available on QalbAudio. A great starting point for converts and new Muslims!";
+
+  // ── Languages ──
+  if (lower.includes("urdu") || lower.includes("hindi") || lower.includes("pakistan") || lower.includes("india"))
+    return "QalbAudio has a growing Urdu & Hindi Islamic audio collection 🇵🇰🇮🇳 including:\n• Urdu Nasheeds & Hamd\n• Quran recitation with Urdu translation\n• Urdu Islamic lectures\n• Naat recitations (Urdu)\nBrowse by language in the filter options!";
+
+  if (lower.includes("arabic") || lower.includes("arab"))
+    return "Arabic is the language of the Quran and Islamic heritage 📖 QalbAudio's Arabic collection includes:\n• Original Arabic Nasheeds\n• Quran in Arabic (multiple reciters)\n• Arabic Islamic lectures\n• Classical Arabic poetry recitations\nThe most extensive collection on QalbAudio!";
+
+  if (lower.includes("english"))
+    return "QalbAudio has a strong English Islamic audio library 🎵 including:\n• English Nasheeds (Maher Zain, Harris J, Sami Yusuf)\n• English Islamic lectures (Nouman Ali Khan, Mufti Menk)\n• Quran with English translation\n• English du'a & adhkar\nPerfect for English-speaking Muslims worldwide!";
+
+  // ── New Muslim / Convert ──
+  if (lower.includes("new muslim") || lower.includes("convert") || lower.includes("revert") || lower.includes("just became muslim") || lower.includes("shahada"))
+    return "Welcome to Islam! Alhamdulillah! 🤲✨\nHere's the best starting audio on QalbAudio:\n• 'The Fundamentals of Tawheed' — Bilal Philips\n• Surah Al-Fatiha + short surahs (recitation)\n• 'New Muslim Guide' lectures — Mufti Menk\n• Morning & Evening Adhkar (beginner)\n• Maher Zain's 'Guide Me All The Way'\nMay Allah strengthen your faith and fill your heart with light!";
+
+  // ── Salah / Prayer ──
+  if (lower.includes("salah") || lower.includes("salat") || lower.includes("prayer") || lower.includes("namaz"))
+    return "Salah is the pillar of our deen 🕌 On QalbAudio find:\n• Adhan recordings (beautiful calls to prayer)\n• Quran recitation for each prayer time\n• Du'a after salah audio\n• 'Khushu in Salah' lectures\n• Prayer time reminders audio\nMay Allah perfect our prayers!";
+
+  // ── Adhan ──
+  if (lower.includes("adhan") || lower.includes("azan") || lower.includes("call to prayer"))
+    return "The Adhan is the beautiful call that echoes from minarets worldwide 🕌 QalbAudio features:\n• Adhan by Mishary Alafasy\n• Adhan from Masjid Al-Haram, Makkah\n• Adhan from Masjid An-Nabawi, Madinah\n• Various regional adhan styles\nA soul-stirring collection to set the mood for prayer!";
+
+  // ── Seerah / Prophet ──
+  if (lower.includes("seerah") || lower.includes("prophet") || lower.includes("muhammad") || lower.includes("pbuh") || lower.includes("rasulullah") || lower.includes("nabi"))
+    return "The life of Prophet Muhammad ﷺ is the greatest story ever told 🌙 On QalbAudio:\n• 'The Seerah' series — Omar Suleiman\n• Nasheeds in praise of the Prophet ﷺ\n• 'Madad Ya Rasulallah' — Mesut Kurtis\n• 'Ya Nabi Salam Alayka' — Maher Zain\n• Seerah lectures — Yasir Qadhi\nSending Salawat on the Prophet ﷺ is the greatest act of love!";
+
+  // ── Stories of Prophets / Sahaba ──
+  if (lower.includes("stories") || lower.includes("prophets") || lower.includes("sahaba") || lower.includes("companions") || lower.includes("qasas"))
+    return "Islamic stories are treasures for the soul 📚 QalbAudio has:\n• 'Stories of the Prophets' — Omar Suleiman\n• 'The Firsts' — Stories of the Sahaba\n• Animated Islamic story audio\n• Stories of Ibrahim, Musa, Isa, Yusuf ﷺ\n• Stories of great Sahabahs: Abu Bakr, Umar, Ali RA\nPerfect for adults and children alike!";
+
+  // ── How to use / search ──
+  if ((lower.includes("how") || lower.includes("where")) && (lower.includes("search") || lower.includes("find") || lower.includes("use") || lower.includes("navigate") || lower.includes("browse")))
+    return "Navigating QalbAudio is simple 🔍:\n• Use the Search bar to find by artist, surah, or keyword\n• Browse Categories: Quran, Nasheeds, Lectures, Du'a\n• Filter by language, duration, or scholar\n• Tap ❤️ to save to Favourites\n• Tap '+' to add to a Playlist\n• Check your profile for listening history\nIs there something specific I can help you find?";
+
+  // ── Favourites / Save ──
+  if (lower.includes("favourite") || lower.includes("favorite") || lower.includes("save") || lower.includes("bookmark") || lower.includes("like") && lower.includes("audio"))
+    return "Saving your favourite audio is easy ❤️:\n1. Find any audio track on QalbAudio\n2. Tap the heart icon ❤️\n3. It's saved to your Favourites\n4. Access anytime from your Profile → Favourites\nYou can also organise your saved content into custom Playlists!";
+
+  // ── Upload ──
+  if (lower.includes("upload") || lower.includes("share") && lower.includes("audio") || lower.includes("contribute"))
+    return "Share beneficial Islamic content with the Ummah! 📤\nTo upload on QalbAudio:\n1. Go to Profile → Upload Audio\n2. Choose your audio file\n3. Add title, artist & category\n4. Submit for review\nMay Allah reward every listener who benefits from your upload. Sadaqah Jariyah in digital form!";
+
+  // ── Account / Profile ──
+  if (lower.includes("account") || lower.includes("profile") || lower.includes("register") || lower.includes("signup") || lower.includes("sign up") || lower.includes("login") || lower.includes("log in"))
+    return "Your QalbAudio account gives you full access! 👤\n• Save Favourites & create Playlists\n• Upload Islamic audio content\n• Personalise your listening experience\n• Track your listening history\n• Access exclusive Ramadan collections\nRegister free at QalbAudio — your spiritual audio journey starts here!";
+
+  // ── Settings / preferences ──
+  if (lower.includes("setting") || lower.includes("preference") || lower.includes("customize") || lower.includes("theme") || lower.includes("dark mode") || lower.includes("notification"))
+    return "Customise your QalbAudio experience in Settings ⚙️:\n• Dark / Light / System theme\n• Notification preferences\n• Audio quality settings\n• Language preference\n• Listening reminders (Fajr, Isha)\n• Accessibility options\nAccess via Profile → Settings!";
+
+  // ── Offline / download ──
+  if (lower.includes("offline") || lower.includes("download") || lower.includes("without internet") || lower.includes("no internet"))
+    return "Download audio for offline listening on QalbAudio 📥 Premium users can:\n• Download Quran recitations for offline\n• Save Nasheeds for travel & no-signal areas\n• Access downloaded content from Profile → Downloads\nPerfect for planes, remote areas, or data-saving mode!";
+
+  // ── Islamic calendar / events ──
+  if (lower.includes("eid") || lower.includes("mawlid") || lower.includes("isra") || lower.includes("miraj") || lower.includes("muharram") || lower.includes("ashura"))
+    return "Celebrate Islamic occasions with QalbAudio 🌙:\n• Eid Nasheeds — Maher Zain's 'Eid' & 'Ya Ilahi'\n• Mawlid: Nasheeds in praise of the Prophet ﷺ\n• Muharram: Lectures on the Islamic New Year\n• Isra & Mi'raj: Stories & reflections\n• Eid Takbeerat audio\nWe update special collections for every Islamic occasion!";
+
+  // ── Feedback / report ──
+  if (lower.includes("feedback") || lower.includes("report") || lower.includes("bug") || lower.includes("problem") || lower.includes("issue") || lower.includes("wrong"))
+    return "We appreciate your feedback! 💬 To report an issue or share suggestions on QalbAudio:\n• Go to Settings → Send Feedback\n• Email us through the contact page\n• Use the 'Report' button on any audio\nYour input helps us improve QalbAudio for the entire Ummah. JazakAllahu Khayran!";
+
+  // ── Thanks ──
+  if (lower.includes("thank") || lower.includes("jazak") || lower.includes("shukran") || lower.includes("barakallah"))
+    return "Wa iyyakum! 🤲 Jazak Allahu Khayran for using QalbAudio. May Allah bless your listening experience and fill your heart with His remembrance. Is there anything else I can help you with?";
+
+  // ── Goodbye ──
+  if (lower.includes("bye") || lower.includes("goodbye") || lower.includes("assalamualaikum wa rahmatullah") || lower.includes("fee amanillah") || lower.includes("take care"))
+    return "Wa Alaikum Assalam wa Rahmatullahi wa Barakatuh! 🌙 May Allah bless you and keep you in His protection. Come back to QalbAudio anytime — we'll be here for your spiritual audio journey. Fee Amanillah! 🤲";
+
+  // ── Default ──
+  return "Assalamu Alaikum! 🤲 I'm your QalbAudio assistant — here to guide you through our Islamic audio collection. You can ask me about:\n• 🎵 Nasheeds & artists\n• 📖 Quran recitations & surahs\n• 🎓 Islamic lectures & scholars\n• 🤲 Du'a & Adhkar\n• 🌙 Ramadan, Fajr, or night audio\n• 🕌 Salah, Prophets, or Islamic occasions\nWhat would you like to explore today?";
 };
 
 // ─── Message bubble ───────────────────────────────────────────────────────────
@@ -187,7 +329,6 @@ const ChatBotPopup = ({ onClose, user }) => {
   const sendMessage = (text) => {
     const trimmed = (text || input).trim();
     if (!trimmed) return;
-
     setInput("");
     const reply = getReply(trimmed);
     setMessages((prev) => [
@@ -226,19 +367,14 @@ const ChatBotPopup = ({ onClose, user }) => {
         .chatbot-messages-scroll::-webkit-scrollbar-thumb { background: rgba(var(--app-accent-rgb),0.22); border-radius: 4px; }
       `}</style>
 
-      {/* Backdrop (mobile) */}
       {isMobile && (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           onClick={onClose}
-          style={{
-            position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
-            zIndex: 200, backdropFilter: "blur(4px)",
-          }}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 200, backdropFilter: "blur(4px)" }}
         />
       )}
 
-      {/* Popup panel */}
       <motion.div
         initial={{ opacity: 0, y: -12, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -272,7 +408,6 @@ const ChatBotPopup = ({ onClose, user }) => {
             position: "absolute", top: 0, left: 0, right: 0, height: 2,
             background: "linear-gradient(90deg,transparent,rgba(var(--app-accent-rgb),0.6) 40%,var(--app-accent) 50%,rgba(var(--app-accent-rgb),0.6) 60%,transparent)",
           }} />
-
           <motion.div
             animate={{ rotate: [0, 8, -8, 0] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -285,22 +420,17 @@ const ChatBotPopup = ({ onClose, user }) => {
           >
             <Bot size={20} color="#041307" strokeWidth={2.2} />
           </motion.div>
-
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontWeight: 800, fontSize: 15, color: "var(--app-text-main)" }}>
               QalbAudio Assistant
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
-              <span style={{
-                width: 7, height: 7, borderRadius: "50%", background: "#22c55e",
-                boxShadow: "0 0 6px #22c55e", display: "inline-block",
-              }} />
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 6px #22c55e", display: "inline-block" }} />
               <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 11.5, color: "var(--app-text-muted)", fontWeight: 500 }}>
                 Online · Islamic Audio Guide
               </span>
             </div>
           </div>
-
           <div style={{ display: "flex", gap: 6 }}>
             <button
               className="chatbot-clear-btn"
@@ -336,9 +466,7 @@ const ChatBotPopup = ({ onClose, user }) => {
           className="chatbot-messages-scroll"
           style={{ flex: 1, overflowY: "auto", padding: "16px 16px 8px", display: "flex", flexDirection: "column" }}
         >
-          {messages.map((msg, i) => (
-            <MessageBubble key={i} msg={msg} />
-          ))}
+          {messages.map((msg, i) => <MessageBubble key={i} msg={msg} />)}
           <div ref={messagesEndRef} />
         </div>
 
@@ -388,7 +516,6 @@ const ChatBotPopup = ({ onClose, user }) => {
             background: "rgba(var(--app-accent-rgb),0.06)",
             border: "1px solid rgba(var(--app-accent-rgb),0.18)",
             borderRadius: 999, padding: "8px 8px 8px 16px",
-            transition: "border-color 0.2s ease",
           }}>
             <input
               ref={inputRef}
