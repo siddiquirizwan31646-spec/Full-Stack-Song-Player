@@ -129,16 +129,16 @@ const CHAT_CATEGORIES = [
 // ─── Prompt → multiple response variants ─────────────────────────────────────
 const RESPONSES = {
   who_creator: [
-    `QalbAudio was created by **Rizwan Siddiqui** 👨‍💻✨\n\nRizwan is a passionate Muslim developer who combined his love for technology and Islam to build QalbAudio — a spiritual audio platform for the Ummah. His vision: make beautiful Islamic content just one tap away for every Muslim on Earth.\n\n_"This app is my sadaqah jariyah — may every heart that finds peace through it be counted as a blessing."_ — Rizwan Siddiqui`,
-    `The mind behind QalbAudio is **Rizwan Siddiqui** 🌙\n\nA developer with a mission — Rizwan built QalbAudio to bring the Quran, Nasheeds, and Islamic knowledge to your fingertips. Every feature, every design choice, every line of code is his dedication to the Ummah.\n\nMay Allah reward him abundantly! 🤲`,
-    `QalbAudio is the creation of **Rizwan Siddiqui** ✨\n\nFueled by faith and passion for Islamic content, Rizwan designed and developed this platform so Muslims everywhere could access spiritual audio with ease. His work is truly a gift to the community. Barakallahu feek, Rizwan! 💚`,
+    `QalbAudio was created by Rizwan Siddiqui 👨‍💻✨\n\nRizwan is a passionate Muslim developer who combined his love for technology and Islam to build QalbAudio — a spiritual audio platform for the Ummah. His vision: make beautiful Islamic content just one tap away for every Muslim on Earth.\n\n_"This app is my sadaqah jariyah — may every heart that finds peace through it be counted as a blessing."_ — Rizwan Siddiqui`,
+    `The mind behind QalbAudio is Rizwan Siddiqui 🌙\n\nA developer with a mission — Rizwan built QalbAudio to bring the Quran, Nasheeds, and Islamic knowledge to your fingertips. Every feature, every design choice, every line of code is his dedication to the Ummah.\n\nMay Allah reward him abundantly! 🤲`,
+    `QalbAudio is the creation of Rizwan Siddiqui ✨\n\nFueled by faith and passion for Islamic content, Rizwan designed and developed this platform so Muslims everywhere could access spiritual audio with ease. His work is truly a gift to the community. Barakallahu feek, Rizwan! 💚`,
   ],
   about_creator: [
-    `**Rizwan Siddiqui** — Founder & Developer of QalbAudio 👨‍💻\n\n• 💡 Visionary behind the QalbAudio platform\n• 🕌 Passionate about making Islamic content accessible\n• 💻 Built QalbAudio from the ground up with love for the Ummah\n• 🌍 Mission: Connect every Muslim heart to spiritual audio\n• 🤲 Sees QalbAudio as a form of sadaqah jariyah\n\nRizwan poured his heart and skills into creating something that serves the entire Muslim community. May Allah bless his efforts!`,
-    `Meet **Rizwan Siddiqui** — the heart behind QalbAudio 🌟\n\nRizwan is a dedicated Muslim developer whose dream was to build a platform where the Ummah could access Quran, Nasheeds, du'a, and lectures all in one place. QalbAudio is that dream, now in your hands.\n\nYou can connect with Rizwan through QalbAudio's official channels. JazakAllahu Khayran for supporting his work! 🤲`,
+    `Rizwan Siddiqui — Founder & Developer of QalbAudio 👨‍💻\n\n• 💡 Visionary behind the QalbAudio platform\n• 🕌 Passionate about making Islamic content accessible\n• 💻 Built QalbAudio from the ground up with love for the Ummah\n• 🌍 Mission: Connect every Muslim heart to spiritual audio\n• 🤲 Sees QalbAudio as a form of sadaqah jariyah\n\nRizwan poured his heart and skills into creating something that serves the entire Muslim community. May Allah bless his efforts!`,
+    `Meet Rizwan Siddiqui — the heart behind QalbAudio 🌟\n\nRizwan is a dedicated Muslim developer whose dream was to build a platform where the Ummah could access Quran, Nasheeds, du'a, and lectures all in one place. QalbAudio is that dream, now in your hands.\n\nYou can connect with Rizwan through QalbAudio's official channels. JazakAllahu Khayran for supporting his work! 🤲`,
   ],
   creator_vision: [
-    `**Rizwan Siddiqui's Vision for QalbAudio** 🌙\n\n_"Every Muslim deserves a beautiful, easy way to connect with Islamic audio — whether it's the Quran at Fajr, a Nasheed on the road, or a lecture before sleep."_\n\nRizwan built QalbAudio to be more than an app — it's a spiritual companion. His vision includes:\n• 🌍 Global Ummah connected through audio\n• 📖 Quran accessible in every language\n• 🎵 Islamic artists celebrated worldwide\n• 🤲 Every user finding peace through sound\n\nMay Allah make this vision a reality! Ameen.`,
+    `Rizwan Siddiqui's Vision for QalbAudio** 🌙\n\n_"Every Muslim deserves a beautiful, easy way to connect with Islamic audio — whether it's the Quran at Fajr, a Nasheed on the road, or a lecture before sleep."_\n\nRizwan built QalbAudio to be more than an app — it's a spiritual companion. His vision includes:\n• 🌍 Global Ummah connected through audio\n• 📖 Quran accessible in every language\n• 🎵 Islamic artists celebrated worldwide\n• 🤲 Every user finding peace through sound\n\nMay Allah make this vision a reality! Ameen.`,
     `Rizwan Siddiqui dreamed of a world where every Muslim — no matter where — could reach for their phone and find peace 🌿\n\nQalbAudio is that dream made real. Rizwan's vision is rooted in the belief that technology can be a bridge to the Divine — one Nasheed, one recitation, one du'a at a time.\n\n_"If one person finds Allah through QalbAudio, that is everything."_ — Rizwan Siddiqui 💚`,
   ],
   nasheed_top: [
@@ -369,7 +369,7 @@ const MessageBubble = ({ msg }) => {
 const getInitialMessages = (user) => ([
   {
     role: "assistant",
-    content: `Assalamu Alaikum${user?.username ? `, ${user.username}` : ""}! 🌙\n\nWelcome to QalbAudio — your spiritual audio companion!\n\nThis app was lovingly built by **Rizwan Siddiqui**, founder of QalbAudio, with a mission to connect Muslim hearts worldwide to the beauty of Islamic audio. 🤲\n\nChoose a topic below to explore our collection — tap any option to get started!`,
+    content: `Assalamu Alaikum${user?.username ? `, ${user.username}` : ""}! 🌙\n\nWelcome to QalbAudio — your spiritual audio companion!\n\nThis app was lovingly built by Rizwan Siddiqui, founder of QalbAudio, with a mission to connect Muslim hearts worldwide to the beauty of Islamic audio. 🤲\n\nChoose a topic below to explore our collection — tap any option to get started!`,
   }
 ]);
 
