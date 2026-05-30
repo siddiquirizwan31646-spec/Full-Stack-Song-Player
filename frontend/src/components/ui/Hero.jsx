@@ -7,328 +7,315 @@ import { usePersistentSongPlayer } from "@/hooks/usePersistentSongPlayer"
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+const LASTFM_KEY = import.meta.env.VITE_LASTFM_API_KEY
 const H = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" }
 import { API_URL } from "@/lib/config"
 const getToken = () => localStorage.getItem("accessToken")
 const authH = (ct = true) => { const h = {}; if (ct) h["Content-Type"] = "application/json"; const t = getToken(); if (t) h.Authorization = `Bearer ${t}`; return h }
 const fmt = (s) => (!s || isNaN(s)) ? "0:00" : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`
 
+// ── Last.fm artist image fetcher ──────────────────────────────────────────────
+const artistImageCache = {}
+
+async function fetchArtistImage(artistName) {
+  if (!artistName) return null
+  const key = artistName.toLowerCase().trim()
+  if (artistImageCache[key] !== undefined) return artistImageCache[key]
+
+  try {
+    const url = `https://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=${encodeURIComponent(artistName)}&api_key=${LASTFM_KEY}&format=json`
+    const res = await fetch(url)
+    const data = await res.json()
+    const images = data?.artist?.image || []
+    // prefer "extralarge" then "large" then "medium"
+    const preferred = ["extralarge", "large", "medium"]
+    let img = null
+    for (const size of preferred) {
+      const found = images.find(i => i.size === size)
+      if (found && found["#text"] && found["#text"] !== "") { img = found["#text"]; break }
+    }
+    artistImageCache[key] = img
+    return img
+  } catch {
+    artistImageCache[key] = null
+    return null
+  }
+}
+
+function dicebearUrl(name) {
+  return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=0a0a0a,111827,1a1a2e,0d1117&fontFamily=sans-serif&fontSize=38&fontWeight=700`
+}
+
+// ── Artist Card ───────────────────────────────────────────────────────────────
+function ArtistCard({ artistName, songCount, onClick }) {
+  const [imgSrc, setImgSrc] = useState(null)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoaded(false)
+    fetchArtistImage(artistName).then(url => {
+      if (!cancelled) setImgSrc(url || dicebearUrl(artistName))
+    })
+    return () => { cancelled = true }
+  }, [artistName])
+
+  return (
+    <div
+      onClick={() => onClick(artistName)}
+      style={{
+        flexShrink: 0,
+        width: 110,
+        cursor: "pointer",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 8,
+        transition: "transform 0.2s",
+      }}
+      onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"}
+      onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
+    >
+      <div style={{
+        width: 80, height: 80, borderRadius: "50%", overflow: "hidden",
+        background: "var(--app-surface)",
+        border: "2px solid rgba(var(--app-accent-rgb),0.25)",
+        boxShadow: "0 4px 18px rgba(0,0,0,0.35)",
+        position: "relative",
+        transition: "border-color 0.2s, box-shadow 0.2s",
+      }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--app-accent)"; e.currentTarget.style.boxShadow = "0 4px 22px rgba(var(--app-accent-rgb),0.35)" }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(var(--app-accent-rgb),0.25)"; e.currentTarget.style.boxShadow = "0 4px 18px rgba(0,0,0,0.35)" }}
+      >
+        {!loaded && (
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg,var(--app-surface) 25%,rgba(var(--app-accent-rgb),0.06) 50%,var(--app-surface) 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s ease infinite" }} />
+        )}
+        <img
+          src={imgSrc || dicebearUrl(artistName)}
+          alt={artistName}
+          onLoad={() => setLoaded(true)}
+          onError={() => { setImgSrc(dicebearUrl(artistName)); setLoaded(true) }}
+          style={{ width: "100%", height: "100%", objectFit: "cover", opacity: loaded ? 1 : 0, transition: "opacity 0.3s" }}
+        />
+      </div>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ color: "var(--app-text-main)", fontWeight: 600, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 105 }}>{artistName}</div>
+        <div style={{ color: "var(--app-text-muted)", fontSize: 10, marginTop: 2 }}>{songCount} song{songCount !== 1 ? "s" : ""}</div>
+      </div>
+    </div>
+  )
+}
+
+// ── Artist Songs Modal ────────────────────────────────────────────────────────
+function ArtistSongsModal({ artistName, onClose, onPlay, currentSong, currentTime, duration, userId, tr }) {
+  const [songs, setSongs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [artistImg, setArtistImg] = useState(null)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchArtistImage(artistName).then(url => { if (!cancelled) setArtistImg(url || dicebearUrl(artistName)) })
+    return () => { cancelled = true }
+  }, [artistName])
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    const url = `${SUPABASE_URL}/rest/v1/songs?select=*&artist=ilike.*${encodeURIComponent(artistName)}*&order=created_at.desc`
+    fetch(url, { headers: H })
+      .then(r => r.json())
+      .then(d => { if (!cancelled) setSongs(Array.isArray(d) ? d : []) })
+      .catch(console.error)
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [artistName])
+
+  useEffect(() => {
+    const fn = e => { if (e.key === "Escape") onClose() }
+    document.addEventListener("keydown", fn)
+    return () => document.removeEventListener("keydown", fn)
+  }, [onClose])
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div ref={ref} style={{ background: "var(--app-shell-bg-alt)", border: "1px solid rgba(var(--app-accent-rgb),0.2)", borderRadius: 18, width: "100%", maxWidth: 520, maxHeight: "85vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.7)" }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "18px 18px 14px", borderBottom: "1px solid rgba(var(--app-accent-rgb),0.1)", background: "rgba(var(--app-accent-rgb),0.03)", flexShrink: 0 }}>
+          <div style={{ width: 60, height: 60, borderRadius: "50%", overflow: "hidden", border: "2px solid rgba(var(--app-accent-rgb),0.3)", flexShrink: 0, background: "var(--app-surface)" }}>
+            {artistImg && <img src={artistImg} alt={artistName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{artistName}</div>
+            <div style={{ color: "var(--app-text-muted)", fontSize: 12, marginTop: 2 }}>{loading ? "Loading..." : `${songs.length} song${songs.length !== 1 ? "s" : ""}`}</div>
+          </div>
+          <button onClick={onClose} style={{ background: "rgba(var(--app-accent-rgb),0.1)", border: "1px solid rgba(var(--app-accent-rgb),0.2)", borderRadius: "50%", width: 32, height: 32, color: "var(--app-text-main)", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
+        </div>
+        {/* Song list */}
+        <div style={{ overflowY: "auto", flex: 1, padding: "10px 12px" }}>
+          {loading
+            ? Array.from({ length: 5 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 58, borderRadius: 10, marginBottom: 6 }} />)
+            : songs.length === 0
+            ? <div style={{ textAlign: "center", color: "var(--app-text-muted)", padding: "40px 0", fontSize: 13 }}>No songs found for this artist</div>
+            : songs.map(song => {
+                const active = currentSong?.id === song.id
+                return (
+                  <div key={song.id} onClick={() => onPlay(song)}
+                    style={{ display: "flex", alignItems: "center", gap: 11, padding: "9px 10px", borderRadius: 10, cursor: "pointer", marginBottom: 4, background: active ? "rgba(var(--app-accent-rgb),0.1)" : "transparent", border: `1px solid ${active ? "rgba(var(--app-accent-rgb),0.25)" : "transparent"}`, transition: "all 0.15s" }}
+                    onMouseEnter={e => { if (!active) e.currentTarget.style.background = "var(--app-surface)" }}
+                    onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent" }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 8, overflow: "hidden", background: "var(--app-surface)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+                      {song.cover_url ? <img src={song.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🎵"}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ color: active ? "var(--app-accent)" : "var(--app-text-main)", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{song.name}</div>
+                      <div style={{ color: "var(--app-text-muted)", fontSize: 11, marginTop: 1 }}>{fmt(song.duration)}</div>
+                    </div>
+                    <FavoriteButton song={song} size={28} iconSize={13} />
+                  </div>
+                )
+              })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Artists Section ───────────────────────────────────────────────────────────
+function ArtistsSection({ tr }) {
+  const navigate = useNavigate()
+  const [artistMap, setArtistMap] = useState({})   // { name: count }
+  const [displayed, setDisplayed] = useState([])   // random subset shown
+  const [selectedArtist, setSelectedArtist] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const { currentSong, currentTime, duration, playSongFromList, userId } = useArtistContext()
+
+  // Fetch distinct artists + counts from Supabase
+  useEffect(() => {
+    const url = `${SUPABASE_URL}/rest/v1/songs?select=artist&artist=not.is.null&artist=neq.`
+    fetch(url, { headers: H })
+      .then(r => r.json())
+      .then(rows => {
+        if (!Array.isArray(rows)) return
+        const map = {}
+        rows.forEach(r => {
+          const a = (r.artist || "").trim()
+          if (a) map[a] = (map[a] || 0) + 1
+        })
+        setArtistMap(map)
+        pickRandom(map)
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [])
+
+  const pickRandom = (map) => {
+    const all = Object.keys(map)
+    const shuffled = [...all].sort(() => Math.random() - 0.5)
+    setDisplayed(shuffled.slice(0, 10))
+  }
+
+  const shuffle = () => pickRandom(artistMap)
+
+  if (!loading && displayed.length === 0) return null
+
+  return (
+    <>
+      <Section
+        title="🎤 Artists"
+        action={<button onClick={shuffle} style={{ background: "none", border: "1px solid rgba(var(--app-accent-rgb),0.25)", borderRadius: 7, color: "var(--app-text-muted)", cursor: "pointer", padding: "3px 10px", fontSize: 11, fontFamily: "'DM Sans',sans-serif", transition: "all 0.18s" }}
+          onMouseEnter={e => { e.currentTarget.style.color = "var(--app-accent)"; e.currentTarget.style.borderColor = "var(--app-accent)" }}
+          onMouseLeave={e => { e.currentTarget.style.color = "var(--app-text-muted)"; e.currentTarget.style.borderColor = "rgba(var(--app-accent-rgb),0.25)" }}>
+          🔀 Shuffle
+        </button>}
+      >
+        <div style={{ display: "flex", gap: 18, overflowX: "auto", paddingBottom: 8, paddingTop: 4, WebkitOverflowScrolling: "touch" }}
+          className="h-scroll">
+          {loading
+            ? Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                  <div className="skeleton" style={{ width: 80, height: 80, borderRadius: "50%" }} />
+                  <div className="skeleton" style={{ width: 70, height: 10, borderRadius: 4 }} />
+                </div>
+              ))
+            : displayed.map(name => (
+                <ArtistCard key={name} artistName={name} songCount={artistMap[name] || 0} onClick={setSelectedArtist} />
+              ))}
+        </div>
+      </Section>
+
+      {selectedArtist && (
+        <ArtistSongsModal
+          artistName={selectedArtist}
+          onClose={() => setSelectedArtist(null)}
+          onPlay={playSongFromList}
+          currentSong={currentSong}
+          currentTime={currentTime}
+          duration={duration}
+          userId={userId}
+          tr={tr}
+        />
+      )}
+    </>
+  )
+}
+
+// context bridge so ArtistsSection can access player + userId without prop-drilling
+import { createContext, useContext } from "react"
+const ArtistCtx = createContext({})
+const useArtistContext = () => useContext(ArtistCtx)
+
+
 // ── Translations ──────────────────────────────────────────────────────────────
 const TRANSLATIONS = {
   en: {
     greeting: (name) => `Assalamu Alaikum, ${name} 👋`,
-    home: "Home",
-    search: "Search songs, reciters...",
-    continueListening: "Continue Listening",
-    recentlyPlayed: "Recently Played",
-    trending: "Trending Now 🔥",
-    allSongs: "ALL SONGS",
-    loading: "LOADING...",
-    loadMore: "Load More",
-    nowPlaying: "NOW PLAYING",
-    noSong: "No Song Selected",
-    pickSong: "Pick a song to play",
-    analytics: "Analytics",
-    totalSongs: "Total Songs",
-    listeners: "Listeners",
-    saves: "Saves",
-    likes: "Likes ♥",
-    shareAudio: "Share Your Audio",
-    uploadDesc: "Upload nasheeds, naats, recitations & more",
-    uploadBtn: "Upload Audio",
-    aiRec: "AI Recommendations",
-    addToPlaylist: "ADD TO PLAYLIST",
-    addingDots: "Adding…",
-    alreadyIn: "Already in playlist",
-    added: "✓ Added!",
-    failed: "Failed",
-    error: "Error",
-    noPlaylists: "No playlists found",
-    loadingDots: "Loading…",
+    home: "Home", search: "Search songs, reciters...", continueListening: "Continue Listening",
+    recentlyPlayed: "Recently Played", trending: "Trending Now 🔥", allSongs: "ALL SONGS",
+    loading: "LOADING...", loadMore: "Load More", nowPlaying: "NOW PLAYING",
+    noSong: "No Song Selected", pickSong: "Pick a song to play", analytics: "Analytics",
+    totalSongs: "Total Songs", listeners: "Listeners", saves: "Saves", likes: "Likes ♥",
+    shareAudio: "Share Your Audio", uploadDesc: "Upload nasheeds, naats, recitations & more",
+    uploadBtn: "Upload Audio", aiRec: "AI Recommendations", addToPlaylist: "ADD TO PLAYLIST",
+    addingDots: "Adding…", alreadyIn: "Already in playlist", added: "✓ Added!", failed: "Failed",
+    error: "Error", noPlaylists: "No playlists found", loadingDots: "Loading…",
   },
   hi: {
-    greeting: (name) => `अस्सलामु अलैकुम, ${name} 👋`,
-    home: "होम",
-    search: "गाने, पाठक खोजें...",
-    continueListening: "सुनना जारी रखें",
-    recentlyPlayed: "हाल ही में चलाए गए",
-    trending: "ट्रेंडिंग अभी 🔥",
-    allSongs: "सभी गाने",
-    loading: "लोड हो रहा है...",
-    loadMore: "और लोड करें",
-    nowPlaying: "अभी चल रहा है",
-    noSong: "कोई गाना नहीं चुना",
-    pickSong: "चलाने के लिए गाना चुनें",
-    analytics: "विश्लेषण",
-    totalSongs: "कुल गाने",
-    listeners: "श्रोता",
-    saves: "सहेजे",
-    likes: "पसंद ♥",
-    shareAudio: "अपना ऑडियो साझा करें",
-    uploadDesc: "नशीद, नात, तिलावत और अधिक अपलोड करें",
-    uploadBtn: "ऑडियो अपलोड करें",
-    aiRec: "AI सिफारिशें",
-    addToPlaylist: "प्लेलिस्ट में जोड़ें",
-    addingDots: "जोड़ा जा रहा है…",
-    alreadyIn: "पहले से प्लेलिस्ट में है",
-    added: "✓ जोड़ा गया!",
-    failed: "विफल",
-    error: "त्रुटि",
-    noPlaylists: "कोई प्लेलिस्ट नहीं मिली",
-    loadingDots: "लोड हो रहा है…",
+    greeting: (name) => `अस्सलामु अलैकुम, ${name} 👋`, home: "होम", search: "गाने, पाठक खोजें...",
+    continueListening: "सुनना जारी रखें", recentlyPlayed: "हाल ही में चलाए गए", trending: "ट्रेंडिंग अभी 🔥",
+    allSongs: "सभी गाने", loading: "लोड हो रहा है...", loadMore: "और लोड करें", nowPlaying: "अभी चल रहा है",
+    noSong: "कोई गाना नहीं चुना", pickSong: "चलाने के लिए गाना चुनें", analytics: "विश्लेषण",
+    totalSongs: "कुल गाने", listeners: "श्रोता", saves: "सहेजे", likes: "पसंद ♥",
+    shareAudio: "अपना ऑडियो साझा करें", uploadDesc: "नशीद, नात, तिलावत और अधिक अपलोड करें",
+    uploadBtn: "ऑडियो अपलोड करें", aiRec: "AI सिफारिशें", addToPlaylist: "प्लेलिस्ट में जोड़ें",
+    addingDots: "जोड़ा जा रहा है…", alreadyIn: "पहले से प्लेलिस्ट में है", added: "✓ जोड़ा गया!",
+    failed: "विफल", error: "त्रुटि", noPlaylists: "कोई प्लेलिस्ट नहीं मिली", loadingDots: "लोड हो रहा है…",
   },
   ur: {
-    greeting: (name) => `السلام علیکم، ${name} 👋`,
-    home: "ہوم",
-    search: "گانے، قاری تلاش کریں...",
-    continueListening: "سننا جاری رکھیں",
-    recentlyPlayed: "حال ہی میں چلائے گئے",
-    trending: "ابھی ٹرینڈنگ 🔥",
-    allSongs: "تمام گانے",
-    loading: "لوڈ ہو رہا ہے...",
-    loadMore: "مزید لوڈ کریں",
-    nowPlaying: "ابھی چل رہا ہے",
-    noSong: "کوئی گانا منتخب نہیں",
-    pickSong: "چلانے کے لیے گانا منتخب کریں",
-    analytics: "تجزیات",
-    totalSongs: "کل گانے",
-    listeners: "سننے والے",
-    saves: "محفوظ",
-    likes: "پسند ♥",
-    shareAudio: "اپنا آڈیو شیئر کریں",
-    uploadDesc: "نشید، نعت، تلاوت اور مزید اپلوڈ کریں",
-    uploadBtn: "آڈیو اپلوڈ کریں",
-    aiRec: "AI سفارشات",
-    addToPlaylist: "پلے لسٹ میں شامل کریں",
-    addingDots: "شامل ہو رہا ہے…",
-    alreadyIn: "پہلے سے پلے لسٹ میں ہے",
-    added: "✓ شامل ہو گیا!",
-    failed: "ناکام",
-    error: "خطا",
-    noPlaylists: "کوئی پلے لسٹ نہیں ملی",
-    loadingDots: "لوڈ ہو رہا ہے…",
+    greeting: (name) => `السلام علیکم، ${name} 👋`, home: "ہوم", search: "گانے، قاری تلاش کریں...",
+    continueListening: "سننا جاری رکھیں", recentlyPlayed: "حال ہی میں چلائے گئے", trending: "ابھی ٹرینڈنگ 🔥",
+    allSongs: "تمام گانے", loading: "لوڈ ہو رہا ہے...", loadMore: "مزید لوڈ کریں", nowPlaying: "ابھی چل رہا ہے",
+    noSong: "کوئی گانا منتخب نہیں", pickSong: "چلانے کے لیے گانا منتخب کریں", analytics: "تجزیات",
+    totalSongs: "کل گانے", listeners: "سننے والے", saves: "محفوظ", likes: "پسند ♥",
+    shareAudio: "اپنا آڈیو شیئر کریں", uploadDesc: "نشید، نعت، تلاوت اور مزید اپلوڈ کریں",
+    uploadBtn: "آڈیو اپلوڈ کریں", aiRec: "AI سفارشات", addToPlaylist: "پلے لسٹ میں شامل کریں",
+    addingDots: "شامل ہو رہا ہے…", alreadyIn: "پہلے سے پلے لسٹ میں ہے", added: "✓ شامل ہو گیا!",
+    failed: "ناکام", error: "خطا", noPlaylists: "کوئی پلے لسٹ نہیں ملی", loadingDots: "لوڈ ہو رہا ہے…",
   },
   ar: {
-    greeting: (name) => `السلام عليكم، ${name} 👋`,
-    home: "الرئيسية",
-    search: "ابحث عن أغاني، قراء...",
-    continueListening: "تابع الاستماع",
-    recentlyPlayed: "تم تشغيلها مؤخراً",
-    trending: "الأكثر رواجاً 🔥",
-    allSongs: "جميع الأغاني",
-    loading: "جارٍ التحميل...",
-    loadMore: "تحميل المزيد",
-    nowPlaying: "يُشغَّل الآن",
-    noSong: "لم يتم اختيار أغنية",
-    pickSong: "اختر أغنية للتشغيل",
-    analytics: "التحليلات",
-    totalSongs: "إجمالي الأغاني",
-    listeners: "المستمعون",
-    saves: "المحفوظات",
-    likes: "الإعجابات ♥",
-    shareAudio: "شارك صوتك",
-    uploadDesc: "ارفع الأناشيد والتلاوات والمزيد",
-    uploadBtn: "رفع الصوت",
-    aiRec: "توصيات الذكاء الاصطناعي",
-    addToPlaylist: "إضافة إلى قائمة التشغيل",
-    addingDots: "جارٍ الإضافة…",
-    alreadyIn: "موجود بالفعل في القائمة",
-    added: "✓ تمت الإضافة!",
-    failed: "فشل",
-    error: "خطأ",
-    noPlaylists: "لا توجد قوائم تشغيل",
-    loadingDots: "جارٍ التحميل…",
-  },
-  zh: {
-    greeting: (name) => `萨拉姆，${name} 👋`,
-    home: "主页",
-    search: "搜索歌曲、诵读者...",
-    continueListening: "继续收听",
-    recentlyPlayed: "最近播放",
-    trending: "正在流行 🔥",
-    allSongs: "所有歌曲",
-    loading: "加载中...",
-    loadMore: "加载更多",
-    nowPlaying: "正在播放",
-    noSong: "未选择歌曲",
-    pickSong: "选择一首歌播放",
-    analytics: "数据分析",
-    totalSongs: "歌曲总数",
-    listeners: "听众",
-    saves: "收藏",
-    likes: "喜欢 ♥",
-    shareAudio: "分享你的音频",
-    uploadDesc: "上传纳什德、诵读等",
-    uploadBtn: "上传音频",
-    aiRec: "AI 推荐",
-    addToPlaylist: "添加到播放列表",
-    addingDots: "添加中…",
-    alreadyIn: "已在播放列表中",
-    added: "✓ 已添加！",
-    failed: "失败",
-    error: "错误",
-    noPlaylists: "未找到播放列表",
-    loadingDots: "加载中…",
-  },
-  bn: {
-    greeting: (name) => `আস্সালামু আলাইকুম, ${name} 👋`,
-    home: "হোম",
-    search: "গান, পাঠক খুঁজুন...",
-    continueListening: "শোনা চালিয়ে যান",
-    recentlyPlayed: "সম্প্রতি চালানো",
-    trending: "এখন ট্রেন্ডিং 🔥",
-    allSongs: "সব গান",
-    loading: "লোড হচ্ছে...",
-    loadMore: "আরও লোড করুন",
-    nowPlaying: "এখন চলছে",
-    noSong: "কোনো গান নির্বাচিত নয়",
-    pickSong: "চালাতে একটি গান বেছে নিন",
-    analytics: "বিশ্লেষণ",
-    totalSongs: "মোট গান",
-    listeners: "শ্রোতা",
-    saves: "সংরক্ষিত",
-    likes: "পছন্দ ♥",
-    shareAudio: "আপনার অডিও শেয়ার করুন",
-    uploadDesc: "নাশিদ, নাত, তিলাওয়াত ও আরও আপলোড করুন",
-    uploadBtn: "অডিও আপলোড করুন",
-    aiRec: "AI সুপারিশ",
-    addToPlaylist: "প্লেলিস্টে যোগ করুন",
-    addingDots: "যোগ হচ্ছে…",
-    alreadyIn: "ইতিমধ্যে প্লেলিস্টে আছে",
-    added: "✓ যোগ হয়েছে!",
-    failed: "ব্যর্থ",
-    error: "ত্রুটি",
-    noPlaylists: "কোনো প্লেলিস্ট পাওয়া যায়নি",
-    loadingDots: "লোড হচ্ছে…",
-  },
-  ta: {
-    greeting: (name) => `அஸ்ஸலாமு அலைக்கும், ${name} 👋`,
-    home: "முகப்பு",
-    search: "பாடல்கள், ஓதுபவர்களை தேடுங்கள்...",
-    continueListening: "கேட்கத் தொடரவும்",
-    recentlyPlayed: "சமீபத்தில் இயக்கியவை",
-    trending: "இப்போது பிரபலமானவை 🔥",
-    allSongs: "அனைத்து பாடல்கள்",
-    loading: "ஏற்றுகிறது...",
-    loadMore: "மேலும் ஏற்று",
-    nowPlaying: "இப்போது இயங்குகிறது",
-    noSong: "பாடல் தேர்வு செய்யப்படவில்லை",
-    pickSong: "இயக்க ஒரு பாடலை தேர்வு செய்யுங்கள்",
-    analytics: "பகுப்பாய்வு",
-    totalSongs: "மொத்த பாடல்கள்",
-    listeners: "கேட்போர்",
-    saves: "சேமிப்புகள்",
-    likes: "விருப்பங்கள் ♥",
-    shareAudio: "உங்கள் ஆடியோவை பகிரவும்",
-    uploadDesc: "நாஷீத், நாத், ஓதல் மற்றும் பலவற்றை பதிவேற்றவும்",
-    uploadBtn: "ஆடியோ பதிவேற்று",
-    aiRec: "AI பரிந்துரைகள்",
-    addToPlaylist: "பட்டியலில் சேர்",
-    addingDots: "சேர்க்கிறது…",
-    alreadyIn: "ஏற்கனவே பட்டியலில் உள்ளது",
-    added: "✓ சேர்க்கப்பட்டது!",
-    failed: "தோல்வி",
-    error: "பிழை",
-    noPlaylists: "பட்டியல்கள் இல்லை",
-    loadingDots: "ஏற்றுகிறது…",
-  },
-  te: {
-    greeting: (name) => `అస్సలాముఅలైకుమ్, ${name} 👋`,
-    home: "హోమ్",
-    search: "పాటలు, పఠకులు వెతకండి...",
-    continueListening: "వినడం కొనసాగించండి",
-    recentlyPlayed: "ఇటీవల ప్లే చేసినవి",
-    trending: "ఇప్పుడు ట్రెండింగ్ 🔥",
-    allSongs: "అన్ని పాటలు",
-    loading: "లోడ్ అవుతోంది...",
-    loadMore: "మరిన్ని లోడ్ చేయండి",
-    nowPlaying: "ఇప్పుడు ప్లే అవుతోంది",
-    noSong: "పాట ఎంపిక చేయబడలేదు",
-    pickSong: "ప్లే చేయడానికి పాటను ఎంచుకోండి",
-    analytics: "విశ్లేషణలు",
-    totalSongs: "మొత్తం పాటలు",
-    listeners: "శ్రోతలు",
-    saves: "సేవ్‌లు",
-    likes: "లైక్‌లు ♥",
-    shareAudio: "మీ ఆడియో పంచుకోండి",
-    uploadDesc: "నశీద్, నాత్, పఠనం మరియు మరిన్ని అప్‌లోడ్ చేయండి",
-    uploadBtn: "ఆడియో అప్‌లోడ్",
-    aiRec: "AI సిఫార్సులు",
-    addToPlaylist: "ప్లేలిస్ట్‌కు జోడించు",
-    addingDots: "జోడిస్తోంది…",
-    alreadyIn: "ఇప్పటికే ప్లేలిస్ట్‌లో ఉంది",
-    added: "✓ జోడించబడింది!",
-    failed: "విఫలమైంది",
-    error: "లోపం",
-    noPlaylists: "ప్లేలిస్ట్‌లు కనుగొనబడలేదు",
-    loadingDots: "లోడ్ అవుతోంది…",
-  },
-  kn: {
-    greeting: (name) => `ಅಸ್ಸಲಾಮು ಅಲೈಕುಮ್, ${name} 👋`,
-    home: "ಮುಖಪುಟ",
-    search: "ಹಾಡುಗಳು, ಓದುಗರನ್ನು ಹುಡುಕಿ...",
-    continueListening: "ಕೇಳುವುದನ್ನು ಮುಂದುವರಿಸಿ",
-    recentlyPlayed: "ಇತ್ತೀಚೆಗೆ ನುಡಿಸಲಾದವು",
-    trending: "ಈಗ ಟ್ರೆಂಡಿಂಗ್ 🔥",
-    allSongs: "ಎಲ್ಲಾ ಹಾಡುಗಳು",
-    loading: "ಲೋಡ್ ಆಗುತ್ತಿದೆ...",
-    loadMore: "ಇನ್ನಷ್ಟು ಲೋಡ್ ಮಾಡಿ",
-    nowPlaying: "ಈಗ ನುಡಿಸಲಾಗುತ್ತಿದೆ",
-    noSong: "ಹಾಡು ಆಯ್ಕೆಯಾಗಿಲ್ಲ",
-    pickSong: "ನುಡಿಸಲು ಹಾಡನ್ನು ಆಯ್ಕೆ ಮಾಡಿ",
-    analytics: "ವಿಶ್ಲೇಷಣೆ",
-    totalSongs: "ಒಟ್ಟು ಹಾಡುಗಳು",
-    listeners: "ಕೇಳುಗರು",
-    saves: "ಉಳಿಸಿದವು",
-    likes: "ಇಷ್ಟಗಳು ♥",
-    shareAudio: "ನಿಮ್ಮ ಆಡಿಯೊ ಹಂಚಿಕೊಳ್ಳಿ",
-    uploadDesc: "ನಶೀದ್, ನಾತ್, ಪಾರಾಯಣ ಮತ್ತು ಇನ್ನಷ್ಟು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ",
-    uploadBtn: "ಆಡಿಯೊ ಅಪ್‌ಲೋಡ್",
-    aiRec: "AI ಶಿಫಾರಸುಗಳು",
-    addToPlaylist: "ಪ್ಲೇಲಿಸ್ಟ್‌ಗೆ ಸೇರಿಸಿ",
-    addingDots: "ಸೇರಿಸಲಾಗುತ್ತಿದೆ…",
-    alreadyIn: "ಈಗಾಗಲೇ ಪ್ಲೇಲಿಸ್ಟ್‌ನಲ್ಲಿದೆ",
-    added: "✓ ಸೇರಿಸಲಾಗಿದೆ!",
-    failed: "ವಿಫಲವಾಗಿದೆ",
-    error: "ದೋಷ",
-    noPlaylists: "ಯಾವುದೇ ಪ್ಲೇಲಿಸ್ಟ್ ಕಂಡುಬಂದಿಲ್ಲ",
-    loadingDots: "ಲೋಡ್ ಆಗುತ್ತಿದೆ…",
-  },
-  ru: {
-    greeting: (name) => `Ассаламу Алейкум, ${name} 👋`,
-    home: "Главная",
-    search: "Поиск песен, чтецов...",
-    continueListening: "Продолжить прослушивание",
-    recentlyPlayed: "Недавно воспроизведённые",
-    trending: "Сейчас в тренде 🔥",
-    allSongs: "ВСЕ ПЕСНИ",
-    loading: "ЗАГРУЗКА...",
-    loadMore: "Загрузить ещё",
-    nowPlaying: "СЕЙЧАС ИГРАЕТ",
-    noSong: "Песня не выбрана",
-    pickSong: "Выберите песню для воспроизведения",
-    analytics: "Аналитика",
-    totalSongs: "Всего песен",
-    listeners: "Слушатели",
-    saves: "Сохранения",
-    likes: "Лайки ♥",
-    shareAudio: "Поделитесь аудио",
-    uploadDesc: "Загрузите нашиды, чтение и многое другое",
-    uploadBtn: "Загрузить аудио",
-    aiRec: "Рекомендации AI",
-    addToPlaylist: "ДОБАВИТЬ В ПЛЕЙЛИСТ",
-    addingDots: "Добавление…",
-    alreadyIn: "Уже в плейлисте",
-    added: "✓ Добавлено!",
-    failed: "Ошибка",
-    error: "Ошибка",
-    noPlaylists: "Плейлисты не найдены",
-    loadingDots: "Загрузка…",
+    greeting: (name) => `السلام عليكم، ${name} 👋`, home: "الرئيسية", search: "ابحث عن أغاني، قراء...",
+    continueListening: "تابع الاستماع", recentlyPlayed: "تم تشغيلها مؤخراً", trending: "الأكثر رواجاً 🔥",
+    allSongs: "جميع الأغاني", loading: "جارٍ التحميل...", loadMore: "تحميل المزيد", nowPlaying: "يُشغَّل الآن",
+    noSong: "لم يتم اختيار أغنية", pickSong: "اختر أغنية للتشغيل", analytics: "التحليلات",
+    totalSongs: "إجمالي الأغاني", listeners: "المستمعون", saves: "المحفوظات", likes: "الإعجابات ♥",
+    shareAudio: "شارك صوتك", uploadDesc: "ارفع الأناشيد والتلاوات والمزيد", uploadBtn: "رفع الصوت",
+    aiRec: "توصيات الذكاء الاصطناعي", addToPlaylist: "إضافة إلى قائمة التشغيل",
+    addingDots: "جارٍ الإضافة…", alreadyIn: "موجود بالفعل في القائمة", added: "✓ تمت الإضافة!",
+    failed: "فشل", error: "خطأ", noPlaylists: "لا توجد قوائم تشغيل", loadingDots: "جارٍ التحميل…",
   },
 }
-
 const t = (lang) => TRANSLATIONS[lang] || TRANSLATIONS.en
-// ─────────────────────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
   { icon: "🏠", label: "Home", id: "home", path: "/hero" },
@@ -463,13 +450,12 @@ function PlusBtn({ song, userId, tr }) {
           display: "flex", alignItems: "center", justifyContent: "center",
           transition: "all 0.18s", lineHeight: 1,
         }}
-        onMouseEnter={e => e.currentTarget.style.background = "rgba(var(--app-accent-rgb),0.22)"}
-        onMouseLeave={e => { if (!open) e.currentTarget.style.background = "rgba(var(--app-accent-rgb),0.1)" }}
       >+</button>
       {open && <AddToPlaylistDropdown song={song} userId={userId} onClose={() => setOpen(false)} tr={tr} />}
     </div>
   )
 }
+
 
 function SongCard({ song, isActive, onPlay, compact, currentTime, duration, userId, tr }) {
   const progress = isActive && duration > 0 ? currentTime / duration : 0
@@ -486,11 +472,7 @@ function SongCard({ song, isActive, onPlay, compact, currentTime, duration, user
       }}>
         <div style={{ width: 46, height: 46, borderRadius: 10, overflow: "hidden", background: "var(--app-surface)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, position: "relative", boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>
           {song.cover_url ? <img src={song.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🎵"}
-          {isActive && (
-            <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <MiniWave isPlaying={true} />
-            </div>
-          )}
+          {isActive && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}><MiniWave isPlaying={true} /></div>}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ color: isActive ? "var(--app-accent)" : "var(--app-text-main)", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{song.name}</div>
@@ -517,11 +499,7 @@ function SongCard({ song, isActive, onPlay, compact, currentTime, duration, user
       }}>
         <div style={{ width: "100%", aspectRatio: "1", background: "var(--app-surface)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, overflow: "hidden", position: "relative" }}>
           {song.cover_url ? <img src={song.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🎵"}
-          {isActive && (
-            <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.38)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Waveform isPlaying={true} />
-            </div>
-          )}
+          {isActive && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.38)", display: "flex", alignItems: "center", justifyContent: "center" }}><Waveform isPlaying={true} /></div>}
         </div>
         <div style={{ padding: "10px 10px 12px" }}>
           <div style={{ color: isActive ? "var(--app-accent)" : "var(--app-text-main)", fontWeight: 600, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{song.name}</div>
@@ -539,6 +517,7 @@ function SongCard({ song, isActive, onPlay, compact, currentTime, duration, user
     </div>
   )
 }
+
 
 export default function QalbAudio() {
   const { user, preferences } = useUser()
@@ -584,7 +563,11 @@ export default function QalbAudio() {
 
   const cardProps = { currentTime, duration, userId, tr }
 
+  // context value for ArtistsSection
+  const artistCtxVal = { currentSong, currentTime, duration, playSongFromList, userId }
+
   return (
+    <ArtistCtx.Provider value={artistCtxVal}>
     <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "var(--app-shell-bg)", color: "var(--app-text-main)", fontFamily: "'DM Sans',sans-serif", overflow: "hidden" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       <style>{`
@@ -601,7 +584,7 @@ export default function QalbAudio() {
         input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--app-accent);cursor:pointer;box-shadow:0 0 6px rgba(var(--app-accent-rgb),0.5)}
         @keyframes wave{from{transform:scaleY(0.35)}to{transform:scaleY(1)}}
         @keyframes pulse{0%,100%{opacity:0.5}50%{opacity:1}}
-        @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
+        @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:calc(200px + 100%) 0}}
         .skeleton{background:linear-gradient(90deg,var(--app-surface) 25%,rgba(var(--app-accent-rgb),0.06) 50%,var(--app-surface) 75%);background-size:400px 100%;animation:shimmer 1.4s ease infinite}
         .sidebar{width:216px;background:var(--app-shell-bg-alt);border-right:1px solid rgba(var(--app-accent-rgb),0.1);display:flex;flex-direction:column;flex-shrink:0;transition:transform 0.28s cubic-bezier(.4,0,.2,1)}
         @media(max-width:768px){.sidebar{position:fixed;left:0;top:0;bottom:0;z-index:200;width:250px;transform:translateX(-100%);box-shadow:4px 0 40px rgba(0,0,0,0.6)}.sidebar.open{transform:translateX(0)}}
@@ -687,6 +670,9 @@ export default function QalbAudio() {
             <h1 style={{ fontSize: "clamp(15px,3.5vw,22px)", fontWeight: 700, margin: "0 0 18px" }}>
               {tr.greeting(displayName)}
             </h1>
+
+            {/* ── ARTISTS SECTION ── */}
+            <ArtistsSection tr={tr} />
 
             <Section title={tr.continueListening}>
               <div className="cl-wrap">
@@ -843,15 +829,17 @@ export default function QalbAudio() {
         </div>
       </div>
     </div>
+    </ArtistCtx.Provider>
   )
 }
 
-function Section({ title, children }) {
+function Section({ title, children, action }) {
   return (
     <div style={{ marginBottom: 22 }}>
       <div style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 10 }}>
         <span style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{title}</span>
         <div style={{ flex: 1, height: 1, background: "linear-gradient(to right,rgba(var(--app-accent-rgb),0.2),transparent)" }} />
+        {action && <div style={{ flexShrink: 0 }}>{action}</div>}
       </div>
       {children}
     </div>
