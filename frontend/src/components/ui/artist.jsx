@@ -252,11 +252,11 @@ export default function ArtistPage() {
           <div style={{ flex: 1, overflowY: "auto", position: "relative" }}>
 
             {/* ── HERO ── */}
-            <div style={{ position: "relative", minHeight: 320, overflow: "hidden" }}>
-              {/* Full blurred background */}
+            <div style={{ position: "relative", height: 280, overflow: "hidden" }}>
+              {/* Background image — contained to hero box */}
               {bgImage ? (
                 <img src={bgImage} alt="" onLoad={() => setBgLoaded(true)}
-                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "blur(3px) brightness(0.28)", transform: "scale(1.06)", opacity: bgLoaded ? 1 : 0, transition: "opacity 0.6s" }} />
+                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", filter: "blur(2px) brightness(0.3)", transform: "scale(1.04)", opacity: bgLoaded ? 1 : 0, transition: "opacity 0.6s" }} />
               ) : (
                 <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg,#0d1f0d 0%,#0a1a0a 45%,#060f06 100%)" }} />
               )}
@@ -270,9 +270,9 @@ export default function ArtistPage() {
               <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 120, background: "linear-gradient(to right, rgba(10,10,10,0.6), transparent)" }} />
 
               {/* Hero content */}
-              <div className="hero-fade-in" style={{ position: "relative", zIndex: 2, display: "flex", alignItems: "flex-end", gap: 28, padding: "36px 28px 32px" }}>
+              <div className="hero-fade-in" style={{ position: "relative", zIndex: 2, display: "flex", alignItems: "flex-end", gap: 22, padding: "24px 28px 24px" }}>
                 {/* Artist Image */}
-                <div style={{ width: 190, height: 190, borderRadius: 14, overflow: "hidden", flexShrink: 0, background: "#1a1a1a", boxShadow: "0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.07)", position: "relative" }}>
+                <div style={{ width: 155, height: 155, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: "#1a1a1a", boxShadow: "0 16px 48px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.07)", position: "relative" }}>
                   {!imgLoaded && <div className="qa-skeleton" style={{ position: "absolute", inset: 0 }} />}
                   <img src={artistImg} alt={decodedName}
                     onLoad={() => setImgLoaded(true)}
