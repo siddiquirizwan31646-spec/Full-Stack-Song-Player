@@ -12,6 +12,7 @@ import Naat from './pages/Naat'
 import Quran from './pages/Quran'
 import Qawwali from './pages/Qawwali'
 import Nasheed from './pages/Nasheed'
+import ArtistPage from './components/ui/Artist'
 import Podcasts from './pages/Podcasts'
 import VerifyOTP from './pages/verifyOTP'
 import Playlist from './pages/playlist'
@@ -48,6 +49,7 @@ const router = createBrowserRouter([
             </ProtectedRoute>
         ),
     },
+    { path: '/hero/artist/:artistName', element: <ProtectedRoute><ArtistPage /></ProtectedRoute> },
     {
         path: '/settings',
         element: (
