@@ -330,7 +330,6 @@ export default function ArtistPage() {
             <span>{fmt(currentTime)}</span><span>{fmt(duration)}</span>
           </div>
         </div>
-
         <div className="player-vol" style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           <span style={{ color: "var(--app-text-muted)", fontSize: 14 }}>🔊</span>
           <input type="range" min={0} max={1} step={0.01} value={volume} onChange={e => setVolume(Number(e.target.value))}

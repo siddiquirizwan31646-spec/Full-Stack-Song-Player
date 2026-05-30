@@ -49,7 +49,11 @@ const router = createBrowserRouter([
             </ProtectedRoute>
         ),
     },
-    { path: '/hero/artist/:artistName', element: <ProtectedRoute><ArtistPage /></ProtectedRoute> },
+    { 
+        path: '/hero/artist/:artistName',
+        element: <ProtectedRoute>
+                    <ArtistPage />
+                </ProtectedRoute> },
     {
         path: '/settings',
         element: (

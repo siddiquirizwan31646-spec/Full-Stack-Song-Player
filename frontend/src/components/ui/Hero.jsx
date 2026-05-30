@@ -239,6 +239,7 @@ function ArtistsSection({ tr }) {
                 <ArtistCard key={name} artistName={name} imageUrl={artistMap[name]?.imageUrl} songCount={artistMap[name]?.count || 0} onClick={(name) => navigate(`/hero/artist/${encodeURIComponent(name)}`)} />
               ))}
         </div>
+        
       </Section>
 
       {selectedArtist && (
