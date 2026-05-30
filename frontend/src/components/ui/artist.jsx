@@ -12,33 +12,24 @@ const API_URL = import.meta.env.VITE_API_URL || ""
 const getToken = () => localStorage.getItem("accessToken")
 const authH = (ct = true) => { const h = {}; if (ct) h["Content-Type"] = "application/json"; const t = getToken(); if (t) h.Authorization = `Bearer ${t}`; return h }
 const fmt = (s) => (!s || isNaN(s)) ? "0:00" : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`
-
 function dicebearUrl(name) {
   return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=0a0a0a,111827,1a1a2e,0d1117&fontFamily=sans-serif&fontSize=38&fontWeight=700`
 }
 
+// ── Mini Waveform ─────────────────────────────────────────────────────────────
 const MiniWave = ({ isPlaying }) => (
-  <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 16 }}>
+  <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 14 }}>
     {[0, 1, 2].map(i => (
       <div key={i} style={{
         width: 3, height: "100%", background: "var(--app-accent)", borderRadius: 2,
-        animation: isPlaying ? `wave ${0.5 + i * 0.15}s ease-in-out infinite alternate` : "none",
+        animation: isPlaying ? `qaWave ${0.5 + i * 0.15}s ease-in-out infinite alternate` : "none",
         animationDelay: `${i * 0.1}s`, opacity: isPlaying ? 1 : 0.4,
       }} />
     ))}
   </div>
 )
 
-const ProgressBar = ({ progress, isActive }) => (
-  <div style={{ height: 3, background: "var(--app-border)", borderRadius: 2, overflow: "hidden" }}>
-    <div style={{
-      width: `${Math.min((progress || 0) * 100, 100)}%`, height: "100%",
-      background: isActive ? "var(--app-accent)" : "rgba(var(--app-accent-rgb),0.4)",
-      borderRadius: 2, transition: "width 0.5s linear",
-    }} />
-  </div>
-)
-
+// ── Add To Playlist Dropdown ──────────────────────────────────────────────────
 function AddToPlaylistDropdown({ song, userId, onClose }) {
   const [playlists, setPlaylists] = useState([])
   const [loading, setLoading] = useState(true)
@@ -49,7 +40,8 @@ function AddToPlaylistDropdown({ song, userId, onClose }) {
   useEffect(() => {
     if (!userId || !getToken()) { setLoading(false); return }
     fetch(`${API_URL}/playlists`, { headers: authH(false) })
-      .then(r => r.json()).then(d => { if (d.success) setPlaylists(d.playlists) }).catch(console.error).finally(() => setLoading(false))
+      .then(r => r.json()).then(d => { if (d.success) setPlaylists(d.playlists) })
+      .catch(console.error).finally(() => setLoading(false))
   }, [userId])
 
   useEffect(() => {
@@ -73,24 +65,24 @@ function AddToPlaylistDropdown({ song, userId, onClose }) {
 
   return (
     <div ref={ref} style={{
-      position: "absolute", zIndex: 1000, top: "110%", right: 0,
-      background: "var(--app-shell-bg-alt)", border: "1px solid rgba(var(--app-accent-rgb),0.25)",
-      borderRadius: 12, minWidth: 190,
-      boxShadow: "0 12px 40px rgba(0,0,0,0.6)", overflow: "hidden", backdropFilter: "blur(16px)",
+      position: "absolute", zIndex: 2000, top: "110%", right: 0,
+      background: "#1a1a1a", border: "1px solid rgba(var(--app-accent-rgb),0.25)",
+      borderRadius: 10, minWidth: 200, boxShadow: "0 16px 48px rgba(0,0,0,0.8)",
+      overflow: "hidden",
     }}>
-      <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--app-border)", color: "var(--app-accent)", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em" }}>
+      <div style={{ padding: "9px 14px", borderBottom: "1px solid rgba(255,255,255,0.08)", color: "var(--app-accent)", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em" }}>
         📋 ADD TO PLAYLIST
       </div>
       {toast
         ? <div style={{ padding: 14, textAlign: "center", color: "var(--app-accent)", fontSize: 13, fontWeight: 600 }}>{toast}</div>
         : loading
-        ? <div style={{ padding: 14, color: "var(--app-text-muted)", fontSize: 12, textAlign: "center" }}>Loading…</div>
+        ? <div style={{ padding: 14, color: "rgba(255,255,255,0.4)", fontSize: 12, textAlign: "center" }}>Loading…</div>
         : playlists.length === 0
-        ? <div style={{ padding: 14, color: "var(--app-text-muted)", fontSize: 12, textAlign: "center" }}>No playlists found</div>
+        ? <div style={{ padding: 14, color: "rgba(255,255,255,0.4)", fontSize: 12, textAlign: "center" }}>No playlists found</div>
         : playlists.map(pl => (
           <div key={pl._id} onClick={() => add(pl)}
-            style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", cursor: adding === pl._id ? "wait" : "pointer", color: adding === pl._id ? "var(--app-accent)" : "var(--app-text-main)", fontSize: 13, transition: "background 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(var(--app-accent-rgb),0.1)"}
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", cursor: "pointer", color: adding === pl._id ? "var(--app-accent)" : "#fff", fontSize: 13, transition: "background 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
             onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
             <span>📋</span>
             <span style={{ flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{pl.name}</span>
@@ -101,6 +93,7 @@ function AddToPlaylistDropdown({ song, userId, onClose }) {
   )
 }
 
+// ── Main Artist Page ──────────────────────────────────────────────────────────
 export default function ArtistPage() {
   const { artistName } = useParams()
   const navigate = useNavigate()
@@ -108,28 +101,43 @@ export default function ArtistPage() {
   const userId = user?._id
   const decodedName = decodeURIComponent(artistName || "")
 
+  // Data state
   const [songs, setSongs] = useState([])
   const [loading, setLoading] = useState(true)
-  const [artistImg, setArtistImg] = useState(null)
+  const [artistData, setArtistData] = useState(null)   // from Supabase artists table
+  const [mongoArtist, setMongoArtist] = useState(null) // from MongoDB (bio, bg_image, etc.)
   const [imgLoaded, setImgLoaded] = useState(false)
+  const [bgLoaded, setBgLoaded] = useState(false)
+  const [activeTab, setActiveTab] = useState("songs")
   const [openPlusId, setOpenPlusId] = useState(null)
+  const [sortOrder, setSortOrder] = useState("newest")
 
+  // Player
   const {
     currentSong, isPlaying, currentTime, duration, volume, progressPct,
     playSongFromList, togglePlay, playNext, playPrev, seekTo, setVolume,
   } = usePersistentSongPlayer(songs)
 
-  // Fetch artist image
+  // Fetch artist image from Supabase
   useEffect(() => {
     if (!decodedName) return
-    const url = `${SUPABASE_URL}/rest/v1/artists?select=image_url&name=ilike.${encodeURIComponent(decodedName)}&limit=1`
+    const url = `${SUPABASE_URL}/rest/v1/artists?select=*&name=ilike.${encodeURIComponent(decodedName)}&limit=1`
     fetch(url, { headers: H })
       .then(r => r.json())
-      .then(rows => setArtistImg(rows?.[0]?.image_url || dicebearUrl(decodedName)))
-      .catch(() => setArtistImg(dicebearUrl(decodedName)))
+      .then(rows => setArtistData(rows?.[0] || null))
+      .catch(console.error)
   }, [decodedName])
 
-  // Fetch songs
+  // Fetch artist extra data from MongoDB (bio, background_image, location, quote, etc.)
+  useEffect(() => {
+    if (!decodedName) return
+    fetch(`${API_URL}/artists/by-name/${encodeURIComponent(decodedName)}`, { headers: authH(false) })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.success) setMongoArtist(d.artist) })
+      .catch(() => {})
+  }, [decodedName])
+
+  // Fetch songs from Supabase
   useEffect(() => {
     if (!decodedName) return
     setLoading(true)
@@ -141,200 +149,433 @@ export default function ArtistPage() {
       .finally(() => setLoading(false))
   }, [decodedName])
 
+  const artistImg = artistData?.image_url || dicebearUrl(decodedName)
+  const bgImage = mongoArtist?.background_image || artistData?.background_image || null
+  const bio = mongoArtist?.bio || artistData?.bio || null
+  const location = mongoArtist?.location || artistData?.location || null
+  const quote = mongoArtist?.quote || null
+  const monthlyListeners = mongoArtist?.monthly_listeners || null
+  const avgRating = mongoArtist?.avg_rating || null
+
+  const sortedSongs = [...songs].sort((a, b) => {
+    if (sortOrder === "newest") return new Date(b.created_at) - new Date(a.created_at)
+    if (sortOrder === "oldest") return new Date(a.created_at) - new Date(b.created_at)
+    return a.name.localeCompare(b.name)
+  })
+
   const playAll = () => { if (songs.length > 0) playSongFromList(songs[0]) }
+  const shufflePlay = () => { if (songs.length > 0) playSongFromList(songs[Math.floor(Math.random() * songs.length)]) }
 
-  const shufflePlay = () => {
-    if (songs.length === 0) return
-    const random = songs[Math.floor(Math.random() * songs.length)]
-    playSongFromList(random)
-  }
-
-  const fmt2 = (s) => (!s || isNaN(s)) ? "0:00" : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`
+  // NAV items for sidebar
+  const NAV_ITEMS = [
+    { icon: "🏠", label: "Home", path: "/hero" },
+    { icon: "🔍", label: "Explore", path: "/explore" },
+    { icon: "📖", label: "Quran", path: "/quran" },
+    { icon: "🎵", label: "Nasheed", path: "/nasheed" },
+    { icon: "🎤", label: "Naat", path: "/naat" },
+    { icon: "🎼", label: "Qawwali", path: "/qawwali" },
+    { icon: "🎙", label: "Podcasts", path: "/podcasts" },
+    { icon: "📋", label: "Playlists", path: "/playlists" },
+  ]
+  const NAV_BOTTOM = [
+    { icon: "⬆", label: "Upload Audio", path: "/upload", accent: true },
+    { icon: "♡", label: "Favorites", path: "/favorites" },
+    { icon: "⚙", label: "Settings", path: "/settings" },
+  ]
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "var(--app-shell-bg)", color: "var(--app-text-main)", fontFamily: "'DM Sans',sans-serif", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "#0a0a0a", color: "#fff", fontFamily: "'DM Sans',sans-serif", overflow: "hidden" }}>
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       <style>{`
         *{box-sizing:border-box}
         ::-webkit-scrollbar{width:4px;height:4px}
-        ::-webkit-scrollbar-thumb{background:rgba(var(--app-accent-rgb),0.2);border-radius:2px}
-        @keyframes wave{from{transform:scaleY(0.35)}to{transform:scaleY(1)}}
-        @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:calc(200px + 100%) 0}}
-        .skeleton{background:linear-gradient(90deg,var(--app-surface) 25%,rgba(var(--app-accent-rgb),0.06) 50%,var(--app-surface) 75%);background-size:400px 100%;animation:shimmer 1.4s ease infinite}
-        .song-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;cursor:pointer;border-left:3px solid transparent;margin-bottom:4px;transition:all 0.18s;position:relative}
-        .song-row:hover{background:var(--app-surface)}
-        .song-row.active-row{border-left-color:var(--app-accent);background:rgba(var(--app-accent-rgb),0.06)}
-        .action-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:12px;cursor:pointer;border:1px solid rgba(var(--app-accent-rgb),0.25);background:rgba(var(--app-accent-rgb),0.06);color:var(--app-text-muted);font-size:12px;font-weight:600;transition:all 0.2s;font-family:'DM Sans',sans-serif}
-        .action-btn:hover{border-color:var(--app-accent);color:var(--app-accent);background:rgba(var(--app-accent-rgb),0.12)}
-        .action-btn.primary{background:linear-gradient(135deg,var(--app-accent-strong),var(--app-accent));border:none;color:#000;font-weight:700}
-        .action-btn.primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(var(--app-accent-rgb),0.35)}
-        input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;outline:none;cursor:pointer}
-        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--app-accent);cursor:pointer;box-shadow:0 0 6px rgba(var(--app-accent-rgb),0.5)}
-        .player-bar{background:var(--app-shell-bg-alt);border-top:1px solid rgba(var(--app-accent-rgb),0.18);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-shrink:0;position:sticky;bottom:0;z-index:20;overflow:hidden}
-        .player-progress-line{position:absolute;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--app-accent-strong),var(--app-accent));transition:width 0.5s linear;pointer-events:none}
-        @media(max-width:600px){.player-bar{padding:8px 10px;gap:8px}.player-seek{width:100px!important}.player-vol{display:none!important}.artist-header{flex-direction:column!important;align-items:flex-start!important;gap:16px!important}.artist-img{width:120px!important;height:120px!important}.song-duration{display:none!important}}
-        @media(max-width:440px){.player-seek{display:none!important}}
+        ::-webkit-scrollbar-thumb{background:rgba(var(--app-accent-rgb),0.3);border-radius:2px}
+        @keyframes qaWave{from{transform:scaleY(0.35)}to{transform:scaleY(1)}}
+        @keyframes qaShimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+        .qa-skeleton{background:linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.09) 50%,rgba(255,255,255,0.04) 75%);background-size:800px 100%;animation:qaShimmer 1.6s ease infinite}
+        .qa-sidebar{width:220px;background:#111;border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;flex-shrink:0}
+        .qa-nav-item{display:flex;align-items:center;gap:14px;padding:11px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,0.55);margin-bottom:2px;transition:all 0.18s;border-left:3px solid transparent}
+        .qa-nav-item:hover{background:rgba(255,255,255,0.06);color:#fff}
+        .qa-nav-item.active{background:rgba(var(--app-accent-rgb),0.14);border-left-color:var(--app-accent);color:var(--app-accent);font-weight:700}
+        .qa-tab{padding:10px 0;font-size:13px;font-weight:600;color:rgba(255,255,255,0.45);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;letter-spacing:0.03em;margin-right:24px;user-select:none}
+        .qa-tab:hover{color:rgba(255,255,255,0.8)}
+        .qa-tab.active{color:var(--app-accent);border-bottom-color:var(--app-accent)}
+        .qa-song-row{display:flex;align-items:center;gap:14px;padding:10px 14px;border-radius:8px;cursor:pointer;transition:background 0.15s;position:relative}
+        .qa-song-row:hover{background:rgba(255,255,255,0.05)}
+        .qa-song-row.active-row{background:rgba(var(--app-accent-rgb),0.08)}
+        .qa-action-btn{display:flex;align-items:center;gap:8px;padding:10px 22px;border-radius:50px;cursor:pointer;font-size:13px;font-weight:700;transition:all 0.2s;font-family:'DM Sans',sans-serif;white-space:nowrap}
+        .qa-action-btn.primary{background:var(--app-accent);border:none;color:#000}
+        .qa-action-btn.primary:hover{transform:scale(1.04);background:#1ed760}
+        .qa-action-btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.3);color:#fff}
+        .qa-action-btn.secondary:hover{border-color:#fff;transform:scale(1.04)}
+        .qa-action-btn.icon-btn{background:transparent;border:1px solid rgba(255,255,255,0.3);color:#fff;padding:10px 14px;border-radius:50%}
+        .qa-action-btn.icon-btn:hover{border-color:#fff;transform:scale(1.06)}
+        .qa-stat-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+        input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;outline:none;cursor:pointer;background:rgba(255,255,255,0.2)}
+        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--app-accent);cursor:pointer}
+        .player-bar{background:#111;border-top:1px solid rgba(255,255,255,0.06);padding:12px 20px;display:flex;align-items:center;gap:16px;flex-shrink:0;position:sticky;bottom:0;z-index:50}
+        @media(max-width:900px){.qa-sidebar{display:none}}
+        @media(max-width:768px){.qa-right-panel{display:none!important}}
+        @media(max-width:600px){.player-bar{padding:8px 12px;gap:10px}.qa-player-seek{width:100px!important}.qa-player-vol{display:none!important}.qa-hero-stats{display:none!important}}
+        @media(max-width:480px){.qa-player-seek{display:none!important}.qa-hero-actions{gap:8px!important}.qa-action-btn{padding:9px 14px!important;font-size:12px!important}}
       `}</style>
 
       <DashboardNavbar />
 
-      <div style={{ flex: 1, overflowY: "auto" }}>
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
-        {/* ── ARTIST HEADER ── */}
-        <div style={{ padding: "24px 20px 20px", borderBottom: "1px solid rgba(var(--app-accent-rgb),0.1)", background: "var(--app-shell-bg-alt)" }}>
-          <div className="artist-header" style={{ display: "flex", alignItems: "flex-start", gap: 24, maxWidth: 860, margin: "0 auto" }}>
-
-            {/* Artist Image */}
-            <div className="artist-img" style={{ width: 180, height: 180, borderRadius: 16, overflow: "hidden", flexShrink: 0, background: "var(--app-surface)", border: "2px solid rgba(var(--app-accent-rgb),0.25)", boxShadow: "0 8px 32px rgba(0,0,0,0.4)", position: "relative" }}>
-              {!imgLoaded && <div className="skeleton" style={{ position: "absolute", inset: 0 }} />}
-              {artistImg && (
-                <img src={artistImg} alt={decodedName}
-                  onLoad={() => setImgLoaded(true)}
-                  onError={e => { e.target.src = dicebearUrl(decodedName); setImgLoaded(true) }}
-                  style={{ width: "100%", height: "100%", objectFit: "cover", opacity: imgLoaded ? 1 : 0, transition: "opacity 0.3s" }} />
-              )}
-            </div>
-
-            {/* Right side */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {/* Artist Name */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ color: "var(--app-text-muted)", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>Artist</div>
-                <h1 style={{ margin: 0, fontSize: "clamp(22px,4vw,36px)", fontWeight: 800, color: "var(--app-text-main)", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{decodedName}</h1>
-                <div style={{ color: "var(--app-text-muted)", fontSize: 13, marginTop: 6 }}>
-                  {loading ? "Loading songs..." : `${songs.length} song${songs.length !== 1 ? "s" : ""}`}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                <button className="action-btn primary" onClick={playAll}>
-                  <span style={{ fontSize: 20 }}>▶</span>
-                  <span>PLAY ALL</span>
-                </button>
-                <button className="action-btn" onClick={shufflePlay}>
-                  <span style={{ fontSize: 20 }}>🔀</span>
-                  <span>SHUFFLE</span>
-                </button>
-                <button className="action-btn" onClick={() => {
-                  // Add all songs to playlist - opens first song's playlist dropdown
-                  if (songs.length > 0) setOpenPlusId("bulk")
-                }}>
-                  <span style={{ fontSize: 20 }}>📋</span>
-                  <span>ADD IN PLAYLIST</span>
-                </button>
-              </div>
-            </div>
+        {/* ── SIDEBAR ── */}
+        <div className="qa-sidebar">
+          <div style={{ padding: "14px 12px 10px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <img src="https://i.postimg.cc/wMj8BDkS/Chat-GPT-Image-May-11-2026-02-56-29-PM.png" alt="QalbAudio"
+              onClick={() => navigate("/")}
+              style={{ height: 56, width: "auto", maxWidth: "90%", objectFit: "contain", cursor: "pointer" }} />
           </div>
+          <nav style={{ flex: 1, padding: "10px 8px", overflowY: "auto" }}>
+            {NAV_ITEMS.map(item => (
+              <div key={item.path} className={`qa-nav-item${item.path === "/hero" ? " active" : ""}`} onClick={() => navigate(item.path)}>
+                <span style={{ fontSize: 15, flexShrink: 0 }}>{item.icon}</span>{item.label}
+              </div>
+            ))}
+            <div style={{ margin: "10px 0", borderTop: "1px solid rgba(255,255,255,0.06)" }} />
+            {NAV_BOTTOM.map(item => (
+              <div key={item.path} className="qa-nav-item" style={{ color: item.accent ? "var(--app-accent)" : undefined }} onClick={() => navigate(item.path)}>
+                <span style={{ fontSize: 15, flexShrink: 0 }}>{item.icon}</span>{item.label}
+              </div>
+            ))}
+          </nav>
+          {/* Mini now playing at bottom */}
+          {currentSong && (
+            <div style={{ padding: "10px 12px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 6, overflow: "hidden", background: "#222", flexShrink: 0, position: "relative" }}>
+                {currentSong.cover_url ? <img src={currentSong.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🎵</div>}
+                {isPlaying && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}><MiniWave isPlaying /></div>}
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{currentSong.name}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{currentSong.artist}</div>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* ── SONGS LIST ── */}
-        <div style={{ maxWidth: 860, margin: "0 auto", padding: "16px 20px 32px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-            <span style={{ color: "var(--app-text-muted)", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em" }}>
-              {loading ? "LOADING..." : `ALL SONGS · ${songs.length}`}
-            </span>
-            <div style={{ flex: 1, height: 1, background: "linear-gradient(to right,var(--app-border),transparent)" }} />
+        {/* ── MAIN CONTENT ── */}
+        <div style={{ flex: 1, display: "flex", overflow: "hidden", minWidth: 0 }}>
+          <div style={{ flex: 1, overflowY: "auto", position: "relative" }}>
+
+            {/* ── HERO SECTION with background ── */}
+            <div style={{ position: "relative", minHeight: 300, background: "#111", overflow: "hidden" }}>
+              {/* Background blurred image */}
+              {bgImage ? (
+                <img src={bgImage} alt="" onLoad={() => setBgLoaded(true)}
+                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "blur(2px) brightness(0.35)", transform: "scale(1.05)", opacity: bgLoaded ? 1 : 0, transition: "opacity 0.5s" }} />
+              ) : (
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg,#0d1f0d 0%,#0a1a0a 40%,#060f06 100%)" }} />
+              )}
+              {/* Green particle overlay effect */}
+              <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 70% 50%, rgba(var(--app-accent-rgb),0.12) 0%, transparent 65%)" }} />
+              {/* Dark bottom fade */}
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 120, background: "linear-gradient(to bottom, transparent, #0a0a0a)" }} />
+
+              {/* Hero content */}
+              <div style={{ position: "relative", zIndex: 2, display: "flex", alignItems: "flex-end", gap: 28, padding: "32px 28px 28px" }}>
+                {/* Artist Image */}
+                <div style={{ width: 180, height: 180, borderRadius: 14, overflow: "hidden", flexShrink: 0, background: "#1a1a1a", boxShadow: "0 16px 48px rgba(0,0,0,0.7)", position: "relative" }}>
+                  {!imgLoaded && <div className="qa-skeleton" style={{ position: "absolute", inset: 0 }} />}
+                  <img src={artistImg} alt={decodedName}
+                    onLoad={() => setImgLoaded(true)}
+                    onError={e => { e.target.src = dicebearUrl(decodedName); setImgLoaded(true) }}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", opacity: imgLoaded ? 1 : 0, transition: "opacity 0.3s" }} />
+                </div>
+
+                {/* Artist Info */}
+                <div style={{ flex: 1, minWidth: 0, paddingBottom: 4 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", letterSpacing: "0.1em", textTransform: "uppercase" }}>ARTIST</span>
+                    <span style={{ color: "var(--app-accent)", fontSize: 14 }}>✔</span>
+                  </div>
+                  <h1 style={{ margin: "0 0 6px", fontSize: "clamp(28px,5vw,52px)", fontWeight: 800, color: "#fff", lineHeight: 1.1, textShadow: "0 2px 20px rgba(0,0,0,0.5)" }}>{decodedName}</h1>
+                  <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, marginBottom: 10 }}>
+                    {loading ? "Loading songs…" : `${songs.length} song${songs.length !== 1 ? "s" : ""}`}
+                  </div>
+                  {bio && (
+                    <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 13, lineHeight: 1.6, maxWidth: 480, margin: "0 0 16px" }}>{bio}</p>
+                  )}
+                  {/* Stats row */}
+                  <div className="qa-hero-stats" style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 20, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                      <span style={{ fontSize: 16 }}>🎵</span>
+                      <div>
+                        <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>{songs.length}</div>
+                        <div style={{ color: "rgba(255,255,255,0.45)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>SONGS</div>
+                      </div>
+                    </div>
+                    {monthlyListeners && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                        <span style={{ fontSize: 16 }}>🎧</span>
+                        <div>
+                          <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>{monthlyListeners}</div>
+                          <div style={{ color: "rgba(255,255,255,0.45)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>MONTHLY LISTENERS</div>
+                        </div>
+                      </div>
+                    )}
+                    {location && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                        <span style={{ fontSize: 16 }}>📍</span>
+                        <div>
+                          <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>{location}</div>
+                          <div style={{ color: "rgba(255,255,255,0.45)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>FROM</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {/* Action Buttons */}
+                  <div className="qa-hero-actions" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    <button className="qa-action-btn primary" onClick={playAll}>
+                      <span style={{ fontSize: 14 }}>▶</span> PLAY ALL
+                    </button>
+                    <button className="qa-action-btn secondary" onClick={shufflePlay}>
+                      <span style={{ fontSize: 13 }}>⇄</span> SHUFFLE
+                    </button>
+                    <button className="qa-action-btn secondary" onClick={() => {}}>
+                      <span style={{ fontSize: 13 }}>＋</span> ADD TO PLAYLIST
+                    </button>
+                    <button className="qa-action-btn icon-btn">···</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── TABS ── */}
+            <div style={{ background: "#0a0a0a", padding: "0 28px", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", gap: 0 }}>
+              {["songs", "albums", "about"].map(tab => (
+                <div key={tab} className={`qa-tab${activeTab === tab ? " active" : ""}`} onClick={() => setActiveTab(tab)}>
+                  {tab.toUpperCase()}
+                </div>
+              ))}
+            </div>
+
+            {/* ── SONGS TAB ── */}
+            {activeTab === "songs" && (
+              <div style={{ padding: "20px 28px 80px" }}>
+                {/* Sort row */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                  <div style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>
+                    All Songs <span style={{ color: "rgba(255,255,255,0.4)", fontWeight: 400 }}>({songs.length})</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <select value={sortOrder} onChange={e => setSortOrder(e.target.value)}
+                      style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "#fff", fontSize: 12, padding: "6px 10px", cursor: "pointer", outline: "none", fontFamily: "'DM Sans',sans-serif" }}>
+                      <option value="newest">Newest First</option>
+                      <option value="oldest">Oldest First</option>
+                      <option value="alpha">A–Z</option>
+                    </select>
+                    <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 18, cursor: "pointer" }}>☰</span>
+                  </div>
+                </div>
+
+                {/* Song rows */}
+                {loading
+                  ? Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="qa-skeleton" style={{ height: 56, borderRadius: 8, marginBottom: 4 }} />
+                    ))
+                  : sortedSongs.length === 0
+                  ? <div style={{ textAlign: "center", color: "rgba(255,255,255,0.3)", padding: "60px 0", fontSize: 14 }}>No songs found</div>
+                  : sortedSongs.map((song, idx) => {
+                      const active = currentSong?.id === song.id
+                      const progress = active && duration > 0 ? currentTime / duration : 0
+                      return (
+                        <div key={song.id} className={`qa-song-row${active ? " active-row" : ""}`}>
+                          {/* Number / wave */}
+                          <div style={{ width: 28, flexShrink: 0, textAlign: "center", color: active ? "var(--app-accent)" : "rgba(255,255,255,0.35)", fontSize: 13, fontWeight: 600 }}>
+                            {active ? <MiniWave isPlaying={isPlaying} /> : idx + 1}
+                          </div>
+
+                          {/* Cover */}
+                          <div onClick={() => playSongFromList(song)} style={{ width: 44, height: 44, borderRadius: 6, overflow: "hidden", background: "#222", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, cursor: "pointer", position: "relative" }}>
+                            {song.cover_url ? <img src={song.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🎵"}
+                            {active && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center" }}><MiniWave isPlaying={isPlaying} /></div>}
+                          </div>
+
+                          {/* Info */}
+                          <div onClick={() => playSongFromList(song)} style={{ flex: 1, minWidth: 0, cursor: "pointer" }}>
+                            <div style={{ color: active ? "var(--app-accent)" : "#fff", fontWeight: 600, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{song.name}</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3 }}>
+                              {song.music_type && (
+                                <span style={{ color: "var(--app-accent)", fontSize: 10, background: "rgba(var(--app-accent-rgb),0.15)", padding: "1px 7px", borderRadius: 4, fontWeight: 700, textTransform: "capitalize" }}>{song.music_type}</span>
+                              )}
+                              {song.location && <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>{song.location}</span>}
+                            </div>
+                            {active && (
+                              <div style={{ height: 2, background: "rgba(255,255,255,0.1)", borderRadius: 1, overflow: "hidden", marginTop: 5 }}>
+                                <div style={{ width: `${Math.min(progress * 100, 100)}%`, height: "100%", background: "var(--app-accent)", borderRadius: 1, transition: "width 0.5s linear" }} />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Duration */}
+                          <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, fontFamily: "monospace", flexShrink: 0 }}>{fmt(song.duration)}</div>
+
+                          {/* Actions */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                            <FavoriteButton song={song} />
+                            <div style={{ position: "relative" }}>
+                              <button onClick={e => { e.stopPropagation(); setOpenPlusId(openPlusId === song.id ? null : song.id) }}
+                                style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}
+                                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.16)"}
+                                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}>+</button>
+                              {openPlusId === song.id && <AddToPlaylistDropdown song={song} userId={userId} onClose={() => setOpenPlusId(null)} />}
+                            </div>
+                            <button style={{ width: 30, height: 30, borderRadius: "50%", background: "transparent", border: "none", color: "rgba(255,255,255,0.35)", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                              onMouseEnter={e => e.currentTarget.style.color = "#fff"}
+                              onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.35)"}>⋮</button>
+                          </div>
+                        </div>
+                      )
+                    })}
+              </div>
+            )}
+
+            {/* ── ALBUMS TAB ── */}
+            {activeTab === "albums" && (
+              <div style={{ padding: "40px 28px", textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: 14 }}>
+                No albums available yet
+              </div>
+            )}
+
+            {/* ── ABOUT TAB ── */}
+            {activeTab === "about" && (
+              <div style={{ padding: "28px", maxWidth: 600 }}>
+                {bio
+                  ? <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 14, lineHeight: 1.8, margin: 0 }}>{bio}</p>
+                  : <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 14 }}>No bio available</div>
+                }
+                {quote && (
+                  <div style={{ marginTop: 28, borderLeft: "3px solid var(--app-accent)", paddingLeft: 18 }}>
+                    <div style={{ fontSize: 28, color: "var(--app-accent)", lineHeight: 1, marginBottom: 8 }}>"</div>
+                    <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, fontStyle: "italic", lineHeight: 1.7, margin: 0 }}>{quote}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {loading
-            ? Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="skeleton" style={{ height: 66, borderRadius: 12, marginBottom: 4 }} />
-              ))
-            : songs.length === 0
-            ? (
-                <div style={{ textAlign: "center", color: "var(--app-text-muted)", padding: "60px 0", fontSize: 14 }}>
-                  No songs found for this artist
-                </div>
-              )
-            : songs.map((song, idx) => {
-                const active = currentSong?.id === song.id
-                const progress = active && duration > 0 ? currentTime / duration : 0
-                return (
-                  <div key={song.id} className={`song-row${active ? " active-row" : ""}`}>
-                    {/* Index */}
-                    <div style={{ width: 24, flexShrink: 0, color: active ? "var(--app-accent)" : "var(--app-text-muted)", fontSize: 12, fontWeight: 600, textAlign: "center" }}>
-                      {active ? <MiniWave isPlaying={isPlaying} /> : idx + 1}
-                    </div>
+          {/* ── RIGHT PANEL ── */}
+          <div className="qa-right-panel" style={{ width: 260, background: "#111", borderLeft: "1px solid rgba(255,255,255,0.06)", padding: "24px 18px", display: "flex", flexDirection: "column", gap: 20, overflowY: "auto", flexShrink: 0 }}>
+            {/* About section */}
+            <div>
+              <div style={{ color: "var(--app-accent)", fontWeight: 700, fontSize: 13, marginBottom: 10 }}>About {decodedName}</div>
+              {bio
+                ? <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, lineHeight: 1.7, margin: 0 }}>{bio}</p>
+                : <div className="qa-skeleton" style={{ height: 60, borderRadius: 8 }} />
+              }
+            </div>
 
-                    {/* Cover */}
-                    <div onClick={() => playSongFromList(song)} style={{ width: 48, height: 48, borderRadius: 10, overflow: "hidden", background: "var(--app-surface)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, position: "relative", boxShadow: active ? "0 0 14px rgba(var(--app-accent-rgb),0.35)" : "none", cursor: "pointer" }}>
-                      {song.cover_url ? <img src={song.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🎵"}
-                      {active && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}><MiniWave isPlaying={isPlaying} /></div>}
-                    </div>
-
-                    {/* Info */}
-                    <div onClick={() => playSongFromList(song)} style={{ flex: 1, minWidth: 0, cursor: "pointer" }}>
-                      <div style={{ color: active ? "var(--app-accent)" : "var(--app-text-main)", fontWeight: 600, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{song.name}</div>
-                      <div style={{ color: "var(--app-text-muted)", fontSize: 12, marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}>
-                        {song.music_type && <span style={{ color: "var(--app-accent)", fontSize: 10, background: "rgba(var(--app-accent-rgb),0.1)", padding: "1px 6px", borderRadius: 4, textTransform: "capitalize" }}>{song.music_type}</span>}
-                        {song.location && <span>{song.location}</span>}
-                      </div>
-                      {active && <div style={{ marginTop: 5 }}><ProgressBar progress={progress} isActive /></div>}
-                    </div>
-
-                    {/* Duration */}
-                    <div className="song-duration" style={{ color: "var(--app-text-muted)", fontSize: 12, fontFamily: "monospace", flexShrink: 0 }}>{fmt2(song.duration)}</div>
-
-                    {/* Actions */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                      <FavoriteButton song={song} />
-                      <div style={{ position: "relative" }}>
-                        <button
-                          onClick={e => { e.stopPropagation(); setOpenPlusId(openPlusId === song.id ? null : song.id) }}
-                          style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(var(--app-accent-rgb),0.1)", border: "1px solid rgba(var(--app-accent-rgb),0.3)", color: "var(--app-accent)", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
-                        {openPlusId === song.id && <AddToPlaylistDropdown song={song} userId={userId} onClose={() => setOpenPlusId(null)} />}
-                      </div>
-                    </div>
+            {/* Top Listeners (decorative) */}
+            <div>
+              <div style={{ color: "var(--app-accent)", fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Top Listeners</div>
+              <div style={{ display: "flex", alignItems: "center", gap: -6 }}>
+                {["A","B","C","D"].map((l, i) => (
+                  <div key={l} style={{ width: 32, height: 32, borderRadius: "50%", background: `hsl(${i * 60 + 120},40%,30%)`, border: "2px solid #111", marginLeft: i === 0 ? 0 : -8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)", zIndex: 4 - i }}>
+                    {l}
                   </div>
-                )
-              })}
+                ))}
+                {monthlyListeners && (
+                  <div style={{ marginLeft: 6, color: "rgba(255,255,255,0.4)", fontSize: 12 }}>+{monthlyListeners}</div>
+                )}
+              </div>
+            </div>
+
+            {/* Stats */}
+            {monthlyListeners && (
+              <div className="qa-stat-card">
+                <span style={{ fontSize: 20 }}>🎧</span>
+                <div>
+                  <div style={{ color: "#fff", fontWeight: 700, fontSize: 16 }}>{monthlyListeners}</div>
+                  <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>Monthly Listeners</div>
+                </div>
+              </div>
+            )}
+
+            <div className="qa-stat-card">
+              <span style={{ fontSize: 20 }}>🎵</span>
+              <div>
+                <div style={{ color: "#fff", fontWeight: 700, fontSize: 16 }}>{loading ? "—" : songs.length}</div>
+                <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>Songs</div>
+              </div>
+            </div>
+
+            {avgRating && (
+              <div className="qa-stat-card">
+                <span style={{ fontSize: 20 }}>⭐</span>
+                <div>
+                  <div style={{ color: "#fff", fontWeight: 700, fontSize: 16 }}>{avgRating}</div>
+                  <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>Average Rating</div>
+                </div>
+              </div>
+            )}
+
+            {/* Quote */}
+            {quote && (
+              <div style={{ background: "rgba(var(--app-accent-rgb),0.05)", border: "1px solid rgba(var(--app-accent-rgb),0.12)", borderRadius: 10, padding: "14px 16px" }}>
+                <div style={{ color: "var(--app-accent)", fontSize: 22, lineHeight: 1, marginBottom: 8 }}>"</div>
+                <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 12, fontStyle: "italic", lineHeight: 1.7, margin: "0 0 10px" }}>{quote}</p>
+                <div style={{ color: "var(--app-accent)", fontSize: 13, fontStyle: "italic", fontWeight: 600, textAlign: "right" }}>— {decodedName}</div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* ── PLAYER BAR ── */}
       <div className="player-bar">
-        <div className="player-progress-line" style={{ width: `${progressPct}%` }} />
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "0 0 auto", width: 200, minWidth: 0 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 9, overflow: "hidden", background: "var(--app-surface)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, boxShadow: currentSong ? "0 0 12px rgba(var(--app-accent-rgb),0.25)" : "none", position: "relative" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "0 0 auto", width: 220, minWidth: 0 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 8, overflow: "hidden", background: "#222", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, position: "relative" }}>
             {currentSong?.cover_url ? <img src={currentSong.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🎵"}
-            {isPlaying && currentSong && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}><MiniWave isPlaying={true} /></div>}
+            {isPlaying && currentSong && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}><MiniWave isPlaying /></div>}
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ color: currentSong ? "var(--app-text-main)" : "var(--app-text-muted)", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 140 }}>
+            <div style={{ color: currentSong ? "#fff" : "rgba(255,255,255,0.3)", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 150 }}>
               {currentSong?.name || "No Song Selected"}
             </div>
-            <div style={{ color: "var(--app-text-muted)", fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 140 }}>
+            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 150 }}>
               {currentSong?.artist || "Pick a song to play"}
             </div>
           </div>
         </div>
 
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }} />
+        <div style={{ flex: 1 }} />
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-          <button onClick={playPrev} style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 18, padding: 4, transition: "color 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.color = "var(--app-text-main)"} onMouseLeave={e => e.currentTarget.style.color = "var(--app-text-muted)"}>⏮</button>
+        {/* Controls */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+          <button onClick={() => {}} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.45)", cursor: "pointer", fontSize: 16, padding: 4 }}>⇄</button>
+          <button onClick={playPrev} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.7)", cursor: "pointer", fontSize: 20, padding: 4, transition: "color 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.color = "#fff"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.7)"}>⏮</button>
           <button onClick={togglePlay}
-            style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#000", fontSize: 14, fontWeight: 700, flexShrink: 0, boxShadow: "0 4px 14px rgba(var(--app-accent-rgb),0.4)", transition: "transform 0.15s" }}
+            style={{ width: 42, height: 42, borderRadius: "50%", background: "var(--app-accent)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#000", fontSize: 15, fontWeight: 700, flexShrink: 0, boxShadow: "0 4px 16px rgba(var(--app-accent-rgb),0.4)", transition: "transform 0.15s" }}
             onMouseEnter={e => e.currentTarget.style.transform = "scale(1.08)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
           >{isPlaying ? "⏸" : "▶"}</button>
-          <button onClick={playNext} style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 18, padding: 4, transition: "color 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.color = "var(--app-text-main)"} onMouseLeave={e => e.currentTarget.style.color = "var(--app-text-muted)"}>⏭</button>
-          <button style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 14, padding: 4 }}>🔁</button>
+          <button onClick={playNext} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.7)", cursor: "pointer", fontSize: 20, padding: 4, transition: "color 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.color = "#fff"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.7)"}>⏭</button>
+          <button style={{ background: "none", border: "none", color: "rgba(255,255,255,0.45)", cursor: "pointer", fontSize: 16, padding: 4 }}>↻</button>
         </div>
 
-        <div className="player-seek" style={{ display: "flex", flexDirection: "column", gap: 3, width: 170, flexShrink: 0 }}>
+        <div style={{ flex: 1 }} />
+
+        {/* Seek */}
+        <div className="qa-player-seek" style={{ display: "flex", flexDirection: "column", gap: 3, width: 180, flexShrink: 0 }}>
           <input type="range" min={0} max={duration || 0} value={currentTime} onChange={e => seekTo(Number(e.target.value))}
-            style={{ width: "100%", background: `linear-gradient(to right,var(--app-accent) ${progressPct}%,var(--app-border) 0%)` }} />
-          <div style={{ display: "flex", justifyContent: "space-between", color: "var(--app-text-muted)", fontSize: 10 }}>
+            style={{ width: "100%", background: `linear-gradient(to right,var(--app-accent) ${progressPct}%,rgba(255,255,255,0.2) 0%)` }} />
+          <div style={{ display: "flex", justifyContent: "space-between", color: "rgba(255,255,255,0.35)", fontSize: 10 }}>
             <span>{fmt(currentTime)}</span><span>{fmt(duration)}</span>
           </div>
         </div>
 
-        <div className="player-vol" style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          <span style={{ color: "var(--app-text-muted)", fontSize: 14 }}>🔊</span>
+        {/* Volume */}
+        <div className="qa-player-vol" style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 14 }}>🔊</span>
           <input type="range" min={0} max={1} step={0.01} value={volume} onChange={e => setVolume(Number(e.target.value))}
-            style={{ width: 70, background: `linear-gradient(to right,var(--app-accent) ${volume * 100}%,var(--app-border) 0%)` }} />
+            style={{ width: 80, background: `linear-gradient(to right,var(--app-accent) ${volume * 100}%,rgba(255,255,255,0.2) 0%)` }} />
         </div>
       </div>
     </div>
