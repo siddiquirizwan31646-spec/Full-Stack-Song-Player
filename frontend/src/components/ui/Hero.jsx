@@ -7,58 +7,22 @@ import { usePersistentSongPlayer } from "@/hooks/usePersistentSongPlayer"
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
-const LASTFM_KEY = import.meta.env.VITE_LASTFM_API_KEY
 const H = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" }
 import { API_URL } from "@/lib/config"
 const getToken = () => localStorage.getItem("accessToken")
 const authH = (ct = true) => { const h = {}; if (ct) h["Content-Type"] = "application/json"; const t = getToken(); if (t) h.Authorization = `Bearer ${t}`; return h }
 const fmt = (s) => (!s || isNaN(s)) ? "0:00" : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`
 
-// ── Last.fm artist image fetcher ──────────────────────────────────────────────
-const artistImageCache = {}
-
-async function fetchArtistImage(artistName) {
-  if (!artistName) return null
-  const key = artistName.toLowerCase().trim()
-  if (artistImageCache[key] !== undefined) return artistImageCache[key]
-
-  try {
-    const url = `https://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=${encodeURIComponent(artistName)}&api_key=${LASTFM_KEY}&format=json`
-    const res = await fetch(url)
-    const data = await res.json()
-    const images = data?.artist?.image || []
-    // prefer "extralarge" then "large" then "medium"
-    const preferred = ["extralarge", "large", "medium"]
-    let img = null
-    for (const size of preferred) {
-      const found = images.find(i => i.size === size)
-      if (found && found["#text"] && found["#text"] !== "") { img = found["#text"]; break }
-    }
-    artistImageCache[key] = img
-    return img
-  } catch {
-    artistImageCache[key] = null
-    return null
-  }
-}
-
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function dicebearUrl(name) {
   return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=0a0a0a,111827,1a1a2e,0d1117&fontFamily=sans-serif&fontSize=38&fontWeight=700`
 }
 
 // ── Artist Card ───────────────────────────────────────────────────────────────
-function ArtistCard({ artistName, songCount, onClick }) {
-  const [imgSrc, setImgSrc] = useState(null)
+// imageUrl comes from artists table in SQL; falls back to DiceBear if null
+function ArtistCard({ artistName, imageUrl, songCount, onClick }) {
   const [loaded, setLoaded] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    setLoaded(false)
-    fetchArtistImage(artistName).then(url => {
-      if (!cancelled) setImgSrc(url || dicebearUrl(artistName))
-    })
-    return () => { cancelled = true }
-  }, [artistName])
+  const imgSrc = imageUrl || dicebearUrl(artistName)
 
   return (
     <div
@@ -91,10 +55,10 @@ function ArtistCard({ artistName, songCount, onClick }) {
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg,var(--app-surface) 25%,rgba(var(--app-accent-rgb),0.06) 50%,var(--app-surface) 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s ease infinite" }} />
         )}
         <img
-          src={imgSrc || dicebearUrl(artistName)}
+          src={imgSrc}
           alt={artistName}
           onLoad={() => setLoaded(true)}
-          onError={() => { setImgSrc(dicebearUrl(artistName)); setLoaded(true) }}
+          onError={e => { e.target.src = dicebearUrl(artistName); setLoaded(true) }}
           style={{ width: "100%", height: "100%", objectFit: "cover", opacity: loaded ? 1 : 0, transition: "opacity 0.3s" }}
         />
       </div>
@@ -115,7 +79,17 @@ function ArtistSongsModal({ artistName, onClose, onPlay, currentSong, currentTim
 
   useEffect(() => {
     let cancelled = false
-    fetchArtistImage(artistName).then(url => { if (!cancelled) setArtistImg(url || dicebearUrl(artistName)) })
+    // fetch artist image from SQL artists table
+    const url = `${SUPABASE_URL}/rest/v1/artists?select=image_url&name=ilike.${encodeURIComponent(artistName)}&limit=1`
+    fetch(url, { headers: H })
+      .then(r => r.json())
+      .then(rows => {
+        if (!cancelled) {
+          const img = rows?.[0]?.image_url
+          setArtistImg(img || dicebearUrl(artistName))
+        }
+      })
+      .catch(() => { if (!cancelled) setArtistImg(dicebearUrl(artistName)) })
     return () => { cancelled = true }
   }, [artistName])
 
@@ -191,23 +165,45 @@ function ArtistsSection({ tr }) {
   const [loading, setLoading] = useState(true)
   const { currentSong, currentTime, duration, playSongFromList, userId } = useArtistContext()
 
-  // Fetch distinct artists + counts from Supabase
+  // Fetch artists that have images in the artists table
+  // then count their songs from the songs table
   useEffect(() => {
-    const url = `${SUPABASE_URL}/rest/v1/songs?select=artist&artist=not.is.null&artist=neq.`
-    fetch(url, { headers: H })
+    let cancelled = false
+    // Step 1: get all artists with images from artists table
+    const artistsUrl = `${SUPABASE_URL}/rest/v1/artists?select=name,image_url&order=name.asc`
+    fetch(artistsUrl, { headers: H })
       .then(r => r.json())
-      .then(rows => {
-        if (!Array.isArray(rows)) return
+      .then(async artistRows => {
+        if (!Array.isArray(artistRows) || artistRows.length === 0) return
+        // Step 2: get song counts per artist
+        const songsUrl = `${SUPABASE_URL}/rest/v1/songs?select=artist&artist=not.is.null`
+        const songsRes = await fetch(songsUrl, { headers: H })
+        const songRows = await songsRes.json()
+        const countMap = {}
+        if (Array.isArray(songRows)) {
+          songRows.forEach(r => {
+            const a = (r.artist || "").trim()
+            if (a) countMap[a.toLowerCase()] = (countMap[a.toLowerCase()] || 0) + 1
+          })
+        }
+        // Build map: { name, imageUrl, count }
         const map = {}
-        rows.forEach(r => {
-          const a = (r.artist || "").trim()
-          if (a) map[a] = (map[a] || 0) + 1
+        artistRows.forEach(r => {
+          if (r.name && r.image_url) {
+            map[r.name] = {
+              imageUrl: r.image_url,
+              count: countMap[r.name.toLowerCase()] || 0
+            }
+          }
         })
-        setArtistMap(map)
-        pickRandom(map)
+        if (!cancelled) {
+          setArtistMap(map)
+          pickRandom(map)
+        }
       })
       .catch(console.error)
-      .finally(() => setLoading(false))
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [])
 
   const pickRandom = (map) => {
@@ -240,7 +236,7 @@ function ArtistsSection({ tr }) {
                 </div>
               ))
             : displayed.map(name => (
-                <ArtistCard key={name} artistName={name} songCount={artistMap[name] || 0} onClick={setSelectedArtist} />
+                <ArtistCard key={name} artistName={name} imageUrl={artistMap[name]?.imageUrl} songCount={artistMap[name]?.count || 0} onClick={setSelectedArtist} />
               ))}
         </div>
       </Section>
