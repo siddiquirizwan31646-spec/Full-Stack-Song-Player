@@ -13,13 +13,11 @@ const getToken = () => localStorage.getItem("accessToken")
 const authH = (ct = true) => { const h = {}; if (ct) h["Content-Type"] = "application/json"; const t = getToken(); if (t) h.Authorization = `Bearer ${t}`; return h }
 const fmt = (s) => (!s || isNaN(s)) ? "0:00" : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function dicebearUrl(name) {
   return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=0a0a0a,111827,1a1a2e,0d1117&fontFamily=sans-serif&fontSize=38&fontWeight=700`
 }
 
 // ── Artist Card ───────────────────────────────────────────────────────────────
-// imageUrl comes from artists table in SQL; falls back to DiceBear if null
 function ArtistCard({ artistName, imageUrl, songCount, onClick }) {
   const [loaded, setLoaded] = useState(false)
   const imgSrc = imageUrl || dicebearUrl(artistName)
@@ -27,26 +25,14 @@ function ArtistCard({ artistName, imageUrl, songCount, onClick }) {
   return (
     <div
       onClick={() => onClick(artistName)}
-      style={{
-        flexShrink: 0,
-        width: 110,
-        cursor: "pointer",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 8,
-        transition: "transform 0.2s",
-      }}
+      style={{ flexShrink: 0, width: 110, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, transition: "transform 0.2s" }}
       onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"}
       onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
     >
       <div style={{
         width: 80, height: 80, borderRadius: "50%", overflow: "hidden",
-        background: "var(--app-surface)",
-        border: "2px solid rgba(var(--app-accent-rgb),0.25)",
-        boxShadow: "0 4px 18px rgba(0,0,0,0.35)",
-        position: "relative",
-        transition: "border-color 0.2s, box-shadow 0.2s",
+        background: "var(--app-surface)", border: "2px solid rgba(var(--app-accent-rgb),0.25)",
+        boxShadow: "0 4px 18px rgba(0,0,0,0.35)", position: "relative", transition: "border-color 0.2s, box-shadow 0.2s",
       }}
         onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--app-accent)"; e.currentTarget.style.boxShadow = "0 4px 22px rgba(var(--app-accent-rgb),0.35)" }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(var(--app-accent-rgb),0.25)"; e.currentTarget.style.boxShadow = "0 4px 18px rgba(0,0,0,0.35)" }}
@@ -55,8 +41,7 @@ function ArtistCard({ artistName, imageUrl, songCount, onClick }) {
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg,var(--app-surface) 25%,rgba(var(--app-accent-rgb),0.06) 50%,var(--app-surface) 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s ease infinite" }} />
         )}
         <img
-          src={imgSrc}
-          alt={artistName}
+          src={imgSrc} alt={artistName}
           onLoad={() => setLoaded(true)}
           onError={e => { e.target.src = dicebearUrl(artistName); setLoaded(true) }}
           style={{ width: "100%", height: "100%", objectFit: "cover", opacity: loaded ? 1 : 0, transition: "opacity 0.3s" }}
@@ -70,112 +55,20 @@ function ArtistCard({ artistName, imageUrl, songCount, onClick }) {
   )
 }
 
-// ── Artist Songs Modal ────────────────────────────────────────────────────────
-function ArtistSongsModal({ artistName, onClose, onPlay, currentSong, currentTime, duration, userId, tr }) {
-  const [songs, setSongs] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [artistImg, setArtistImg] = useState(null)
-  const ref = useRef(null)
-
-  useEffect(() => {
-    let cancelled = false
-    // fetch artist image from SQL artists table
-    const url = `${SUPABASE_URL}/rest/v1/artists?select=image_url&name=ilike.${encodeURIComponent(artistName)}&limit=1`
-    fetch(url, { headers: H })
-      .then(r => r.json())
-      .then(rows => {
-        if (!cancelled) {
-          const img = rows?.[0]?.image_url
-          setArtistImg(img || dicebearUrl(artistName))
-        }
-      })
-      .catch(() => { if (!cancelled) setArtistImg(dicebearUrl(artistName)) })
-    return () => { cancelled = true }
-  }, [artistName])
-
-  useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    const url = `${SUPABASE_URL}/rest/v1/songs?select=*&artist=ilike.*${encodeURIComponent(artistName)}*&order=created_at.desc`
-    fetch(url, { headers: H })
-      .then(r => r.json())
-      .then(d => { if (!cancelled) setSongs(Array.isArray(d) ? d : []) })
-      .catch(console.error)
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
-  }, [artistName])
-
-  useEffect(() => {
-    const fn = e => { if (e.key === "Escape") onClose() }
-    document.addEventListener("keydown", fn)
-    return () => document.removeEventListener("keydown", fn)
-  }, [onClose])
-
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div ref={ref} style={{ background: "var(--app-shell-bg-alt)", border: "1px solid rgba(var(--app-accent-rgb),0.2)", borderRadius: 18, width: "100%", maxWidth: 520, maxHeight: "85vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.7)" }}>
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "18px 18px 14px", borderBottom: "1px solid rgba(var(--app-accent-rgb),0.1)", background: "rgba(var(--app-accent-rgb),0.03)", flexShrink: 0 }}>
-          <div style={{ width: 60, height: 60, borderRadius: "50%", overflow: "hidden", border: "2px solid rgba(var(--app-accent-rgb),0.3)", flexShrink: 0, background: "var(--app-surface)" }}>
-            {artistImg && <img src={artistImg} alt={artistName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{artistName}</div>
-            <div style={{ color: "var(--app-text-muted)", fontSize: 12, marginTop: 2 }}>{loading ? "Loading..." : `${songs.length} song${songs.length !== 1 ? "s" : ""}`}</div>
-          </div>
-          <button onClick={onClose} style={{ background: "rgba(var(--app-accent-rgb),0.1)", border: "1px solid rgba(var(--app-accent-rgb),0.2)", borderRadius: "50%", width: 32, height: 32, color: "var(--app-text-main)", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
-        </div>
-        {/* Song list */}
-        <div style={{ overflowY: "auto", flex: 1, padding: "10px 12px" }}>
-          {loading
-            ? Array.from({ length: 5 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 58, borderRadius: 10, marginBottom: 6 }} />)
-            : songs.length === 0
-            ? <div style={{ textAlign: "center", color: "var(--app-text-muted)", padding: "40px 0", fontSize: 13 }}>No songs found for this artist</div>
-            : songs.map(song => {
-                const active = currentSong?.id === song.id
-                return (
-                  <div key={song.id} onClick={() => onPlay(song)}
-                    style={{ display: "flex", alignItems: "center", gap: 11, padding: "9px 10px", borderRadius: 10, cursor: "pointer", marginBottom: 4, background: active ? "rgba(var(--app-accent-rgb),0.1)" : "transparent", border: `1px solid ${active ? "rgba(var(--app-accent-rgb),0.25)" : "transparent"}`, transition: "all 0.15s" }}
-                    onMouseEnter={e => { if (!active) e.currentTarget.style.background = "var(--app-surface)" }}
-                    onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent" }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 8, overflow: "hidden", background: "var(--app-surface)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
-                      {song.cover_url ? <img src={song.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🎵"}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ color: active ? "var(--app-accent)" : "var(--app-text-main)", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{song.name}</div>
-                      <div style={{ color: "var(--app-text-muted)", fontSize: 11, marginTop: 1 }}>{fmt(song.duration)}</div>
-                    </div>
-                    <FavoriteButton song={song} size={28} iconSize={13} />
-                  </div>
-                )
-              })}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ── Artists Section ───────────────────────────────────────────────────────────
 function ArtistsSection({ tr }) {
   const navigate = useNavigate()
-  const [artistMap, setArtistMap] = useState({})   // { name: count }
-  const [displayed, setDisplayed] = useState([])   // random subset shown
-  const [selectedArtist, setSelectedArtist] = useState(null)
+  const [artistMap, setArtistMap] = useState({})
+  const [displayed, setDisplayed] = useState([])
   const [loading, setLoading] = useState(true)
-  const { currentSong, currentTime, duration, playSongFromList, userId } = useArtistContext()
 
-  // Fetch artists that have images in the artists table
-  // then count their songs from the songs table
   useEffect(() => {
     let cancelled = false
-    // Step 1: get all artists with images from artists table
     const artistsUrl = `${SUPABASE_URL}/rest/v1/artists?select=name,image_url&order=name.asc`
     fetch(artistsUrl, { headers: H })
       .then(r => r.json())
       .then(async artistRows => {
         if (!Array.isArray(artistRows) || artistRows.length === 0) return
-        // Step 2: get song counts per artist
         const songsUrl = `${SUPABASE_URL}/rest/v1/songs?select=artist&artist=not.is.null`
         const songsRes = await fetch(songsUrl, { headers: H })
         const songRows = await songsRes.json()
@@ -186,20 +79,13 @@ function ArtistsSection({ tr }) {
             if (a) countMap[a.toLowerCase()] = (countMap[a.toLowerCase()] || 0) + 1
           })
         }
-        // Build map: { name, imageUrl, count }
         const map = {}
         artistRows.forEach(r => {
           if (r.name && r.image_url) {
-            map[r.name] = {
-              imageUrl: r.image_url,
-              count: countMap[r.name.toLowerCase()] || 0
-            }
+            map[r.name] = { imageUrl: r.image_url, count: countMap[r.name.toLowerCase()] || 0 }
           }
         })
-        if (!cancelled) {
-          setArtistMap(map)
-          pickRandom(map)
-        }
+        if (!cancelled) { setArtistMap(map); pickRandom(map) }
       })
       .catch(console.error)
       .finally(() => { if (!cancelled) setLoading(false) })
@@ -217,52 +103,43 @@ function ArtistsSection({ tr }) {
   if (!loading && displayed.length === 0) return null
 
   return (
-    <>
-      <Section
-        title="🎤 Artists"
-        action={<button onClick={shuffle} style={{ background: "none", border: "1px solid rgba(var(--app-accent-rgb),0.25)", borderRadius: 7, color: "var(--app-text-muted)", cursor: "pointer", padding: "3px 10px", fontSize: 11, fontFamily: "'DM Sans',sans-serif", transition: "all 0.18s" }}
+    <Section
+      title="🎤 Artists"
+      action={
+        <button onClick={shuffle}
+          style={{ background: "none", border: "1px solid rgba(var(--app-accent-rgb),0.25)", borderRadius: 7, color: "var(--app-text-muted)", cursor: "pointer", padding: "3px 10px", fontSize: 11, fontFamily: "'DM Sans',sans-serif", transition: "all 0.18s" }}
           onMouseEnter={e => { e.currentTarget.style.color = "var(--app-accent)"; e.currentTarget.style.borderColor = "var(--app-accent)" }}
           onMouseLeave={e => { e.currentTarget.style.color = "var(--app-text-muted)"; e.currentTarget.style.borderColor = "rgba(var(--app-accent-rgb),0.25)" }}>
           🔀 Shuffle
-        </button>}
-      >
-        <div style={{ display: "flex", gap: 18, overflowX: "auto", paddingBottom: 8, paddingTop: 4, WebkitOverflowScrolling: "touch" }}
-          className="h-scroll">
-          {loading
-            ? Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                  <div className="skeleton" style={{ width: 80, height: 80, borderRadius: "50%" }} />
-                  <div className="skeleton" style={{ width: 70, height: 10, borderRadius: 4 }} />
-                </div>
-              ))
-            : displayed.map(name => (
-                <ArtistCard key={name} artistName={name} imageUrl={artistMap[name]?.imageUrl} songCount={artistMap[name]?.count || 0} onClick={(name) => navigate(`/hero/artist/${encodeURIComponent(name)}`)} />
-              ))}
-        </div>
-        
-      </Section>
-
-      {selectedArtist && (
-        <ArtistSongsModal
-          artistName={selectedArtist}
-          onClose={() => setSelectedArtist(null)}
-          onPlay={playSongFromList}
-          currentSong={currentSong}
-          currentTime={currentTime}
-          duration={duration}
-          userId={userId}
-          tr={tr}
-        />
-      )}
-    </>
+        </button>
+      }
+    >
+      <div style={{ display: "flex", gap: 18, overflowX: "auto", paddingBottom: 8, paddingTop: 4, WebkitOverflowScrolling: "touch" }} className="h-scroll">
+        {loading
+          ? Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                <div className="skeleton" style={{ width: 80, height: 80, borderRadius: "50%" }} />
+                <div className="skeleton" style={{ width: 70, height: 10, borderRadius: 4 }} />
+              </div>
+            ))
+          : displayed.map(name => (
+              <ArtistCard
+                key={name}
+                artistName={name}
+                imageUrl={artistMap[name]?.imageUrl}
+                songCount={artistMap[name]?.count || 0}
+                onClick={(name) => navigate(`/hero/artist/${encodeURIComponent(name)}`)}
+              />
+            ))}
+      </div>
+    </Section>
   )
 }
 
-// context bridge so ArtistsSection can access player + userId without prop-drilling
+// context bridge so child sections can access player + userId without prop-drilling
 import { createContext, useContext } from "react"
 const ArtistCtx = createContext({})
 const useArtistContext = () => useContext(ArtistCtx)
-
 
 // ── Translations ──────────────────────────────────────────────────────────────
 const TRANSLATIONS = {
@@ -453,7 +330,6 @@ function PlusBtn({ song, userId, tr }) {
   )
 }
 
-
 function SongCard({ song, isActive, onPlay, compact, currentTime, duration, userId, tr }) {
   const progress = isActive && duration > 0 ? currentTime / duration : 0
   const [open, setOpen] = useState(false)
@@ -515,7 +391,6 @@ function SongCard({ song, isActive, onPlay, compact, currentTime, duration, user
   )
 }
 
-
 export default function QalbAudio() {
   const { user, preferences } = useUser()
   const navigate = useNavigate()
@@ -560,11 +435,7 @@ export default function QalbAudio() {
 
   const cardProps = { currentTime, duration, userId, tr }
 
-  // context value for ArtistsSection
-  const artistCtxVal = { currentSong, currentTime, duration, playSongFromList, userId }
-
   return (
-    <ArtistCtx.Provider value={artistCtxVal}>
     <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "var(--app-shell-bg)", color: "var(--app-text-main)", fontFamily: "'DM Sans',sans-serif", overflow: "hidden" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       <style>{`
@@ -826,7 +697,6 @@ export default function QalbAudio() {
         </div>
       </div>
     </div>
-    </ArtistCtx.Provider>
   )
 }
 
