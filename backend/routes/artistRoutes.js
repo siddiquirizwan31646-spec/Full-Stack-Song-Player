@@ -1,6 +1,7 @@
-const express = require("express")
+import express from "express"
+import Artist from "../models/artistModel.js"
+
 const router = express.Router()
-const Artist = require("../models/artistModel")
 
 // GET artist by name (used by frontend)
 router.get("/by-name/:name", async (req, res) => {
@@ -20,4 +21,4 @@ router.post("/upsert", async (req, res) => {
   } catch (e) { res.json({ success: false, error: e.message }) }
 })
 
-module.exports = router
+export default router
