@@ -172,7 +172,7 @@ export default function ArtistPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "#0a0a0a", color: "#fff", fontFamily: "'DM Sans',sans-serif", overflow: "hidden" }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Dancing+Script:wght@700&display=swap" rel="stylesheet" />
       <style>{`
         *{box-sizing:border-box}
         ::-webkit-scrollbar{width:4px;height:4px}
@@ -252,88 +252,79 @@ export default function ArtistPage() {
           <div style={{ flex: 1, overflowY: "auto", position: "relative" }}>
 
             {/* ── HERO ── */}
-            <div style={{ position: "relative", height: 280, overflow: "hidden" }}>
-              {/* Background image — contained to hero box */}
+            <div style={{ position: "relative", height: 320, overflow: "hidden" }}>
+
+              {/* Full background image — no blur, covers entire hero */}
               {bgImage ? (
                 <img src={bgImage} alt="" onLoad={() => setBgLoaded(true)}
-                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", filter: "blur(2px) brightness(0.3)", transform: "scale(1.04)", opacity: bgLoaded ? 1 : 0, transition: "opacity 0.6s" }} />
+                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center center", opacity: bgLoaded ? 1 : 0, transition: "opacity 0.6s" }} />
               ) : (
-                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg,#0d1f0d 0%,#0a1a0a 45%,#060f06 100%)" }} />
+                <div style={{ position: "absolute", inset: 0, background: "#0d0d0d" }} />
               )}
 
-              {/* Green radial glow right side */}
-              <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 75% 40%, rgba(var(--app-accent-rgb),0.18) 0%, transparent 60%)" }} />
+              {/* Dark overlay — stronger on left where text is */}
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.15) 100%)" }} />
 
-              {/* Bottom fade into page bg */}
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 140, background: "linear-gradient(to bottom, transparent, #0a0a0a)" }} />
-              {/* Left fade */}
-              <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 120, background: "linear-gradient(to right, rgba(10,10,10,0.6), transparent)" }} />
+              {/* Bottom fade to page */}
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 100, background: "linear-gradient(to bottom, transparent, #0a0a0a)" }} />
 
-              {/* Hero content */}
-              <div className="hero-fade-in" style={{ position: "relative", zIndex: 2, display: "flex", alignItems: "flex-end", gap: 22, padding: "24px 28px 24px" }}>
-                {/* Artist Image */}
-                <div style={{ width: 155, height: 155, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: "#1a1a1a", boxShadow: "0 16px 48px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.07)", position: "relative" }}>
-                  {!imgLoaded && <div className="qa-skeleton" style={{ position: "absolute", inset: 0 }} />}
-                  <img src={artistImg} alt={decodedName}
-                    onLoad={() => setImgLoaded(true)}
-                    onError={e => { e.target.src = dicebearUrl(decodedName); setImgLoaded(true) }}
-                    style={{ width: "100%", height: "100%", objectFit: "cover", opacity: imgLoaded ? 1 : 0, transition: "opacity 0.3s" }} />
-                </div>
+              {/* ── ARTIST INFO — bottom left ── */}
+              <div className="hero-fade-in" style={{ position: "absolute", zIndex: 2, bottom: 28, left: 28, right: 28, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 20 }}>
 
-                {/* Artist Info */}
-                <div style={{ flex: 1, minWidth: 0, paddingBottom: 4 }}>
+                {/* Left: artist details */}
+                <div style={{ minWidth: 0 }}>
                   {/* ARTIST badge */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.55)", letterSpacing: "0.12em", textTransform: "uppercase" }}>ARTIST</span>
-                    <span style={{ color: "var(--app-accent)", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", width: 18, height: 18, background: "rgba(var(--app-accent-rgb),0.2)", borderRadius: "50%" }}>✔</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", letterSpacing: "0.12em", textTransform: "uppercase" }}>ARTIST</span>
+                    <span style={{ color: "var(--app-accent)", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", width: 18, height: 18, background: "rgba(var(--app-accent-rgb),0.25)", borderRadius: "50%" }}>✔</span>
                   </div>
 
-                  {/* Name */}
-                  <h1 style={{ margin: "0 0 4px", fontSize: "clamp(30px,5vw,54px)", fontWeight: 800, color: "#fff", lineHeight: 1.05, letterSpacing: "-0.02em", textShadow: "0 2px 24px rgba(0,0,0,0.6)" }}>
+                  {/* Artist Name — large bold like reference */}
+                  <h1 style={{ margin: "0 0 6px", fontSize: "clamp(32px,5vw,58px)", fontWeight: 900, color: "#fff", lineHeight: 1, letterSpacing: "-0.02em", textShadow: "0 2px 32px rgba(0,0,0,0.8)" }}>
                     {decodedName}
                   </h1>
 
                   {/* Song count */}
-                  <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: bio ? 10 : 18 }}>
-                    {loading ? "Loading songs…" : `${songs.length} song${songs.length !== 1 ? "s" : ""}`}
+                  <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, marginBottom: 12 }}>
+                    {loading ? "Loading…" : `${songs.length} song${songs.length !== 1 ? "s" : ""}`}
                   </div>
 
-                  {/* Bio short */}
+                  {/* Bio — max 2 lines */}
                   {bio && (
-                    <p style={{ color: "rgba(255,255,255,0.62)", fontSize: 13, lineHeight: 1.65, maxWidth: 500, margin: "0 0 18px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{bio}</p>
+                    <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 13, lineHeight: 1.6, maxWidth: 460, margin: "0 0 14px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", textShadow: "0 1px 8px rgba(0,0,0,0.6)" }}>{bio}</p>
                   )}
 
-                  {/* Stats row */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 28, marginBottom: 20, flexWrap: "wrap" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                      <span style={{ fontSize: 16 }}>🎵</span>
+                  {/* Stats */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 16, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 14 }}>🎵</span>
                       <div>
-                        <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>{songs.length}</div>
-                        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.07em" }}>SONGS</div>
+                        <div style={{ color: "#fff", fontWeight: 700, fontSize: 13 }}>{songs.length}</div>
+                        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em" }}>SONGS</div>
                       </div>
                     </div>
                     {monthlyListeners && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                        <span style={{ fontSize: 16 }}>🎧</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 14 }}>🎧</span>
                         <div>
-                          <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>{monthlyListeners}</div>
-                          <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.07em" }}>MONTHLY LISTENERS</div>
+                          <div style={{ color: "#fff", fontWeight: 700, fontSize: 13 }}>{monthlyListeners}</div>
+                          <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em" }}>MONTHLY LISTENERS</div>
                         </div>
                       </div>
                     )}
                     {location && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                        <span style={{ fontSize: 16 }}>📍</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 14 }}>📍</span>
                         <div>
-                          <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>{location}</div>
-                          <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.07em" }}>FROM</div>
+                          <div style={{ color: "#fff", fontWeight: 700, fontSize: 13 }}>{location}</div>
+                          <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em" }}>FROM</div>
                         </div>
                       </div>
                     )}
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="qa-hero-actions" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <div className="qa-hero-actions" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                     <button className="qa-action-btn primary" onClick={playAll}>
                       <span style={{ fontSize: 12 }}>▶</span> PLAY ALL
                     </button>
@@ -346,24 +337,25 @@ export default function ArtistPage() {
                     <button className="qa-action-btn icon-btn" style={{ fontSize: 18, letterSpacing: 1 }}>···</button>
                   </div>
                 </div>
-              </div>
 
-              {/* ── TAGLINE bottom-right corner of hero ── */}
-              {tagline && (
-                <div style={{
-                  position: "absolute", zIndex: 3, bottom: 28, right: 28,
-                  maxWidth: 280, textAlign: "right",
-                  pointerEvents: "none",
-                }}>
-                  <div style={{ color: "var(--app-accent)", fontSize: 22, lineHeight: 1, marginBottom: 4 }}>"</div>
-                  <p style={{
-                    color: "rgba(255,255,255,0.75)", fontSize: 13, fontStyle: "italic",
-                    fontWeight: 500, lineHeight: 1.6, margin: "0 0 6px",
-                    textShadow: "0 1px 12px rgba(0,0,0,0.7)",
-                  }}>{tagline}</p>
-                  <div style={{ color: "var(--app-accent)", fontSize: 12, fontStyle: "italic", fontWeight: 600 }}>— {decodedName}</div>
-                </div>
-              )}
+                {/* Right: tagline — bottom right like reference */}
+                {tagline && (
+                  <div style={{ flexShrink: 0, maxWidth: 260, textAlign: "right", paddingBottom: 4 }}>
+                    <div style={{ color: "var(--app-accent)", fontSize: 28, lineHeight: 1, marginBottom: 4, fontFamily: "Georgia, serif" }}>"</div>
+                    <p style={{
+                      color: "rgba(255,255,255,0.85)", fontSize: 13.5,
+                      fontStyle: "italic", fontWeight: 500, lineHeight: 1.65,
+                      margin: "0 0 8px", textShadow: "0 1px 16px rgba(0,0,0,0.9)",
+                    }}>{tagline}</p>
+                    <div style={{
+                      color: "var(--app-accent)", fontSize: 13,
+                      fontStyle: "italic", fontWeight: 700,
+                      fontFamily: "'Dancing Script', 'Segoe Script', cursive",
+                      letterSpacing: "0.02em",
+                    }}>— {decodedName}</div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* ── TABS ── */}
