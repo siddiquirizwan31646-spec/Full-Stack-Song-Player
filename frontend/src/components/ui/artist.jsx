@@ -6,7 +6,7 @@ import { usePersistentSongPlayer } from "@/hooks/usePersistentSongPlayer"
 import { useUser } from "@/context/userContext"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPlay, faPause, faForwardFast, faBackwardFast } from "@fortawesome/free-solid-svg-icons"
-
+import NavbarMenu, { useNavbar, HamburgerBtn } from "@/components/ui/NavbarMenu"
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 const H = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" }
@@ -365,22 +365,6 @@ function SongRow({ song, idx, active, isPlaying, currentTime, duration, playSong
   )
 }
 
-// ── Nav ───────────────────────────────────────────────────────────────────────
-const NAV_ITEMS = [
-  { icon: "🏠", label: "Home", id: "home", path: "/hero" },
-  { icon: "🔍", label: "Explore", id: "explore", path: "/explore" },
-  { icon: "📖", label: "Quran", id: "quran", path: "/quran" },
-  { icon: "🎵", label: "Nasheed", id: "nasheed", path: "/nasheed" },
-  { icon: "🎤", label: "Naat", id: "naat", path: "/naat" },
-  { icon: "🎼", label: "Qawwali", id: "qawwali", path: "/qawwali" },
-  { icon: "🎙", label: "Podcasts", id: "podcasts", path: "/podcasts" },
-  { icon: "📋", label: "Playlists", id: "playlists", path: "/playlists" },
-]
-const NAV_BOTTOM = [
-  { icon: "⬆", label: "Upload Audio", id: "upload", path: "/upload" },
-  { icon: "♡", label: "Favorites", id: "favorites", path: "/favorites" },
-  { icon: "⚙", label: "Settings", id: "settings", path: "/settings" },
-]
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function ArtistPage() {
@@ -400,7 +384,7 @@ export default function ArtistPage() {
   const [openPlusId, setOpenPlusId] = useState(null)
   const [openDotsId, setOpenDotsId] = useState(null)
   const [sortOrder, setSortOrder] = useState("newest")
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { sidebarOpen, toggleSidebar, closeSidebar } = useNavbar()
 
   const {
     currentSong, isPlaying, currentTime, duration, volume, progressPct,
@@ -456,137 +440,93 @@ export default function ArtistPage() {
     <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "var(--app-shell-bg)", color: "var(--app-text-main)", fontFamily: "'DM Sans',sans-serif", overflow: "hidden" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;0,9..40,900;1,9..40,400;1,9..40,600&family=Dancing+Script:wght@700&display=swap" rel="stylesheet" />
       <style>{`
-        *{box-sizing:border-box;margin:0;padding:0}
-        ::-webkit-scrollbar{width:4px;height:4px}
-        ::-webkit-scrollbar-thumb{background:rgba(var(--app-accent-rgb),0.2);border-radius:2px}
-        ::-webkit-scrollbar-track{background:transparent}
+  *{box-sizing:border-box;margin:0;padding:0}
+  ::-webkit-scrollbar{width:4px;height:4px}
+  ::-webkit-scrollbar-thumb{background:rgba(var(--app-accent-rgb),0.2);border-radius:2px}
+  ::-webkit-scrollbar-track{background:transparent}
 
-        @keyframes wave{from{transform:scaleY(0.35)}to{transform:scaleY(1)}}
-        @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:calc(200px + 100%) 0}}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes wave{from{transform:scaleY(0.35)}to{transform:scaleY(1)}}
+  @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:calc(200px + 100%) 0}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
-        .qa-skeleton{background:linear-gradient(90deg,var(--app-surface) 25%,rgba(var(--app-accent-rgb),0.06) 50%,var(--app-surface) 75%);background-size:400px 100%;animation:shimmer 1.4s ease infinite}
+  .qa-skeleton{background:linear-gradient(90deg,var(--app-surface) 25%,rgba(var(--app-accent-rgb),0.06) 50%,var(--app-surface) 75%);background-size:400px 100%;animation:shimmer 1.4s ease infinite}
 
-        .qa-sidebar{width:216px;background:var(--app-shell-bg-alt);border-right:1px solid rgba(var(--app-accent-rgb),0.1);display:flex;flex-direction:column;flex-shrink:0;transition:transform 0.28s cubic-bezier(.4,0,.2,1)}
-        @media(max-width:768px){.qa-sidebar{position:fixed;left:0;top:0;bottom:0;z-index:200;width:250px;transform:translateX(-100%);box-shadow:4px 0 40px rgba(0,0,0,0.6)}.qa-sidebar.open{transform:translateX(0)}}
-        .mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:199;backdrop-filter:blur(3px)}
-        @media(max-width:768px){.mob-overlay.visible{display:block}}
+  .qa-tab{padding:11px 0;font-size:12.5px;font-weight:700;color:var(--app-text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;letter-spacing:0.08em;margin-right:28px;user-select:none;text-transform:uppercase}
+  .qa-tab:hover{color:var(--app-text-main)}
+  .qa-tab.active{color:var(--app-accent);border-bottom-color:var(--app-accent)}
 
-        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;margin-bottom:3px;font-size:13px;font-weight:500;color:var(--app-text-muted);border-left:3px solid transparent;transition:all 0.18s}
-        .nav-item:hover{background:var(--app-surface);color:var(--app-text-main)}
-        .nav-item.active{background:rgba(var(--app-accent-rgb),0.12);border-left-color:var(--app-accent);color:var(--app-accent);font-weight:700}
+  .qa-song-row{display:grid;grid-template-columns:28px 44px 1fr auto auto;align-items:center;gap:12px;padding:9px 12px;border-radius:10px;cursor:default;transition:background 0.15s;position:relative;border-left:3px solid transparent;margin-bottom:2px}
+  .qa-song-row:hover{background:var(--app-surface)}
+  .qa-song-row.active-row{border-left-color:var(--app-accent);background:rgba(var(--app-accent-rgb),0.06)}
+  @media(max-width:480px){.qa-song-row{grid-template-columns:24px 38px 1fr auto;gap:8px;padding:8px 8px}.qa-song-row .song-duration{display:none}}
 
-        .qa-tab{padding:11px 0;font-size:12.5px;font-weight:700;color:var(--app-text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;letter-spacing:0.08em;margin-right:28px;user-select:none;text-transform:uppercase}
-        .qa-tab:hover{color:var(--app-text-main)}
-        .qa-tab.active{color:var(--app-accent);border-bottom-color:var(--app-accent)}
+  .qa-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:50px;cursor:pointer;font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif;letter-spacing:0.04em;transition:all 0.18s;outline:none;white-space:nowrap;user-select:none}
+  .qa-btn-primary{background:linear-gradient(135deg,var(--app-accent-strong),var(--app-accent));border:none;color:#000}
+  .qa-btn-primary:hover{transform:scale(1.04);filter:brightness(1.1)}
+  .qa-btn-outline{background:transparent;border:1.5px solid rgba(255,255,255,0.3);color:var(--app-text-main)}
+  .qa-btn-outline:hover{border-color:rgba(255,255,255,0.7);transform:scale(1.03)}
+  .qa-btn-icon{background:transparent;border:1.5px solid rgba(255,255,255,0.28);color:var(--app-text-muted);padding:9px 13px;border-radius:50%;font-size:16px;line-height:1}
+  .qa-btn-icon:hover{border-color:rgba(255,255,255,0.65);color:var(--app-text-main);transform:scale(1.05)}
+  @media(max-width:480px){.qa-btn{padding:8px 14px;font-size:12px}.qa-btn-icon{padding:8px 11px}}
 
-        .qa-song-row{display:grid;grid-template-columns:28px 44px 1fr auto auto;align-items:center;gap:12px;padding:9px 12px;border-radius:10px;cursor:default;transition:background 0.15s;position:relative;border-left:3px solid transparent;margin-bottom:2px}
-        .qa-song-row:hover{background:var(--app-surface)}
-        .qa-song-row.active-row{border-left-color:var(--app-accent);background:rgba(var(--app-accent-rgb),0.06)}
-        @media(max-width:480px){.qa-song-row{grid-template-columns:24px 38px 1fr auto;gap:8px;padding:8px 8px}.qa-song-row .song-duration{display:none}}
+  .qa-stat-card{background:var(--app-surface);border:1px solid var(--app-border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px}
 
-        .qa-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:50px;cursor:pointer;font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif;letter-spacing:0.04em;transition:all 0.18s;outline:none;white-space:nowrap;user-select:none}
-        .qa-btn-primary{background:linear-gradient(135deg,var(--app-accent-strong),var(--app-accent));border:none;color:#000}
-        .qa-btn-primary:hover{transform:scale(1.04);filter:brightness(1.1)}
-        .qa-btn-outline{background:transparent;border:1.5px solid rgba(255,255,255,0.3);color:var(--app-text-main)}
-        .qa-btn-outline:hover{border-color:rgba(255,255,255,0.7);transform:scale(1.03)}
-        .qa-btn-icon{background:transparent;border:1.5px solid rgba(255,255,255,0.28);color:var(--app-text-muted);padding:9px 13px;border-radius:50%;font-size:16px;line-height:1}
-        .qa-btn-icon:hover{border-color:rgba(255,255,255,0.65);color:var(--app-text-main);transform:scale(1.05)}
-        @media(max-width:480px){.qa-btn{padding:8px 14px;font-size:12px}.qa-btn-icon{padding:8px 11px}}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--app-accent);cursor:pointer;box-shadow:0 0 6px rgba(var(--app-accent-rgb),0.5)}
 
-        .qa-stat-card{background:var(--app-surface);border:1px solid var(--app-border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px}
+  .player-bar{background:var(--app-shell-bg-alt);border-top:1px solid rgba(var(--app-accent-rgb),0.18);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-shrink:0;position:sticky;bottom:0;z-index:20;overflow:hidden}
+  .player-progress-line{position:absolute;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--app-accent-strong),var(--app-accent));transition:width 0.5s linear;pointer-events:none}
+  .player-wave{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .player-controls{display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .player-seek{display:flex;flex-direction:column;gap:3px;width:170px;flex-shrink:0}
+  .player-vol{display:flex;align-items:center;gap:8px;flex-shrink:0}
+  @media(max-width:1000px){.player-wave{display:none}}
+  @media(max-width:750px){.player-vol{display:none}}
+  @media(max-width:600px){.player-bar{padding:8px 10px;gap:8px}.player-seek{width:110px}}
+  @media(max-width:450px){.player-seek{display:none}}
 
-        input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;outline:none;cursor:pointer}
-        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--app-accent);cursor:pointer;box-shadow:0 0 6px rgba(var(--app-accent-rgb),0.5)}
+  .player-ctrl-btn{background:none;border:none;color:var(--app-text-muted);cursor:pointer;padding:7px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:color 0.15s,background 0.15s;font-size:15px;line-height:1}
+  .player-ctrl-btn:hover{color:var(--app-text-main);background:rgba(255,255,255,0.07)}
+  .player-ctrl-btn:active{transform:scale(0.92)}
+  .player-play-btn{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--app-accent-strong),var(--app-accent));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;flex-shrink:0;box-shadow:0 4px 14px rgba(var(--app-accent-rgb),0.4);transition:transform 0.15s,filter 0.15s}
+  .player-play-btn:hover{transform:scale(1.08);filter:brightness(1.1)}
+  .player-play-btn:active{transform:scale(0.95)}
 
-        .player-bar{background:var(--app-shell-bg-alt);border-top:1px solid rgba(var(--app-accent-rgb),0.18);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-shrink:0;position:sticky;bottom:0;z-index:20;overflow:hidden}
-        .player-progress-line{position:absolute;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--app-accent-strong),var(--app-accent));transition:width 0.5s linear;pointer-events:none}
-        .player-wave{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
-        .player-controls{display:flex;align-items:center;gap:10px;flex-shrink:0}
-        .player-seek{display:flex;flex-direction:column;gap:3px;width:170px;flex-shrink:0}
-        .player-vol{display:flex;align-items:center;gap:8px;flex-shrink:0}
-        @media(max-width:1000px){.player-wave{display:none}}
-        @media(max-width:750px){.player-vol{display:none}}
-        @media(max-width:600px){.player-bar{padding:8px 10px;gap:8px}.player-seek{width:110px}}
-        @media(max-width:450px){.player-seek{display:none}}
+  .qa-right-panel{width:240px;background:var(--app-shell-bg-alt);border-left:1px solid rgba(var(--app-accent-rgb),0.08);padding:20px 16px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;flex-shrink:0}
+  @media(max-width:1100px){.qa-right-panel{display:none}}
 
-        /* Player icon buttons */
-        .player-ctrl-btn{background:none;border:none;color:var(--app-text-muted);cursor:pointer;padding:7px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:color 0.15s,background 0.15s;font-size:15px;line-height:1}
-        .player-ctrl-btn:hover{color:var(--app-text-main);background:rgba(255,255,255,0.07)}
-        .player-ctrl-btn:active{transform:scale(0.92)}
-        .player-play-btn{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--app-accent-strong),var(--app-accent));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;flex-shrink:0;box-shadow:0 4px 14px rgba(var(--app-accent-rgb),0.4);transition:transform 0.15s,filter 0.15s}
-        .player-play-btn:hover{transform:scale(1.08);filter:brightness(1.1)}
-        .player-play-btn:active{transform:scale(0.95)}
+  .fade-up{animation:fadeUp 0.5s ease both}
+  .fade-up-1{animation-delay:0.05s}
+  .fade-up-2{animation-delay:0.12s}
+  .fade-up-3{animation-delay:0.2s}
 
-        .qa-right-panel{width:240px;background:var(--app-shell-bg-alt);border-left:1px solid rgba(var(--app-accent-rgb),0.08);padding:20px 16px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;flex-shrink:0}
-        @media(max-width:1100px){.qa-right-panel{display:none}}
+  .hero-artist-portrait{position:absolute;top:16px;left:16px;z-index:4;display:flex;flex-direction:column;align-items:center;gap:6px;animation:fadeIn 0.6s ease 0.1s both}
+  .hero-artist-portrait-img{width:72px;height:96px;border-radius:10px;overflow:hidden;border:2px solid rgba(var(--app-accent-rgb),0.55);box-shadow:0 4px 20px rgba(0,0,0,0.7),0 0 0 1px rgba(var(--app-accent-rgb),0.15);background:var(--app-surface);flex-shrink:0}
+  .hero-artist-portrait-img img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
+  .hero-artist-portrait-label{font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.55);letter-spacing:0.1em;text-transform:uppercase;text-align:center;max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 6px rgba(0,0,0,0.9)}
 
-        .hamburger{display:none;background:none;border:none;color:var(--app-text-main);font-size:20px;cursor:pointer;padding:6px 8px;border-radius:8px;flex-shrink:0;line-height:1;transition:background 0.15s}
-        .hamburger:hover{background:var(--app-surface)}
-        @media(max-width:768px){.hamburger{display:flex;align-items:center;justify-content:center}}
-
-        .fade-up{animation:fadeUp 0.5s ease both}
-        .fade-up-1{animation-delay:0.05s}
-        .fade-up-2{animation-delay:0.12s}
-        .fade-up-3{animation-delay:0.2s}
-
-        .hero-artist-portrait{position:absolute;top:16px;left:16px;z-index:4;display:flex;flex-direction:column;align-items:center;gap:6px;animation:fadeIn 0.6s ease 0.1s both}
-        .hero-artist-portrait-img{width:72px;height:96px;border-radius:10px;overflow:hidden;border:2px solid rgba(var(--app-accent-rgb),0.55);box-shadow:0 4px 20px rgba(0,0,0,0.7),0 0 0 1px rgba(var(--app-accent-rgb),0.15);background:var(--app-surface);flex-shrink:0}
-        .hero-artist-portrait-img img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
-        .hero-artist-portrait-label{font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.55);letter-spacing:0.1em;text-transform:uppercase;text-align:center;max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 6px rgba(0,0,0,0.9)}
-
-        @media(max-width:600px){
-          .hero-artist-portrait-img{width:56px;height:74px;border-radius:8px}
-          .hero-hero-content{padding:0 14px 24px !important}
-          .hero-title{font-size:clamp(26px,7vw,46px) !important}
-          .hero-stats{gap:16px !important}
-          .hero-buttons{gap:7px !important}
-          .hero-buttons .qa-btn-outline-hide{display:none}
-          .songs-header{flex-direction:column;align-items:flex-start !important;gap:10px}
-          .songs-header-right{width:100%;justify-content:space-between}
-          .about-chips{flex-direction:column;gap:7px !important}
-        }
-        @media(max-width:400px){.hero-artist-portrait-img{width:46px;height:62px}}
-      `}</style>
+  @media(max-width:600px){
+    .hero-artist-portrait-img{width:56px;height:74px;border-radius:8px}
+    .hero-hero-content{padding:0 14px 24px !important}
+    .hero-title{font-size:clamp(26px,7vw,46px) !important}
+    .hero-stats{gap:16px !important}
+    .hero-buttons{gap:7px !important}
+    .hero-buttons .qa-btn-outline-hide{display:none}
+    .songs-header{flex-direction:column;align-items:flex-start !important;gap:10px}
+    .songs-header-right{width:100%;justify-content:space-between}
+    .about-chips{flex-direction:column;gap:7px !important}
+  }
+  @media(max-width:400px){.hero-artist-portrait-img{width:46px;height:62px}}
+`}</style>
 
       <DashboardNavbar />
-      <div className={`mob-overlay${sidebarOpen ? " visible" : ""}`} onClick={() => setSidebarOpen(false)} />
+      <NavbarMenu sidebarOpen={sidebarOpen} onClose={closeSidebar} />
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
         {/* ══ SIDEBAR ══ */}
-        <div className={`qa-sidebar${sidebarOpen ? " open" : ""}`}>
-          <div style={{ padding: "14px 12px 10px", borderBottom: "1px solid rgba(var(--app-accent-rgb),0.08)", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <img
-              src="https://i.postimg.cc/wMj8BDkS/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
-              alt="QalbAudio"
-              onClick={() => { navigate("/"); setSidebarOpen(false) }}
-              style={{ height: 60, width: "auto", maxWidth: "88%", objectFit: "contain", cursor: "pointer", display: "block" }}
-            />
-            <div style={{ fontSize: 11, color: "var(--app-text-muted)", textAlign: "center" }}>
-              <span style={{ color: "var(--app-accent)", fontWeight: 600 }}>{displayName}</span>
-            </div>
-          </div>
-          <nav style={{ flex: 1, padding: "10px 8px", overflowY: "auto" }}>
-            {NAV_ITEMS.map(item => (
-              <div key={item.id} className={`nav-item${item.id === "home" ? " active" : ""}`}
-                onClick={() => { navigate(item.path); setSidebarOpen(false) }}>
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
-                {item.label}
-              </div>
-            ))}
-            <div style={{ margin: "10px 0", borderTop: "1px solid var(--app-border)" }} />
-            {NAV_BOTTOM.map(item => (
-              <div key={item.id} className="nav-item"
-                style={{ color: item.id === "upload" ? "var(--app-accent)" : undefined }}
-                onClick={() => { navigate(item.path); setSidebarOpen(false) }}>
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
-                {item.label}
-              </div>
-            ))}
-          </nav>
-        </div>
+        
 
         {/* ── MAIN ── */}
         <div style={{ flex: 1, display: "flex", overflow: "hidden", minWidth: 0 }}>
@@ -594,7 +534,7 @@ export default function ArtistPage() {
 
             {/* Mobile toolbar */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 14px", background: "var(--app-shell-bg-alt)", borderBottom: "1px solid rgba(var(--app-accent-rgb),0.08)", flexShrink: 0 }}>
-              <button className="hamburger" onClick={() => setSidebarOpen(v => !v)}>☰</button>
+              <HamburgerBtn onClick={toggleSidebar} />
               <span style={{ color: "var(--app-text-main)", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{decodedName}</span>
             </div>
 

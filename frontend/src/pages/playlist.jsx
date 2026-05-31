@@ -9,7 +9,7 @@ import DashboardNavbar from "@/components/DashboardNavbar";
 import FavoriteButton from "@/components/FavoriteButton";
 import { useUser } from "@/context/userContext";
 import { usePersistentSongPlayer } from "@/hooks/usePersistentSongPlayer";
-
+import NavbarMenu, { useNavbar, HamburgerBtn } from "@/components/ui/NavbarMenu"
 import { API_URL } from "@/lib/config";
 
 const fmt = (s) =>
@@ -33,21 +33,7 @@ const mapPlaylistSong = (song) => ({
   addedAt: song.addedAt,
 });
 
-const NAV_ITEMS = [
-  { icon: "🏠", label: "Home",      id: "home",      path: "/hero" },
-  { icon: "🔍", label: "Explore",   id: "explore",   path: "/explore" },
-  { icon: "📖", label: "Quran",     id: "quran",     path: "/quran" },
-  { icon: "🎵", label: "Nasheed",   id: "nasheed",   path: "/nasheed" },
-  { icon: "🎤", label: "Naat",      id: "naat",      path: "/naat" },
-  { icon: "🎼", label: "Qawwali",   id: "qawwali",   path: "/qawwali" },
-  { icon: "🎙", label: "Podcasts",  id: "podcasts",  path: "/podcasts" },
-  { icon: "📋", label: "Playlists", id: "playlists", path: "/playlists" },
-];
-const NAV_BOTTOM = [
-  { icon: "⬆", label: "Upload Audio", id: "upload",    path: "/upload" },
-  { icon: "♡", label: "Favorites",    id: "favorites", path: "/favorites" },
-  { icon: "⚙", label: "Settings",    id: "settings",  path: "/settings" },
-];
+
 
 /* ─── helpers ─── */
 const Artwork = ({ src, size = 44, radius = 10, iconSize = 18 }) => (
@@ -123,7 +109,7 @@ export default function PlaylistPage() {
   const [loadingPlaylists, setLoadingPlaylists] = useState(true);
 
   // two independent mobile drawers — exactly like hero
-  const [sidebarOpen,  setSidebarOpen]  = useState(false); // main nav
+  const { sidebarOpen, toggleSidebar, closeSidebar } = useNavbar()
   const [playlistOpen, setPlaylistOpen] = useState(false); // playlist panel
 
   const selected = playlists.find(p => p._id === selectedId) || null;
@@ -264,103 +250,44 @@ const iconBtn = {
     }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       <style>{`
-        *{box-sizing:border-box}
-        ::-webkit-scrollbar{width:3px}
-        ::-webkit-scrollbar-track{background:transparent}
-        ::-webkit-scrollbar-thumb{background:rgba(var(--app-accent-rgb),.2);border-radius:2px}
-        .song-row:hover{background:rgba(var(--app-accent-rgb),.055)!important}
-        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;margin-bottom:3px;font-size:13px;font-weight:500;color:var(--app-text-muted);border-left:3px solid transparent;transition:all 0.18s}
-        .nav-item:hover{background:var(--app-surface);color:var(--app-text-main)}
-        .nav-item.active{background:rgba(var(--app-accent-rgb),0.12);border-left-color:var(--app-accent);color:var(--app-accent);font-weight:700}
-        .pl-item:hover{background:rgba(var(--app-accent-rgb),.07)!important}
-        input[type=range]{-webkit-appearance:none;appearance:none}
-        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--app-accent);cursor:pointer}
-        input[type=range]::-moz-range-thumb{width:13px;height:13px;border:none;border-radius:50%;background:var(--app-accent);cursor:pointer}
-        .pl-delete:hover{color:#ef4444!important}
+  *{box-sizing:border-box}
+  ::-webkit-scrollbar{width:3px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:rgba(var(--app-accent-rgb),.2);border-radius:2px}
 
-        /* ── sidebar: desktop always visible ── */
-        .sidebar{width:216px;background:var(--app-shell-bg-alt);border-right:1px solid rgba(var(--app-accent-rgb),.1);display:flex;flex-direction:column;flex-shrink:0;transition:transform .28s cubic-bezier(.4,0,.2,1)}
+  .song-row:hover{background:rgba(var(--app-accent-rgb),.055)!important}
+  .pl-item:hover{background:rgba(var(--app-accent-rgb),.07)!important}
+  .pl-delete:hover{color:#ef4444!important}
 
-        /* ── playlist panel: desktop always visible ── */
-        .playlist-panel{width:236px;flex-shrink:0;background:var(--app-shell-bg-alt);border-right:1px solid rgba(var(--app-accent-rgb),.08);display:flex;flex-direction:column;overflow:hidden;transition:transform .28s cubic-bezier(.4,0,.2,1)}
+  input[type=range]{-webkit-appearance:none;appearance:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--app-accent);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:13px;height:13px;border:none;border-radius:50%;background:var(--app-accent);cursor:pointer}
 
-        /* ── hamburger: hidden on desktop ── */
-        .hamburger{display:none;background:none;border:none;color:var(--app-text-main);font-size:20px;cursor:pointer;padding:6px 8px;border-radius:8px;flex-shrink:0;line-height:1;transition:background .15s}
-        .hamburger:hover{background:var(--app-surface)}
+  .playlist-panel{width:236px;flex-shrink:0;background:var(--app-shell-bg-alt);border-right:1px solid rgba(var(--app-accent-rgb),.08);display:flex;flex-direction:column;overflow:hidden;transition:transform .28s cubic-bezier(.4,0,.2,1)}
+  .pl-open-btn{display:none!important}
 
-        /* ── playlist-open btn: hidden on desktop ── */
-        .pl-open-btn{display:none!important}
+  @media(max-width:768px){
+    .playlist-panel{position:fixed;left:0;top:0;bottom:0;z-index:220;width:280px;transform:translateX(-100%);box-shadow:4px 0 40px rgba(0,0,0,.5)}
+    .playlist-panel.open{transform:translateX(0)}
+    .pl-open-btn{display:flex!important}
+    .mob-overlay-pl{display:block;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:215;backdrop-filter:blur(3px)}
+  }
 
-        /* ── overlays ── */
-        .mob-overlay{display:none;position:fixed;inset:0;backdrop-filter:blur(3px)}
-        @media(max-width:768px){
-          /* nav sidebar → fixed left drawer */
-          .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:210;width:250px;transform:translateX(-100%);box-shadow:4px 0 40px rgba(0,0,0,.6)}
-          .sidebar.open{transform:translateX(0)}
-          /* playlist panel → fixed left drawer (slightly wider, higher z) */
-          .playlist-panel{position:fixed;left:0;top:0;bottom:0;z-index:220;width:280px;transform:translateX(-100%);box-shadow:4px 0 40px rgba(0,0,0,.5)}
-          .playlist-panel.open{transform:translateX(0)}
-          /* show buttons */
-          .hamburger{display:flex;align-items:center;justify-content:center}
-          .pl-open-btn{display:flex!important}
-          /* overlays */
-          .mob-overlay-nav{display:block;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:205;backdrop-filter:blur(3px)}
-          .mob-overlay-pl{display:block;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:215;backdrop-filter:blur(3px)}
-        }
-
-        @keyframes qaWave{from{transform:scaleY(.45);opacity:.4}to{transform:scaleY(1.1);opacity:1}}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-      `}</style>
+  @keyframes qaWave{from{transform:scaleY(.45);opacity:.4}to{transform:scaleY(1.1);opacity:1}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+`}</style>
 
       <DashboardNavbar />
 
       {/* ── mobile overlays ── */}
-      {sidebarOpen  && <div className="mob-overlay-nav" onClick={() => setSidebarOpen(false)} />}
+      <NavbarMenu sidebarOpen={sidebarOpen} onClose={closeSidebar} />
       {playlistOpen && <div className="mob-overlay-pl"  onClick={() => setPlaylistOpen(false)} />}
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
 
         {/* ══ NAV SIDEBAR ══ */}
-        <div className={`sidebar${sidebarOpen ? " open" : ""}`}>
-          {/* Logo */}
-          <div style={{
-            padding: "14px 12px 10px",
-            borderBottom: "1px solid rgba(var(--app-accent-rgb),.08)",
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-          }}>
-            <img
-              src="https://i.postimg.cc/wMj8BDkS/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
-              alt="QalbAudio"
-              onClick={() => goTo("/")}
-              style={{ height: 60, width: "auto", maxWidth: "88%", objectFit: "contain", cursor: "pointer", display: "block" }}
-            />
-            <div style={{ fontSize: 11, color: "var(--app-text-muted)", textAlign: "center" }}>
-              <span style={{ color: "var(--app-accent)", fontWeight: 600 }}>{displayName}</span>
-            </div>
-          </div>
-
-          <nav style={{ flex: 1, padding: "10px 8px", overflowY: "auto" }}>
-            {NAV_ITEMS.map(item => (
-              <div key={item.id}
-                className={`nav-item${activeNav === item.id ? " active" : ""}`}
-                onClick={() => goTo(item.path)}>
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
-                {item.label}
-              </div>
-            ))}
-            <div style={{ margin: "10px 0", borderTop: "1px solid var(--app-border)" }} />
-            {NAV_BOTTOM.map(item => (
-              <div key={item.id}
-                className={`nav-item${activeNav === item.id ? " active" : ""}`}
-                style={{ color: item.id === "upload" && activeNav !== item.id ? "var(--app-accent)" : undefined }}
-                onClick={() => goTo(item.path)}>
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
-                {item.label}
-              </div>
-            ))}
-          </nav>
-        </div>
+       
 
         {/* ══ PLAYLIST PANEL ══ */}
         <div className={`playlist-panel${playlistOpen ? " open" : ""}`}>
@@ -497,7 +424,7 @@ const iconBtn = {
             flexShrink: 0,
           }}>
             {/* ☰ hamburger — opens main nav sidebar (mobile only) */}
-            <button className="hamburger" onClick={() => setSidebarOpen(v => !v)}>☰</button>
+            <HamburgerBtn onClick={toggleSidebar} />
 
             {/* 📋 playlist panel button (mobile only) */}
             <button
