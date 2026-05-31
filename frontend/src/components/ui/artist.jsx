@@ -92,22 +92,13 @@ function TopArtists({ navigate, currentArtist }) {
         : artists.map(a => {
             const isActive = a.name === currentArtist
             return (
-              <div
-                key={a.name}
-                onClick={() => navigate(`/hero/artist/${encodeURIComponent(a.name)}`)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 10, padding: "7px 8px",
-                  borderRadius: 9, cursor: "pointer", marginBottom: 2,
-                  background: isActive ? "rgba(var(--app-accent-rgb),0.1)" : "transparent",
-                  border: isActive ? "1px solid rgba(var(--app-accent-rgb),0.2)" : "1px solid transparent",
-                  transition: "all 0.15s",
-                }}
+              <div key={a.name} onClick={() => navigate(`/hero/artist/${encodeURIComponent(a.name)}`)}
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 8px", borderRadius: 9, cursor: "pointer", marginBottom: 2, background: isActive ? "rgba(var(--app-accent-rgb),0.1)" : "transparent", border: isActive ? "1px solid rgba(var(--app-accent-rgb),0.2)" : "1px solid transparent", transition: "all 0.15s" }}
                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--app-surface)" }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent" }}
               >
                 <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `2px solid ${isActive ? "var(--app-accent)" : "rgba(var(--app-accent-rgb),0.2)"}`, background: "var(--app-surface)" }}>
-                  <img src={a.imageUrl} alt={a.name} style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    onError={e => { e.target.src = dicebearUrl(a.name) }} />
+                  <img src={a.imageUrl} alt={a.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { e.target.src = dicebearUrl(a.name) }} />
                 </div>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ color: isActive ? "var(--app-accent)" : "var(--app-text-main)", fontWeight: 600, fontSize: 12.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.name}</div>
@@ -156,21 +147,12 @@ function AddToPlaylistDropdown({ song, userId, onClose }) {
   }
 
   return (
-    <div ref={ref} style={{
-      position: "absolute", zIndex: 2000, top: "110%", right: 0,
-      background: "var(--app-shell-bg-alt)", border: "1px solid rgba(var(--app-accent-rgb),0.25)",
-      borderRadius: 12, minWidth: 200, boxShadow: "0 16px 48px rgba(0,0,0,0.8)", overflow: "hidden",
-      backdropFilter: "blur(16px)",
-    }}>
-      <div style={{ padding: "9px 14px", borderBottom: "1px solid var(--app-border)", color: "var(--app-accent)", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em" }}>
-        📋 ADD TO PLAYLIST
-      </div>
+    <div ref={ref} style={{ position: "absolute", zIndex: 2000, top: "110%", right: 0, background: "var(--app-shell-bg-alt)", border: "1px solid rgba(var(--app-accent-rgb),0.25)", borderRadius: 12, minWidth: 200, boxShadow: "0 16px 48px rgba(0,0,0,0.8)", overflow: "hidden", backdropFilter: "blur(16px)" }}>
+      <div style={{ padding: "9px 14px", borderBottom: "1px solid var(--app-border)", color: "var(--app-accent)", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em" }}>📋 ADD TO PLAYLIST</div>
       {toast
         ? <div style={{ padding: 14, textAlign: "center", color: "var(--app-accent)", fontSize: 13, fontWeight: 600 }}>{toast}</div>
-        : loading
-        ? <div style={{ padding: 14, color: "var(--app-text-muted)", fontSize: 12, textAlign: "center" }}>Loading…</div>
-        : playlists.length === 0
-        ? <div style={{ padding: 14, color: "var(--app-text-muted)", fontSize: 12, textAlign: "center" }}>No playlists found</div>
+        : loading ? <div style={{ padding: 14, color: "var(--app-text-muted)", fontSize: 12, textAlign: "center" }}>Loading…</div>
+        : playlists.length === 0 ? <div style={{ padding: 14, color: "var(--app-text-muted)", fontSize: 12, textAlign: "center" }}>No playlists found</div>
         : playlists.map(pl => (
           <div key={pl._id} onClick={() => add(pl)}
             style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", cursor: "pointer", color: adding === pl._id ? "var(--app-accent)" : "var(--app-text-main)", fontSize: 13, transition: "background 0.15s" }}
@@ -216,6 +198,7 @@ export default function ArtistPage() {
   const [artistData, setArtistData] = useState(null)
   const [mongoArtist, setMongoArtist] = useState(null)
   const [bgLoaded, setBgLoaded] = useState(false)
+  const [imgLoaded, setImgLoaded] = useState(false)
   const [activeTab, setActiveTab] = useState("songs")
   const [openPlusId, setOpenPlusId] = useState(null)
   const [sortOrder, setSortOrder] = useState("newest")
@@ -276,37 +259,49 @@ export default function ArtistPage() {
         @keyframes wave{from{transform:scaleY(0.35)}to{transform:scaleY(1)}}
         @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:calc(200px + 100%) 0}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
         .qa-skeleton{background:linear-gradient(90deg,var(--app-surface) 25%,rgba(var(--app-accent-rgb),0.06) 50%,var(--app-surface) 75%);background-size:400px 100%;animation:shimmer 1.4s ease infinite}
 
         /* ── Sidebar ── */
         .qa-sidebar{width:216px;background:var(--app-shell-bg-alt);border-right:1px solid rgba(var(--app-accent-rgb),0.1);display:flex;flex-direction:column;flex-shrink:0;transition:transform 0.28s cubic-bezier(.4,0,.2,1)}
-        @media(max-width:768px){.qa-sidebar{position:fixed;left:0;top:0;bottom:0;z-index:200;width:250px;transform:translateX(-100%);box-shadow:4px 0 40px rgba(0,0,0,0.6)}.qa-sidebar.open{transform:translateX(0)}}
-        .mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:199;backdrop-filter:blur(3px)}
+        @media(max-width:768px){
+          .qa-sidebar{position:fixed;left:0;top:0;bottom:0;z-index:200;width:260px;transform:translateX(-100%);box-shadow:4px 0 40px rgba(0,0,0,0.7)}
+          .qa-sidebar.open{transform:translateX(0)}
+        }
+        .mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:199;backdrop-filter:blur(3px)}
         @media(max-width:768px){.mob-overlay.visible{display:block}}
 
-        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;margin-bottom:3px;font-size:13px;font-weight:500;color:var(--app-text-muted);border-left:3px solid transparent;transition:all 0.18s}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;margin-bottom:3px;font-size:13px;font-weight:500;color:var(--app-text-muted);border-left:3px solid transparent;transition:all 0.18s;user-select:none}
         .nav-item:hover{background:var(--app-surface);color:var(--app-text-main)}
         .nav-item.active{background:rgba(var(--app-accent-rgb),0.12);border-left-color:var(--app-accent);color:var(--app-accent);font-weight:700}
 
         /* ── Tabs ── */
-        .qa-tab{padding:11px 0;font-size:12.5px;font-weight:700;color:var(--app-text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;letter-spacing:0.08em;margin-right:28px;user-select:none;text-transform:uppercase}
+        .qa-tab{padding:11px 0;font-size:12.5px;font-weight:700;color:var(--app-text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;letter-spacing:0.08em;margin-right:24px;user-select:none;text-transform:uppercase;white-space:nowrap}
         .qa-tab:hover{color:var(--app-text-main)}
         .qa-tab.active{color:var(--app-accent);border-bottom-color:var(--app-accent)}
 
-        /* ── Song Row ── */
+        /* ── Song Row — desktop ── */
         .qa-song-row{display:grid;grid-template-columns:28px 44px 1fr auto auto;align-items:center;gap:12px;padding:9px 12px;border-radius:10px;cursor:pointer;transition:background 0.15s;position:relative;border-left:3px solid transparent;margin-bottom:2px}
         .qa-song-row:hover{background:var(--app-surface)}
         .qa-song-row.active-row{border-left-color:var(--app-accent);background:rgba(var(--app-accent-rgb),0.06)}
+        @media(max-width:520px){
+          .qa-song-row{grid-template-columns:28px 40px 1fr auto auto;gap:8px;padding:8px 8px}
+          .qa-song-duration{display:none}
+        }
 
         /* ── Buttons ── */
-        .qa-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:50px;cursor:pointer;font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif;letter-spacing:0.04em;transition:all 0.18s;outline:none;white-space:nowrap;user-select:none}
+        .qa-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:50px;cursor:pointer;font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif;letter-spacing:0.04em;transition:all 0.18s;outline:none;white-space:nowrap;user-select:none}
         .qa-btn-primary{background:linear-gradient(135deg,var(--app-accent-strong),var(--app-accent));border:none;color:#000}
         .qa-btn-primary:hover{transform:scale(1.04);filter:brightness(1.1)}
-        .qa-btn-outline{background:transparent;border:1.5px solid rgba(255,255,255,0.3);color:var(--app-text-main)}
+        .qa-btn-outline{background:transparent;border:1.5px solid rgba(255,255,255,0.3);color:#fff}
         .qa-btn-outline:hover{border-color:rgba(255,255,255,0.7);transform:scale(1.03)}
-        .qa-btn-icon{background:transparent;border:1.5px solid rgba(255,255,255,0.28);color:var(--app-text-muted);padding:9px 13px;border-radius:50%;font-size:16px;line-height:1}
-        .qa-btn-icon:hover{border-color:rgba(255,255,255,0.65);color:var(--app-text-main);transform:scale(1.05)}
+        .qa-btn-icon{background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.25);color:#fff;padding:9px 13px;border-radius:50%;font-size:16px;line-height:1}
+        .qa-btn-icon:hover{background:rgba(255,255,255,0.18);transform:scale(1.05)}
+        @media(max-width:420px){
+          .qa-btn{padding:8px 14px;font-size:12px}
+          .qa-btn-hide-mob{display:none}
+        }
 
         /* ── Stat card ── */
         .qa-stat-card{background:var(--app-surface);border:1px solid var(--app-border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px}
@@ -336,10 +331,85 @@ export default function ArtistPage() {
         .hamburger:hover{background:var(--app-surface)}
         @media(max-width:768px){.hamburger{display:flex;align-items:center;justify-content:center}}
 
+        /* ── Hero ── */
+        .hero-wrap{position:relative;overflow:hidden;flex-shrink:0}
+
+        /* Desktop: fixed height */
+        @media(min-width:601px){.hero-wrap{height:420px}}
+        /* Mobile: taller, stacked layout */
+        @media(max-width:600px){.hero-wrap{height:auto;min-height:340px}}
+
+        /* Artist portrait positioning */
+        .artist-portrait{
+          position:absolute;
+          right:0; bottom:0;
+          height:95%;
+          width:auto;
+          max-width:55%;
+          object-fit:cover;
+          object-position:center top;
+          mask-image:linear-gradient(to left, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 50%, transparent 100%),
+                      linear-gradient(to top, transparent 0%, black 15%);
+          -webkit-mask-image:linear-gradient(to left, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 50%, transparent 100%);
+          mask-composite:intersect;
+          -webkit-mask-composite:destination-in;
+          transition:opacity 0.6s ease;
+          filter:drop-shadow(-12px 0 32px rgba(0,0,0,0.6));
+        }
+        @media(max-width:600px){
+          .artist-portrait{
+            position:relative;
+            width:130px; height:150px;
+            max-width:none;
+            border-radius:12px;
+            object-fit:cover;
+            mask-image:none;
+            -webkit-mask-image:none;
+            filter:none;
+            box-shadow:0 8px 32px rgba(0,0,0,0.6);
+            flex-shrink:0;
+          }
+        }
+
+        /* Hero content layout */
+        .hero-content{
+          position:absolute; inset:0; z-index:3;
+          display:flex; flex-direction:column;
+          justify-content:flex-end;
+          padding:0 32px 32px;
+        }
+        @media(max-width:600px){
+          .hero-content{
+            position:relative; inset:auto;
+            padding:20px 16px 24px;
+            display:flex; flex-direction:column; gap:0;
+          }
+        }
+
+        /* Mobile: row with portrait + text */
+        .hero-mob-row{display:none}
+        @media(max-width:600px){
+          .hero-mob-row{display:flex;align-items:flex-end;gap:16px;margin-bottom:16px}
+        }
+        .hero-text-block{}
+        @media(max-width:600px){.hero-text-block{flex:1;min-width:0}}
+
+        /* Stats row wrap on mobile */
+        .hero-stats{display:flex;align-items:center;gap:24px;margin-bottom:18px;flex-wrap:wrap}
+        @media(max-width:600px){.hero-stats{gap:16px;margin-bottom:14px}}
+
+        /* Action buttons wrap */
+        .hero-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+        @media(max-width:420px){.hero-actions{gap:7px}}
+
+        /* ── Mobile toolbar ── */
+        .mob-toolbar{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--app-shell-bg-alt);border-bottom:1px solid rgba(var(--app-accent-rgb),0.08);flex-shrink:0}
+
         .fade-up{animation:fadeUp 0.5s ease both}
         .fade-up-1{animation-delay:0.05s}
         .fade-up-2{animation-delay:0.12s}
         .fade-up-3{animation-delay:0.2s}
+        .fade-in{animation:fadeIn 0.6s ease both}
       `}</style>
 
       <DashboardNavbar />
@@ -347,7 +417,7 @@ export default function ArtistPage() {
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
-        {/* ══ SIDEBAR — no now-playing mini at bottom ══ */}
+        {/* ══ SIDEBAR ══ */}
         <div className={`qa-sidebar${sidebarOpen ? " open" : ""}`}>
           <div style={{ padding: "14px 12px 10px", borderBottom: "1px solid rgba(var(--app-accent-rgb),0.08)", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
             <img
@@ -360,144 +430,136 @@ export default function ArtistPage() {
               <span style={{ color: "var(--app-accent)", fontWeight: 600 }}>{displayName}</span>
             </div>
           </div>
-          {/* Nav — fills full remaining height, NO now-playing bar at bottom */}
           <nav style={{ flex: 1, padding: "10px 8px", overflowY: "auto" }}>
             {NAV_ITEMS.map(item => (
-              <div
-                key={item.id}
-                className={`nav-item${item.id === "home" ? " active" : ""}`}
-                onClick={() => { navigate(item.path); setSidebarOpen(false) }}
-              >
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
-                {item.label}
+              <div key={item.id} className={`nav-item${item.id === "home" ? " active" : ""}`}
+                onClick={() => { navigate(item.path); setSidebarOpen(false) }}>
+                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>{item.label}
               </div>
             ))}
             <div style={{ margin: "10px 0", borderTop: "1px solid var(--app-border)" }} />
             {NAV_BOTTOM.map(item => (
-              <div
-                key={item.id}
-                className="nav-item"
+              <div key={item.id} className="nav-item"
                 style={{ color: item.id === "upload" ? "var(--app-accent)" : undefined }}
-                onClick={() => { navigate(item.path); setSidebarOpen(false) }}
-              >
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
-                {item.label}
+                onClick={() => { navigate(item.path); setSidebarOpen(false) }}>
+                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>{item.label}
               </div>
             ))}
           </nav>
-          {/* ↑ No mini player bar here — removed */}
         </div>
 
         {/* ── MAIN ── */}
         <div style={{ flex: 1, display: "flex", overflow: "hidden", minWidth: 0 }}>
-          <div style={{ flex: 1, overflowY: "auto", position: "relative", display: "flex", flexDirection: "column" }}>
+          <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
 
             {/* Mobile toolbar */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 14px", background: "var(--app-shell-bg-alt)", borderBottom: "1px solid rgba(var(--app-accent-rgb),0.08)", flexShrink: 0 }}>
+            <div className="mob-toolbar">
               <button className="hamburger" onClick={() => setSidebarOpen(v => !v)}>☰</button>
               <span style={{ color: "var(--app-text-main)", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{decodedName}</span>
             </div>
 
-            {/* ══ HERO — taller BG, no portrait on the left ══ */}
-            <div style={{ position: "relative", height: 380, overflow: "hidden", flexShrink: 0 }}>
+            {/* ══ HERO ══ */}
+            <div className="hero-wrap">
 
-              {/* Full-width background — taller, object-position top so face shows */}
+              {/* ── Background image (full bleed) ── */}
               {bgImage ? (
-                <img
-                  src={bgImage} alt=""
-                  onLoad={() => setBgLoaded(true)}
-                  style={{
-                    position: "absolute", inset: 0, width: "100%", height: "100%",
-                    objectFit: "cover", objectPosition: "center 20%",
-                    opacity: bgLoaded ? 1 : 0, transition: "opacity 0.7s ease",
-                  }}
-                />
+                <img src={bgImage} alt="" onLoad={() => setBgLoaded(true)}
+                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 20%", opacity: bgLoaded ? 1 : 0, transition: "opacity 0.7s" }} />
               ) : (
-                /* Fallback: show artist portrait as full-bleed background when no bg image */
-                <img
-                  src={artistImg} alt={decodedName}
-                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", filter: "blur(18px) brightness(0.45)", transform: "scale(1.08)" }}
-                />
+                <img src={artistImg} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", filter: "blur(20px) brightness(0.4)", transform: "scale(1.1)" }} />
               )}
 
-              {/* Left 35% dark fade only */}
-              <div style={{
-                position: "absolute", inset: 0, zIndex: 1,
-                background: "linear-gradient(to right, #0a0a0a 0%, #0a0a0a 18%, rgba(10,10,10,0.88) 28%, rgba(10,10,10,0.45) 40%, rgba(10,10,10,0.1) 55%, transparent 68%)",
-              }} />
+              {/* ── Left dark fade ── */}
+              <div style={{ position: "absolute", inset: 0, zIndex: 1, background: "linear-gradient(to right, #0a0a0a 0%, #0a0a0a 15%, rgba(10,10,10,0.85) 25%, rgba(10,10,10,0.4) 42%, rgba(10,10,10,0.05) 60%, transparent 72%)" }} />
 
-              {/* Bottom fade into page */}
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 110, background: "linear-gradient(to bottom, transparent, var(--app-shell-bg))", zIndex: 2 }} />
+              {/* ── Bottom fade ── */}
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 120, background: "linear-gradient(to bottom, transparent, var(--app-shell-bg))", zIndex: 2 }} />
 
-              {/* Hero content — NO portrait image, just text & buttons */}
-              <div style={{ position: "absolute", inset: 0, zIndex: 3, display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: "0 32px 36px" }}>
+              {/* ── Artist portrait — right side, fades into bg ── */}
+              <img
+                src={artistImg} alt={decodedName}
+                onLoad={() => setImgLoaded(true)}
+                className="artist-portrait fade-in"
+                style={{ zIndex: 2, opacity: imgLoaded ? 1 : 0 }}
+              />
 
-                <div className="fade-up fade-up-1" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.55)", letterSpacing: "0.14em" }}>ARTIST</span>
-                  <span style={{ color: "var(--app-accent)", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", width: 17, height: 17, background: "rgba(var(--app-accent-rgb),0.22)", borderRadius: "50%" }}>✔</span>
-                </div>
+              {/* ── DESKTOP hero content ── */}
+              <div className="hero-content" style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
 
-                <h1 className="fade-up fade-up-1" style={{
-                  fontSize: "clamp(36px,5.5vw,72px)", fontWeight: 900, color: "#fff",
-                  lineHeight: 1, letterSpacing: "-0.03em", margin: "0 0 8px",
-                  textShadow: "0 2px 32px rgba(0,0,0,0.7)",
-                }}>
-                  {decodedName}
-                </h1>
+                {/* Hide on mobile — mobile uses .hero-mob-row below */}
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <div className="fade-up fade-up-1" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", letterSpacing: "0.14em" }}>ARTIST</span>
+                    <span style={{ color: "var(--app-accent)", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", width: 17, height: 17, background: "rgba(var(--app-accent-rgb),0.22)", borderRadius: "50%" }}>✔</span>
+                  </div>
 
-                <div className="fade-up fade-up-1" style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: bio ? 10 : 18 }}>
-                  {loading ? "Loading…" : `${songs.length} song${songs.length !== 1 ? "s" : ""}`}
-                </div>
-
-                {bio && (
-                  <p className="fade-up fade-up-2" style={{
-                    color: "rgba(255,255,255,0.6)", fontSize: 13.5, lineHeight: 1.65,
-                    maxWidth: 520, margin: "0 0 16px",
-                    display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-                  }}>{bio}</p>
-                )}
-
-                {/* Stats */}
-                <div className="fade-up fade-up-2" style={{ display: "flex", alignItems: "center", gap: 28, marginBottom: 20, flexWrap: "wrap" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                    <span style={{ fontSize: 16 }}>🎵</span>
-                    <div>
-                      <div style={{ color: "#fff", fontWeight: 800, fontSize: 14, lineHeight: 1.1 }}>{loading ? "—" : songs.length}</div>
-                      <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.09em" }}>SONGS</div>
+                  {/* ── Mobile: portrait + name side by side ── */}
+                  <div className="hero-mob-row">
+                    <img src={artistImg} alt={decodedName} className="artist-portrait" style={{ position: "static", height: 150, width: 130, borderRadius: 12, objectFit: "cover", objectPosition: "center top", mask: "none", WebkitMask: "none", filter: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.6)", opacity: 1 }} />
+                    <div className="hero-text-block">
+                      <h1 style={{ fontSize: "clamp(26px,7vw,42px)", fontWeight: 900, color: "#fff", lineHeight: 1.05, letterSpacing: "-0.025em", margin: "0 0 5px", textShadow: "0 2px 16px rgba(0,0,0,0.8)" }}>
+                        {decodedName}
+                      </h1>
+                      <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginBottom: 8 }}>
+                        {loading ? "Loading…" : `${songs.length} song${songs.length !== 1 ? "s" : ""}`}
+                      </div>
                     </div>
                   </div>
-                  {monthlyListeners && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                      <span style={{ fontSize: 16 }}>🎧</span>
-                      <div>
-                        <div style={{ color: "#fff", fontWeight: 800, fontSize: 14, lineHeight: 1.1 }}>{monthlyListeners}</div>
-                        <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.09em" }}>MONTHLY LISTENERS</div>
-                      </div>
-                    </div>
-                  )}
-                  {location && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                      <span style={{ fontSize: 16 }}>📍</span>
-                      <div>
-                        <div style={{ color: "#fff", fontWeight: 800, fontSize: 14, lineHeight: 1.1 }}>{location}</div>
-                        <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.09em" }}>FROM</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
 
-                {/* Action buttons */}
-                <div className="fade-up fade-up-3" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                  <button className="qa-btn qa-btn-primary" onClick={playAll}><span style={{ fontSize: 11 }}>▶</span> PLAY ALL</button>
-                  <button className="qa-btn qa-btn-outline" onClick={shufflePlay}><span style={{ fontSize: 13 }}>⇄</span> SHUFFLE</button>
-                  <button className="qa-btn qa-btn-outline"><span style={{ fontSize: 14 }}>+</span> ADD TO PLAYLIST</button>
-                  <button className="qa-btn qa-btn-icon">···</button>
+                  {/* Desktop-only name */}
+                  <h1 className="fade-up fade-up-1" style={{ fontSize: "clamp(38px,5vw,72px)", fontWeight: 900, color: "#fff", lineHeight: 1, letterSpacing: "-0.03em", margin: "0 0 6px", textShadow: "0 2px 32px rgba(0,0,0,0.7)", display: "var(--hero-name-desktop, block)" }}>
+                    <style>{`@media(max-width:600px){.qa-hero-name-desktop{display:none!important}}`}</style>
+                    <span className="qa-hero-name-desktop">{decodedName}</span>
+                  </h1>
+
+                  <div className="fade-up fade-up-1 qa-hero-name-desktop" style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: bio ? 10 : 16 }}>
+                    {loading ? "Loading…" : `${songs.length} song${songs.length !== 1 ? "s" : ""}`}
+                  </div>
+
+                  {bio && (
+                    <p className="fade-up fade-up-2" style={{ color: "rgba(255,255,255,0.6)", fontSize: 13.5, lineHeight: 1.65, maxWidth: 500, margin: "0 0 14px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{bio}</p>
+                  )}
+
+                  <div className="hero-stats fade-up fade-up-2">
+                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                      <span style={{ fontSize: 15 }}>🎵</span>
+                      <div>
+                        <div style={{ color: "#fff", fontWeight: 800, fontSize: 14, lineHeight: 1.1 }}>{loading ? "—" : songs.length}</div>
+                        <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.09em" }}>SONGS</div>
+                      </div>
+                    </div>
+                    {monthlyListeners && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                        <span style={{ fontSize: 15 }}>🎧</span>
+                        <div>
+                          <div style={{ color: "#fff", fontWeight: 800, fontSize: 14, lineHeight: 1.1 }}>{monthlyListeners}</div>
+                          <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.09em" }}>MONTHLY LISTENERS</div>
+                        </div>
+                      </div>
+                    )}
+                    {location && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                        <span style={{ fontSize: 15 }}>📍</span>
+                        <div>
+                          <div style={{ color: "#fff", fontWeight: 800, fontSize: 14, lineHeight: 1.1 }}>{location}</div>
+                          <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.09em" }}>FROM</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="hero-actions fade-up fade-up-3">
+                    <button className="qa-btn qa-btn-primary" onClick={playAll}><span style={{ fontSize: 11 }}>▶</span> PLAY ALL</button>
+                    <button className="qa-btn qa-btn-outline" onClick={shufflePlay}><span style={{ fontSize: 13 }}>⇄</span> SHUFFLE</button>
+                    <button className="qa-btn qa-btn-outline qa-btn-hide-mob"><span style={{ fontSize: 14 }}>+</span> ADD TO PLAYLIST</button>
+                    <button className="qa-btn qa-btn-icon">···</button>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* ── TABS ── */}
-            <div style={{ background: "var(--app-shell-bg)", padding: "0 24px", borderBottom: "1px solid var(--app-border)", display: "flex", flexShrink: 0 }}>
+            <div style={{ background: "var(--app-shell-bg)", padding: "0 16px", borderBottom: "1px solid var(--app-border)", display: "flex", flexShrink: 0, overflowX: "auto" }}>
               {["songs", "albums", "about"].map(tab => (
                 <div key={tab} className={`qa-tab${activeTab === tab ? " active" : ""}`} onClick={() => setActiveTab(tab)}>
                   {tab.toUpperCase()}
@@ -509,26 +571,21 @@ export default function ArtistPage() {
             <div style={{ flex: 1, overflowY: "auto" }}>
 
               {activeTab === "songs" && (
-                <div style={{ padding: "18px 20px 80px" }}>
+                <div style={{ padding: "16px 12px 100px" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                     <div style={{ color: "var(--app-text-main)", fontSize: 13.5, fontWeight: 700 }}>
                       All Songs <span style={{ color: "var(--app-text-muted)", fontWeight: 500 }}>({songs.length})</span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <select value={sortOrder} onChange={e => setSortOrder(e.target.value)}
-                        style={{ background: "var(--app-surface)", border: "1px solid var(--app-border)", borderRadius: 8, color: "var(--app-text-main)", fontSize: 12, padding: "6px 10px", cursor: "pointer", outline: "none", fontFamily: "'DM Sans',sans-serif" }}>
-                        <option value="newest">Newest First</option>
-                        <option value="oldest">Oldest First</option>
-                        <option value="alpha">A–Z</option>
-                      </select>
-                      <span style={{ color: "var(--app-text-muted)", fontSize: 17, cursor: "pointer" }}>☰</span>
-                    </div>
+                    <select value={sortOrder} onChange={e => setSortOrder(e.target.value)}
+                      style={{ background: "var(--app-surface)", border: "1px solid var(--app-border)", borderRadius: 8, color: "var(--app-text-main)", fontSize: 12, padding: "6px 10px", cursor: "pointer", outline: "none", fontFamily: "'DM Sans',sans-serif" }}>
+                      <option value="newest">Newest First</option>
+                      <option value="oldest">Oldest First</option>
+                      <option value="alpha">A–Z</option>
+                    </select>
                   </div>
 
                   {loading
-                    ? Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} className="qa-skeleton" style={{ height: 54, borderRadius: 10, marginBottom: 4 }} />
-                      ))
+                    ? Array.from({ length: 5 }).map((_, i) => <div key={i} className="qa-skeleton" style={{ height: 54, borderRadius: 10, marginBottom: 4 }} />)
                     : sortedSongs.length === 0
                     ? <div style={{ textAlign: "center", color: "var(--app-text-muted)", padding: "60px 0", fontSize: 13.5 }}>No songs found</div>
                     : sortedSongs.map((song, idx) => {
@@ -539,15 +596,15 @@ export default function ArtistPage() {
                             <div style={{ textAlign: "center", fontSize: 12.5, fontWeight: 600, color: active ? "var(--app-accent)" : "var(--app-text-muted)" }}>
                               {active ? <MiniWave isPlaying={isPlaying} /> : idx + 1}
                             </div>
-                            <div onClick={() => playSongFromList(song)} style={{ width: 44, height: 44, borderRadius: 9, overflow: "hidden", background: "var(--app-surface)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, cursor: "pointer", position: "relative", flexShrink: 0, boxShadow: active ? "0 0 14px rgba(var(--app-accent-rgb),0.35)" : "none" }}>
+                            <div onClick={() => playSongFromList(song)} style={{ width: 40, height: 40, borderRadius: 8, overflow: "hidden", background: "var(--app-surface)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, cursor: "pointer", position: "relative", flexShrink: 0, boxShadow: active ? "0 0 14px rgba(var(--app-accent-rgb),0.35)" : "none" }}>
                               {song.cover_url ? <img src={song.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🎵"}
                               {active && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center" }}><MiniWave isPlaying={isPlaying} /></div>}
                             </div>
                             <div onClick={() => playSongFromList(song)} style={{ minWidth: 0, cursor: "pointer" }}>
-                              <div style={{ color: active ? "var(--app-accent)" : "var(--app-text-main)", fontWeight: 600, fontSize: 13.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{song.name}</div>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
-                                {song.music_type && <span style={{ color: "var(--app-accent)", fontSize: 10, background: "rgba(var(--app-accent-rgb),0.1)", padding: "1px 7px", borderRadius: 4, fontWeight: 700, textTransform: "capitalize" }}>{song.music_type}</span>}
-                                {song.location && <span style={{ color: "var(--app-text-muted)", fontSize: 11.5 }}>{song.location}</span>}
+                              <div style={{ color: active ? "var(--app-accent)" : "var(--app-text-main)", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{song.name}</div>
+                              <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2, flexWrap: "nowrap", overflow: "hidden" }}>
+                                {song.music_type && <span style={{ color: "var(--app-accent)", fontSize: 10, background: "rgba(var(--app-accent-rgb),0.1)", padding: "1px 6px", borderRadius: 4, fontWeight: 700, textTransform: "capitalize", flexShrink: 0 }}>{song.music_type}</span>}
+                                {song.location && <span style={{ color: "var(--app-text-muted)", fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{song.location}</span>}
                               </div>
                               {active && (
                                 <div style={{ height: 2, background: "var(--app-border)", borderRadius: 1, overflow: "hidden", marginTop: 5 }}>
@@ -555,21 +612,16 @@ export default function ArtistPage() {
                                 </div>
                               )}
                             </div>
-                            <div style={{ color: "var(--app-text-muted)", fontSize: 12.5, fontFamily: "monospace", flexShrink: 0 }}>{fmt(song.duration)}</div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                            <div className="qa-song-duration" style={{ color: "var(--app-text-muted)", fontSize: 12.5, fontFamily: "monospace", flexShrink: 0 }}>{fmt(song.duration)}</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
                               <FavoriteButton song={song} />
                               <div style={{ position: "relative" }}>
-                                <button
-                                  onClick={e => { e.stopPropagation(); setOpenPlusId(openPlusId === song.id ? null : song.id) }}
+                                <button onClick={e => { e.stopPropagation(); setOpenPlusId(openPlusId === song.id ? null : song.id) }}
                                   style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(var(--app-accent-rgb),0.1)", border: "1px solid rgba(var(--app-accent-rgb),0.3)", color: "var(--app-accent)", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}
                                   onMouseEnter={e => e.currentTarget.style.background = "rgba(var(--app-accent-rgb),0.22)"}
-                                  onMouseLeave={e => e.currentTarget.style.background = "rgba(var(--app-accent-rgb),0.1)"}
-                                >+</button>
+                                  onMouseLeave={e => e.currentTarget.style.background = "rgba(var(--app-accent-rgb),0.1)"}>+</button>
                                 {openPlusId === song.id && <AddToPlaylistDropdown song={song} userId={userId} onClose={() => setOpenPlusId(null)} />}
                               </div>
-                              <button style={{ width: 28, height: 28, borderRadius: "50%", background: "transparent", border: "none", color: "var(--app-text-muted)", fontSize: 17, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                                onMouseEnter={e => e.currentTarget.style.color = "var(--app-text-main)"}
-                                onMouseLeave={e => e.currentTarget.style.color = "var(--app-text-muted)"}>⋮</button>
                             </div>
                           </div>
                         )
@@ -578,23 +630,21 @@ export default function ArtistPage() {
               )}
 
               {activeTab === "albums" && (
-                <div style={{ padding: "48px 28px", textAlign: "center", color: "var(--app-text-muted)", fontSize: 13.5 }}>No albums available yet</div>
+                <div style={{ padding: "48px 20px", textAlign: "center", color: "var(--app-text-muted)", fontSize: 13.5 }}>No albums available yet</div>
               )}
 
               {activeTab === "about" && (
-                <div style={{ padding: "28px 24px", maxWidth: 620 }}>
-                  {bio
-                    ? <p style={{ color: "var(--app-text-muted)", fontSize: 13.5, lineHeight: 1.85, marginBottom: 28 }}>{bio}</p>
-                    : <div style={{ color: "var(--app-text-muted)", fontSize: 13.5, marginBottom: 28 }}>No bio available</div>
-                  }
+                <div style={{ padding: "24px 16px", maxWidth: 620 }}>
+                  {bio ? <p style={{ color: "var(--app-text-muted)", fontSize: 13.5, lineHeight: 1.85, marginBottom: 24 }}>{bio}</p>
+                    : <div style={{ color: "var(--app-text-muted)", fontSize: 13.5, marginBottom: 24 }}>No bio available</div>}
                   {quote && (
-                    <div style={{ borderLeft: "3px solid var(--app-accent)", paddingLeft: 20, marginBottom: 28 }}>
-                      <div style={{ fontSize: 26, color: "var(--app-accent)", lineHeight: 1, marginBottom: 8 }}>"</div>
+                    <div style={{ borderLeft: "3px solid var(--app-accent)", paddingLeft: 18, marginBottom: 24 }}>
+                      <div style={{ fontSize: 24, color: "var(--app-accent)", lineHeight: 1, marginBottom: 8 }}>"</div>
                       <p style={{ color: "var(--app-text-muted)", fontSize: 13.5, fontStyle: "italic", lineHeight: 1.75, marginBottom: 10 }}>{quote}</p>
                       <div style={{ color: "var(--app-accent)", fontSize: 13, fontStyle: "italic", fontWeight: 600 }}>— {decodedName}</div>
                     </div>
                   )}
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     {location && <div style={{ background: "var(--app-surface)", border: "1px solid var(--app-border)", borderRadius: 20, padding: "6px 14px", fontSize: 12, color: "var(--app-text-muted)", display: "flex", alignItems: "center", gap: 6 }}>📍 {location}</div>}
                     {monthlyListeners && <div style={{ background: "var(--app-surface)", border: "1px solid var(--app-border)", borderRadius: 20, padding: "6px 14px", fontSize: 12, color: "var(--app-text-muted)", display: "flex", alignItems: "center", gap: 6 }}>🎧 {monthlyListeners} Monthly Listeners</div>}
                     {avgRating && <div style={{ background: "var(--app-surface)", border: "1px solid var(--app-border)", borderRadius: 20, padding: "6px 14px", fontSize: 12, color: "var(--app-text-muted)", display: "flex", alignItems: "center", gap: 6 }}>⭐ {avgRating} Rating</div>}
@@ -604,22 +654,16 @@ export default function ArtistPage() {
             </div>
           </div>
 
-          {/* ══ RIGHT PANEL — Top Artists replaces Top Listeners, no ArtistsSection above ══ */}
+          {/* ══ RIGHT PANEL ══ */}
           <div className="qa-right-panel">
-
-            {/* About */}
             <div>
               <div style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 12.5, marginBottom: 10, letterSpacing: "0.05em" }}>About {decodedName}</div>
-              {bio
-                ? <p style={{ color: "var(--app-text-muted)", fontSize: 12, lineHeight: 1.75 }}>{bio}</p>
-                : <div className="qa-skeleton" style={{ height: 58, borderRadius: 8 }} />
-              }
+              {bio ? <p style={{ color: "var(--app-text-muted)", fontSize: 12, lineHeight: 1.75 }}>{bio}</p>
+                : <div className="qa-skeleton" style={{ height: 58, borderRadius: 8 }} />}
             </div>
 
-            {/* ── Top Artists (replaces Top Listeners) ── */}
             <TopArtists navigate={navigate} currentArtist={decodedName} />
 
-            {/* Stat cards */}
             {monthlyListeners && (
               <div className="qa-stat-card">
                 <span style={{ fontSize: 20 }}>🎧</span>
@@ -645,8 +689,6 @@ export default function ArtistPage() {
                 </div>
               </div>
             )}
-
-            {/* Quote */}
             {quote && (
               <div style={{ background: "rgba(var(--app-accent-rgb),0.05)", border: "1px solid rgba(var(--app-accent-rgb),0.14)", borderRadius: 12, padding: "15px 15px 13px" }}>
                 <div style={{ color: "var(--app-accent)", fontSize: 22, lineHeight: 1, marginBottom: 8 }}>"</div>
@@ -654,14 +696,11 @@ export default function ArtistPage() {
                 <div style={{ color: "var(--app-accent)", fontSize: 13, fontStyle: "italic", fontWeight: 700, textAlign: "right", fontFamily: "'Dancing Script', cursive" }}>— {decodedName}</div>
               </div>
             )}
-
-            {/* Now playing */}
             {currentSong && (
               <div style={{ background: "rgba(var(--app-accent-rgb),0.06)", border: "1px solid rgba(var(--app-accent-rgb),0.2)", borderRadius: 12, padding: "12px", textAlign: "center" }}>
                 <div style={{ color: "var(--app-text-muted)", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", marginBottom: 8 }}>NOW PLAYING</div>
                 <div style={{ width: 64, height: 64, borderRadius: 10, overflow: "hidden", margin: "0 auto 10px", background: "var(--app-surface)" }}>
-                  {currentSong.cover_url
-                    ? <img src={currentSong.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  {currentSong.cover_url ? <img src={currentSong.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>🎵</div>}
                 </div>
                 <div style={{ color: "var(--app-text-main)", fontWeight: 600, fontSize: 13, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{currentSong.name}</div>
@@ -676,7 +715,6 @@ export default function ArtistPage() {
       {/* ══ PLAYER BAR ══ */}
       <div className="player-bar">
         <div className="player-progress-line" style={{ width: `${progressPct}%` }} />
-
         <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "0 0 auto", width: 200, minWidth: 0 }}>
           <div style={{ width: 42, height: 42, borderRadius: 9, overflow: "hidden", background: "var(--app-surface)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, boxShadow: currentSong ? "0 0 12px rgba(var(--app-accent-rgb),0.25)" : "none", position: "relative" }}>
             {currentSong?.cover_url ? <img src={currentSong.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🎵"}
@@ -691,9 +729,7 @@ export default function ArtistPage() {
             </div>
           </div>
         </div>
-
         <div className="player-wave"><Waveform isPlaying={isPlaying} /></div>
-
         <div className="player-controls">
           <button onClick={playPrev} style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 18, padding: 4, transition: "color 0.15s" }}
             onMouseEnter={e => e.currentTarget.style.color = "var(--app-text-main)"} onMouseLeave={e => e.currentTarget.style.color = "var(--app-text-muted)"}>⏮</button>
@@ -705,7 +741,6 @@ export default function ArtistPage() {
             onMouseEnter={e => e.currentTarget.style.color = "var(--app-text-main)"} onMouseLeave={e => e.currentTarget.style.color = "var(--app-text-muted)"}>⏭</button>
           <button style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 14, padding: 4 }}>🔁</button>
         </div>
-
         <div className="player-seek">
           <input type="range" min={0} max={duration || 0} value={currentTime} onChange={e => seekTo(Number(e.target.value))}
             style={{ width: "100%", background: `linear-gradient(to right,var(--app-accent) ${progressPct}%,var(--app-border) 0%)` }} />
@@ -713,7 +748,6 @@ export default function ArtistPage() {
             <span>{fmt(currentTime)}</span><span>{fmt(duration)}</span>
           </div>
         </div>
-
         <div className="player-vol">
           <span style={{ color: "var(--app-text-muted)", fontSize: 14, flexShrink: 0 }}>🔊</span>
           <input type="range" min={0} max={1} step={0.01} value={volume} onChange={e => setVolume(Number(e.target.value))}
