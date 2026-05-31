@@ -437,26 +437,29 @@ const ChatBotPopup = ({ onClose, user }) => {
       )}
 
       <motion.div
-        initial={{ opacity: 0, y: -12, scale: 0.96 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -12, scale: 0.96 }}
-        transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-        style={{
-          position: "fixed",
-          top: isMobile ? "50%" : 80,
-          right: isMobile ? "50%" : 28,
-          transform: isMobile ? "translate(50%,-50%)" : "none",
-          width: isMobile ? "min(94vw, 420px)" : 400,
-          height: isMobile ? "min(88vh, 620px)" : 580,
-          zIndex: 201,
-          display: "flex", flexDirection: "column",
-          borderRadius: 24,
-          background: "var(--app-surface-solid)",
-          border: "1px solid rgba(var(--app-accent-rgb),0.22)",
-          boxShadow: "0 32px 80px rgba(0,0,0,0.36), 0 0 0 1px rgba(var(--app-accent-rgb),0.06)",
-          overflow: "hidden",
-        }}
-      >
+  initial={{ opacity: 0, y: isMobile ? 40 : -12, scale: isMobile ? 1 : 0.96 }}
+  animate={{ opacity: 1, y: 0, scale: 1 }}
+  exit={{ opacity: 0, y: isMobile ? 40 : -12, scale: isMobile ? 1 : 0.96 }}
+  transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+  style={{
+    position: "fixed",
+    top: isMobile ? 0 : 80,
+    right: isMobile ? 0 : 28,
+    left: isMobile ? 0 : "auto",
+    bottom: isMobile ? 0 : "auto",
+    transform: "none",
+    width: isMobile ? "100%" : 400,
+    height: isMobile ? "100%" : 580,
+    maxHeight: isMobile ? "100dvh" : 580,
+    zIndex: 201,
+    display: "flex", flexDirection: "column",
+    borderRadius: isMobile ? 0 : 24,
+    background: "var(--app-surface-solid)",
+    border: isMobile ? "none" : "1px solid rgba(var(--app-accent-rgb),0.22)",
+    boxShadow: "0 32px 80px rgba(0,0,0,0.36), 0 0 0 1px rgba(var(--app-accent-rgb),0.06)",
+    overflow: "hidden",
+  }}
+>
         {/* ── HEADER ── */}
         <div style={{
           padding: "16px 18px",

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/DashboardNavbar";
 import FavoriteButton from "@/components/FavoriteButton";
 import { useUser } from "@/context/userContext";
+import PlayerBar from "@/components/ui/PlayerBar"
 import { usePersistentSongPlayer } from "@/hooks/usePersistentSongPlayer";
 import NavbarMenu, { useNavbar, HamburgerBtn } from "@/components/ui/NavbarMenu"
 const fmt = (s) =>
@@ -105,19 +106,17 @@ export default function FavoritePage() {
   @media(max-width:500px){.song-duration{display:none!important}}
 `}</style>
 
-      <DashboardNavbar />
-
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-  <NavbarMenu sidebarOpen={sidebarOpen} onClose={closeSidebar} />
-
-        
-
+        <NavbarMenu sidebarOpen={sidebarOpen} onClose={closeSidebar} />
+        <div className="qa-sidebar-spacer" />
         {/* ── MAIN ── */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
 
+          <DashboardNavbar onToggleSidebar={toggleSidebar} />
+
           {/* Toolbar */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "var(--app-shell-bg-alt)", borderBottom: "1px solid rgba(var(--app-accent-rgb),0.08)", flexShrink: 0 }}>
-           <HamburgerBtn onClick={toggleSidebar} />
+
             <span style={{ fontSize: 16 }}>♥</span>
             <span style={{ color: "var(--app-text-main)", fontSize: 16, fontWeight: 700, flexShrink: 0 }}>Favorites</span>
             <span style={{ fontSize: 11, color: "var(--app-accent)", fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: "rgba(var(--app-accent-rgb),0.12)", border: "1px solid rgba(var(--app-accent-rgb),0.22)" }}>
@@ -217,71 +216,19 @@ export default function FavoritePage() {
           </div>
         </div>
       </div>
-
-      {/* ── PLAYER BAR ── */}
-      <div className="player-bar">
-        <div className="player-progress-line" style={{ width: `${progressPct}%` }} />
-
-        {/* Track */}
-        <div className="player-track">
-          <div style={{ width: 42, height: 42, borderRadius: 9, overflow: "hidden", background: "var(--app-surface)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, boxShadow: currentSong ? "0 0 12px rgba(var(--app-accent-rgb),0.25)" : "none", position: "relative" }}>
-            {currentSong?.cover_url ? <img src={currentSong.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🎵"}
-            {isPlaying && currentSong && (
-              <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <MiniWave isPlaying={true} />
-              </div>
-            )}
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ color: currentSong ? "var(--app-text-main)" : "var(--app-text-muted)", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 140 }}>
-              {currentSong?.name || "No Song Selected"}
-            </div>
-            <div style={{ color: "var(--app-text-muted)", fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 140 }}>
-              {currentSong?.artist || "Pick a song to play"}
-            </div>
-          </div>
-        </div>
-
-        {/* Waveform */}
-        <div className="player-wave"><Waveform isPlaying={isPlaying} /></div>
-
-        {/* Controls */}
-        <div className="player-controls">
-          <button onClick={playPrev} style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 18, padding: 4, transition: "color 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.color = "var(--app-text-main)"}
-            onMouseLeave={e => e.currentTarget.style.color = "var(--app-text-muted)"}>⏮</button>
-          <button onClick={togglePlay}
-            style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#000", fontSize: 14, fontWeight: 700, flexShrink: 0, boxShadow: "0 4px 14px rgba(var(--app-accent-rgb),0.4)", transition: "transform 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.transform = "scale(1.08)"}
-            onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
-            {isPlaying ? "⏸" : "▶"}
-          </button>
-          <button onClick={playNext} style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 18, padding: 4, transition: "color 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.color = "var(--app-text-main)"}
-            onMouseLeave={e => e.currentTarget.style.color = "var(--app-text-muted)"}>⏭</button>
-          <button style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 14, padding: 4 }}>🔁</button>
-        </div>
-
-        {/* Seek */}
-        <div className="player-seek">
-          <input type="range" min={0} max={duration || 0} value={currentTime}
-            onChange={e => seekTo(Number(e.target.value))}
-            style={{ width: "100%", background: `linear-gradient(to right,var(--app-accent) ${progressPct}%,var(--app-border) 0%)` }}
-          />
-          <div style={{ display: "flex", justifyContent: "space-between", color: "var(--app-text-muted)", fontSize: 10 }}>
-            <span>{fmt(currentTime)}</span><span>{fmt(duration)}</span>
-          </div>
-        </div>
-
-        {/* Volume */}
-        <div className="player-vol">
-          <span style={{ color: "var(--app-text-muted)", fontSize: 14, flexShrink: 0 }}>🔊</span>
-          <input type="range" min={0} max={1} step={0.01} value={volume}
-            onChange={e => setVolume(Number(e.target.value))}
-            style={{ width: 70, background: `linear-gradient(to right,var(--app-accent) ${volume * 100}%,var(--app-border) 0%)` }}
-          />
-        </div>
-      </div>
+      <PlayerBar
+        currentSong={currentSong}
+        isPlaying={isPlaying}
+        currentTime={currentTime}
+        duration={duration}
+        volume={volume}
+        progressPct={progressPct}
+        togglePlay={togglePlay}
+        playNext={playNext}
+        playPrev={playPrev}
+        seekTo={seekTo}
+        setVolume={setVolume}
+      />
     </div>
   );
 }

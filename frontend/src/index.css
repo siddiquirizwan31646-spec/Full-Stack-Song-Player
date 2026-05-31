@@ -164,3 +164,25 @@ body.reduce-motion *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
 }
+.qa-page-root {
+    margin-left: 210px;
+    transition: margin-left 0.28s cubic-bezier(.4,0,.2,1);
+}
+
+@media (max-width: 768px) {
+    .qa-page-root {
+        margin-left: 0;
+    }
+}
+.qa-sidebar-spacer {
+    width: 210px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .qa-sidebar-spacer {
+        display: none;
+    }
+}
+.qa-sidebar-spacer { width: 210px; flex-shrink: 0; }
+@media(max-width:768px) { .qa-sidebar-spacer { display: none; } }

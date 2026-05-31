@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { DEFAULT_PREFERENCES, useUser } from "@/context/userContext"
-
+import NavbarMenu, { useNavbar, HamburgerBtn } from "@/components/ui/NavbarMenu"
 const API_SAFE_DEFAULTS = { ...DEFAULT_PREFERENCES }
 
 const NAV_ITEMS = [
@@ -301,7 +301,7 @@ const Setting = () => {
     const [isDirty, setIsDirty] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
-    const [sidebarOpen, setSidebarOpen] = useState(false)
+    const { sidebarOpen, toggleSidebar, closeSidebar } = useNavbar()
 
     useEffect(() => {
         if (!isDirty) setDraft(preferences || API_SAFE_DEFAULTS)
@@ -413,47 +413,11 @@ const Setting = () => {
                 @keyframes pulse{0%,100%{opacity:0.5}50%{opacity:1}}
             `}</style>
 
-            <DashboardNavbar />
+            <DashboardNavbar onToggleSidebar={toggleSidebar} />
 
-            {/* Mobile overlay */}
-            <div className={`mob-overlay${sidebarOpen ? " visible" : ""}`} onClick={() => setSidebarOpen(false)} />
-
-            <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-
-                {/* ── SIDEBAR ── */}
-                <div className={`sidebar${sidebarOpen ? " open" : ""}`}>
-                    <div style={{ padding: "14px 12px 10px", borderBottom: "1px solid rgba(var(--app-accent-rgb),0.08)", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                        <img
-                            src="https://i.postimg.cc/wMj8BDkS/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
-                            alt="QalbAudio"
-                            onClick={() => { navigate("/"); setSidebarOpen(false) }}
-                            style={{ height: 60, width: "auto", maxWidth: "88%", objectFit: "contain", cursor: "pointer", display: "block" }}
-                        />
-                        <div style={{ fontSize: 11, color: "var(--app-text-muted)", textAlign: "center" }}>
-                            <span style={{ color: "var(--app-accent)", fontWeight: 600 }}>{displayName}</span>
-                        </div>
-                    </div>
-
-                    <nav style={{ flex: 1, padding: "10px 8px", overflowY: "auto" }}>
-                        {NAV_ITEMS.map(item => (
-                            <div key={item.id} className="nav-item"
-                                onClick={() => { navigate(item.path); setSidebarOpen(false) }}>
-                                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
-                                {item.label}
-                            </div>
-                        ))}
-                        <div style={{ margin: "10px 0", borderTop: "1px solid var(--app-border)" }} />
-                        {NAV_BOTTOM.map(item => (
-                            <div key={item.id}
-                                className={`nav-item${item.id === "settings" ? " active" : ""}`}
-                                style={{ color: item.id === "upload" ? "var(--app-accent)" : undefined }}
-                                onClick={() => { navigate(item.path); setSidebarOpen(false) }}>
-                                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
-                                {item.label}
-                            </div>
-                        ))}
-                    </nav>
-                </div>
+                <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+  <NavbarMenu sidebarOpen={sidebarOpen} onClose={closeSidebar} />
+  <div className="qa-sidebar-spacer" />
 
                 {/* ── MAIN CONTENT ── */}
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
@@ -463,7 +427,6 @@ const Setting = () => {
                         display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
                         background: "var(--app-shell-bg-alt)", borderBottom: "1px solid rgba(var(--app-accent-rgb),0.08)", flexShrink: 0,
                     }}>
-                        <button className="hamburger" onClick={() => setSidebarOpen(v => !v)}>☰</button>
                         <span style={{ color: "var(--app-text-main)", fontSize: 16, fontWeight: 700 }}>Settings</span>
                         <div style={{ flex: 1 }} />
                         {isDirty && (

@@ -15,23 +15,7 @@ import {
 } from "lucide-react";
 import DashboardNavbar from "@/components/DashboardNavbar";
 import { useUser } from "@/context/userContext";
-
-const NAV_ITEMS = [
-  { icon: "🏠", label: "Home",      id: "home",      path: "/hero" },
-  { icon: "🔍", label: "Explore",   id: "explore",   path: "/explore" },
-  { icon: "📖", label: "Quran",     id: "quran",     path: "/quran" },
-  { icon: "🎵", label: "Nasheed",   id: "nasheed",   path: "/nasheed" },
-  { icon: "🎤", label: "Naat",      id: "naat",      path: "/naat" },
-  { icon: "🎼", label: "Qawwali",   id: "qawwali",   path: "/qawwali" },
-  { icon: "🎙", label: "Podcasts",  id: "podcasts",  path: "/podcasts" },
-  { icon: "📋", label: "Playlists", id: "playlists", path: "/playlists" },
-];
-const NAV_BOTTOM = [
-  { icon: "⬆", label: "Upload Audio", id: "upload",    path: "/upload" },
-  { icon: "♡", label: "Favorites",    id: "favorites", path: "/favorites" },
-  { icon: "⬇", label: "Downloads",    id: "downloads", path: "/downloads" },
-  { icon: "⚙", label: "Settings",     id: "settings",  path: "/settings" },
-];
+import NavbarMenu, { useNavbar, HamburgerBtn } from "@/components/ui/NavbarMenu"
 
 const detailCardStyle = {
   background: "var(--app-surface)",
@@ -74,7 +58,7 @@ export default function Profile() {
   const [profile, setProfile] = useState(user);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { sidebarOpen, toggleSidebar, closeSidebar } = useNavbar(); 
 
   useEffect(() => {
     let isMounted = true;
@@ -169,52 +153,18 @@ export default function Profile() {
         }
       `}</style>
 
-      <DashboardNavbar />
-
-      {/* Mobile overlay */}
-      <div className={`mob-overlay${sidebarOpen ? " visible" : ""}`} onClick={() => setSidebarOpen(false)} />
-
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-
-        {/* ── SIDEBAR ── */}
-        <div className={`sidebar${sidebarOpen ? " open" : ""}`}>
-          <div style={{ padding: "14px 12px 10px", borderBottom: "1px solid rgba(var(--app-accent-rgb),0.08)", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <img
-              src="https://i.postimg.cc/DZLCn6Sb/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
-              alt="QalbAudio"
-              onClick={() => { navigate("/"); setSidebarOpen(false); }}
-              style={{ height: 60, width: "auto", maxWidth: "88%", objectFit: "contain", cursor: "pointer", display: "block" }}
-            />
-            <div style={{ fontSize: 11, color: "var(--app-text-muted)", textAlign: "center" }}>
-              <span style={{ color: "var(--app-accent)", fontWeight: 600 }}>{displayName}</span>
-            </div>
-          </div>
-          <nav style={{ flex: 1, padding: "10px 8px", overflowY: "auto" }}>
-            {NAV_ITEMS.map(item => (
-              <div key={item.id} className="nav-item"
-                onClick={() => { navigate(item.path); setSidebarOpen(false); }}>
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
-                {item.label}
-              </div>
-            ))}
-            <div style={{ margin: "10px 0", borderTop: "1px solid var(--app-border)" }} />
-            {NAV_BOTTOM.map(item => (
-              <div key={item.id} className={`nav-item${item.id === "settings" ? " active" : ""}`}
-                style={{ color: item.id === "upload" ? "var(--app-accent)" : undefined }}
-                onClick={() => { navigate(item.path); setSidebarOpen(false); }}>
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
-                {item.label}
-              </div>
-            ))}
-          </nav>
-        </div>
+      
+  <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        <NavbarMenu sidebarOpen={sidebarOpen} onClose={closeSidebar} />
+        <div className="qa-sidebar-spacer" />
 
         {/* ── MAIN ── */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
 
+          <DashboardNavbar onToggleSidebar={toggleSidebar} />
+
           {/* Topbar */}
           <div className="profile-topbar">
-            <button className="hamburger" onClick={() => setSidebarOpen(v => !v)}>☰</button>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <UserRound size={18} color="var(--app-accent)" />
               <span style={{ color: "var(--app-text-main)", fontSize: 16, fontWeight: 700 }}>Profile</span>

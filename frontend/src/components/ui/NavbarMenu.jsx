@@ -28,22 +28,21 @@ export function useNavbar() {
   return { sidebarOpen, openSidebar, closeSidebar, toggleSidebar }
 }
 
-// Mini waveform animation for the now-playing card
 const MiniWaveform = ({ isPlaying }) => (
-  <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 18 }}>
-    {Array.from({ length: 12 }).map((_, i) => {
-      const baseH = 4 + Math.sin(i * 0.9) * 5 + ((i * 3) % 4)
+  <div style={{ display: "flex", alignItems: "flex-end", gap: 2.5, height: 20, width: "100%" }}>
+    {Array.from({ length: 20 }).map((_, i) => {
+      const baseH = 4 + Math.sin(i * 0.75) * 7 + ((i * 3) % 5)
       return (
         <div key={i} style={{
-          width: 2.5,
+          flex: 1,
           height: baseH,
-          background: `rgba(var(--app-accent-rgb),${isPlaying ? 0.9 : 0.35})`,
+          background: `rgba(var(--app-accent-rgb),${isPlaying ? 0.85 : 0.3})`,
           borderRadius: 2,
           animation: isPlaying
-            ? `qaWave ${0.5 + (i % 5) * 0.12}s ease-in-out infinite alternate`
+            ? `qaWave ${0.45 + (i % 5) * 0.12}s ease-in-out infinite alternate`
             : "none",
-          animationDelay: `${i * 0.05}s`,
-          transition: "background 0.4s, height 0.3s",
+          animationDelay: `${i * 0.04}s`,
+          transition: "background 0.4s",
         }} />
       )
     })}
@@ -56,7 +55,6 @@ export default function NavbarMenu({ sidebarOpen, onClose }) {
   const { user }  = useUser()
   const displayName = user?.username || "Guest"
 
-  // Access persistent player state for the now-playing card
   const { currentSong, isPlaying, togglePlay } = usePersistentSongPlayer([])
 
   const activeId = [...NAV_ITEMS, ...NAV_BOTTOM]
@@ -68,12 +66,10 @@ export default function NavbarMenu({ sidebarOpen, onClose }) {
     <>
       <style>{`
         @keyframes qaWave { from { transform: scaleY(0.3) } to { transform: scaleY(1) } }
-        @keyframes qaPulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
         @keyframes qaGlow  { 0%,100%{box-shadow:0 0 0 0 rgba(var(--app-accent-rgb),0.3)} 50%{box-shadow:0 0 0 6px rgba(var(--app-accent-rgb),0)} }
         @keyframes qaFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
-        @keyframes qaShimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
 
-        /* ── Sidebar shell ── */
+        /* ── Sidebar shell — FIXED full height always ── */
         .qa-nav-sidebar {
           width: 210px;
           background: var(--app-shell-bg-alt);
@@ -81,13 +77,15 @@ export default function NavbarMenu({ sidebarOpen, onClose }) {
           display: flex;
           flex-direction: column;
           flex-shrink: 0;
-          /* Height handled by parent flex layout: fills between navbar and player */
           overflow: hidden;
           transition: transform 0.28s cubic-bezier(.4,0,.2,1);
-          position: relative;
+          position: fixed;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          z-index: 200;
         }
 
-        /* Subtle top-to-bottom gradient overlay inside sidebar */
         .qa-nav-sidebar::before {
           content: '';
           position: absolute;
@@ -102,20 +100,22 @@ export default function NavbarMenu({ sidebarOpen, onClose }) {
           z-index: 0;
         }
 
-        /* ── Mobile: slide in from left ── */
+        /* ── Mobile: hidden by default, slides in ── */
         @media(max-width:768px){
           .qa-nav-sidebar {
-            position: fixed;
-            left: 0;
-            /* top = navbar height (~60px), bottom = player bar (~68px) */
-            top: 60px;
-            bottom: 68px;
-            z-index: 200;
             width: 240px;
             transform: translateX(-100%);
             box-shadow: 4px 0 40px rgba(0,0,0,0.6);
+            z-index: 300;
           }
           .qa-nav-sidebar.open { transform: translateX(0) }
+        }
+
+        /* Desktop: always visible, push content right via margin on host */
+        @media(min-width:769px){
+          .qa-nav-sidebar {
+            transform: translateX(0) !important;
+          }
         }
 
         /* ── Overlay ── */
@@ -124,7 +124,7 @@ export default function NavbarMenu({ sidebarOpen, onClose }) {
           position: fixed;
           inset: 0;
           background: rgba(0,0,0,0.5);
-          z-index: 199;
+          z-index: 299;
           backdrop-filter: blur(3px);
         }
         @media(max-width:768px){
@@ -172,7 +172,6 @@ export default function NavbarMenu({ sidebarOpen, onClose }) {
         .qa-nav-item:hover .nav-icon { transform: scale(1.15) }
         .qa-nav-item.active .nav-icon { animation: qaFloat 2.5s ease-in-out infinite }
 
-        /* ── Upload item ── */
         .qa-nav-item.upload-item {
           color: var(--app-accent);
           font-weight: 700;
@@ -182,19 +181,19 @@ export default function NavbarMenu({ sidebarOpen, onClose }) {
           font-size: 17px;
         }
 
-        /* ── Sidebar logo area ── */
-        .qa-sidebar-logo {
-          padding: 14px 12px 10px;
+        /* ── Sidebar logo/brand area at top ── */
+        .qa-sidebar-brand {
+          padding: 12px 12px 10px;
           border-bottom: 1px solid rgba(var(--app-accent-rgb), 0.08);
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 4px;
+          gap: 3px;
           position: relative;
           z-index: 1;
+          flex-shrink: 0;
         }
 
-        /* ── Section label ── */
         .qa-nav-section-label {
           font-size: 9.5px;
           font-weight: 700;
@@ -207,14 +206,13 @@ export default function NavbarMenu({ sidebarOpen, onClose }) {
           z-index: 1;
         }
 
-        /* ── Section divider ── */
         .qa-nav-divider {
           margin: 6px 10px;
           border: none;
           border-top: 1px solid rgba(var(--app-accent-rgb), 0.08);
         }
 
-        /* ── Hamburger btn ── */
+        /* ── Hamburger btn (shown on mobile) ── */
         .qa-hamburger {
           display: none;
           background: none;
@@ -233,7 +231,7 @@ export default function NavbarMenu({ sidebarOpen, onClose }) {
           .qa-hamburger { display: flex; align-items: center; justify-content: center }
         }
 
-        /* ── Bottom Now Playing Card ── */
+        /* ── Now Playing card ── */
         .qa-np-card {
           position: relative;
           z-index: 1;
@@ -255,7 +253,6 @@ export default function NavbarMenu({ sidebarOpen, onClose }) {
           background-size: cover;
           background-position: center;
           opacity: 0.22;
-          filter: blur(0px);
         }
         .qa-np-overlay {
           position: absolute;
@@ -275,8 +272,6 @@ export default function NavbarMenu({ sidebarOpen, onClose }) {
           overflow: hidden;
           opacity: 0.18;
         }
-
-        /* ── Play btn in card ── */
         .qa-np-play-btn {
           width: 28px;
           height: 28px;
@@ -304,20 +299,20 @@ export default function NavbarMenu({ sidebarOpen, onClose }) {
 
       <div className={`qa-nav-sidebar${sidebarOpen ? " open" : ""}`}>
 
-        {/* Logo + username */}
-        <div className="qa-sidebar-logo">
+        {/* Brand / Logo at top of sidebar — replaces navbar brand on the left */}
+        <div className="qa-sidebar-brand">
           <img
             src="https://i.postimg.cc/wMj8BDkS/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
             alt="QalbAudio"
             onClick={() => goTo("/")}
-            style={{ height: 52, width: "auto", maxWidth: "85%", objectFit: "contain", cursor: "pointer", display: "block" }}
+            style={{ height: 60, width: "auto", maxWidth: "88%", objectFit: "contain", cursor: "pointer", display: "block" }}
           />
           <div style={{ fontSize: 10.5, color: "var(--app-text-muted)", textAlign: "center" }}>
             <span style={{ color: "var(--app-accent)", fontWeight: 600 }}>{displayName}</span>
           </div>
         </div>
 
-        {/* Scrollable nav area */}
+        {/* Scrollable nav area — Menu items only */}
         <nav style={{ flex: 1, padding: "10px 8px 6px", overflowY: "auto", position: "relative", zIndex: 1 }}>
 
           <div className="qa-nav-section-label">Menu</div>
@@ -332,96 +327,252 @@ export default function NavbarMenu({ sidebarOpen, onClose }) {
               {item.label}
             </div>
           ))}
-
-          <hr className="qa-nav-divider" />
-
-          <div className="qa-nav-section-label">Library</div>
-
-          {NAV_BOTTOM.map(item => (
-            <div
-              key={item.id}
-              className={`qa-nav-item${activeId === item.id ? " active" : ""}${item.accent && activeId !== item.id ? " upload-item" : ""}`}
-              onClick={() => goTo(item.path)}
-            >
-              <span className="nav-icon">{item.icon}</span>
-              {item.label}
-            </div>
-          ))}
         </nav>
 
-        {/* ── Now Playing Card at bottom ── */}
-        <NowPlayingCard currentSong={currentSong} isPlaying={isPlaying} togglePlay={togglePlay} />
+        {/* ── BOTTOM CARD: Library + Now Playing all in one ── */}
+        <BottomCard
+          navBottom={NAV_BOTTOM}
+          activeId={activeId}
+          goTo={goTo}
+          currentSong={currentSong}
+          isPlaying={isPlaying}
+          togglePlay={togglePlay}
+        />
 
       </div>
     </>
   )
 }
-
-function NowPlayingCard({ currentSong, isPlaying, togglePlay }) {
-  const BG = "https://i.postimg.cc/Zn7K81b5/Chat-GPT-Image-May-31-2026-05-18-46-PM.png"
+function BottomCard({ navBottom, activeId, goTo, currentSong, isPlaying }) {
+  const MOSQUE_BG = "https://i.postimg.cc/pVSDtTMz/Chat-GPT-Image-May-31-2026-06-11-31-PM.png"
+  const bgImage = currentSong?.cover_url ? currentSong.cover_url : MOSQUE_BG
 
   return (
-    <div className="qa-np-card" style={{ minHeight: currentSong ? 110 : 90 }}>
-      {/* Mosque background */}
-      <div className="qa-np-bg" style={{ backgroundImage: `url(${currentSong?.cover_url || BG})` }} />
+    <div style={{
+      margin: "6px 10px 10px",
+      borderRadius: 16,
+      overflow: "hidden",
+      border: "1px solid rgba(var(--app-accent-rgb), 0.22)",
+      position: "relative",
+      flexShrink: 0,
+    }}>
+      {/* Background image */}
+      <div style={{
+        position: "absolute", inset: 0,
+        backgroundImage: `url(${bgImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }} />
 
-      {/* Grid dot overlay */}
-      <div className="qa-np-grid">
-        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="npgrid" width="14" height="14" patternUnits="userSpaceOnUse">
-              <circle cx="1" cy="1" r="1" fill="var(--app-accent)" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#npgrid)" />
-        </svg>
-      </div>
+      {/* Grid mesh */}
+      <div style={{
+        position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none",
+        backgroundImage: `
+          linear-gradient(rgba(74,222,128,0.06) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(74,222,128,0.06) 1px, transparent 1px)
+        `,
+        backgroundSize: "16px 16px",
+      }} />
 
-      <div className="qa-np-overlay" />
+      {/* Dark overlay — heavier at bottom */}
+      <div style={{
+        position: "absolute", inset: 0, zIndex: 2,
+        background: "linear-gradient(180deg, rgba(2,8,4,0.82) 0%, rgba(2,8,4,0.75) 60%, rgba(2,8,4,0.88) 100%)",
+      }} />
 
-      <div className="qa-np-content">
-        {currentSong ? (
-          <>
-            {/* Song info row */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              {/* Cover */}
-              <div style={{ width: 36, height: 36, borderRadius: 8, overflow: "hidden", background: "rgba(0,0,0,0.4)", flexShrink: 0, border: "1px solid rgba(var(--app-accent-rgb),0.3)" }}>
-                {currentSong.cover_url
-                  ? <img src={currentSong.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🎵</div>
-                }
-              </div>
-              {/* Title */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ color: "#fff", fontWeight: 700, fontSize: 11.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: "'DM Sans',sans-serif" }}>{currentSong.name}</div>
-                <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 10, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{currentSong.artist}</div>
-              </div>
-              {/* Play/pause */}
-              <button className="qa-np-play-btn" onClick={e => { e.stopPropagation(); togglePlay?.() }}>
-                {isPlaying ? "⏸" : "▶"}
-              </button>
+      {/* Content */}
+      <div style={{ position: "relative", zIndex: 3 }}>
+
+        {/* Library label */}
+        <div style={{
+          fontSize: 9.5, fontWeight: 700, letterSpacing: "0.12em",
+          color: "rgba(255,255,255,0.45)", textTransform: "uppercase",
+          padding: "10px 14px 4px",
+        }}>Library</div>
+
+        {/* Library nav items */}
+        {navBottom.map(item => (
+          <div
+            key={item.id}
+            onClick={() => goTo(item.path)}
+            style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "8px 14px",
+              cursor: "pointer",
+              fontSize: 13, fontWeight: activeId === item.id ? 700 : 500,
+              color: activeId === item.id
+                ? "var(--app-accent)"
+                : item.accent
+                ? "var(--app-accent)"
+                : "rgba(255,255,255,0.75)",
+              borderLeft: `3px solid ${activeId === item.id ? "var(--app-accent)" : "transparent"}`,
+              background: activeId === item.id ? "rgba(var(--app-accent-rgb),0.12)" : "transparent",
+              transition: "all 0.18s",
+            }}
+            onMouseEnter={e => { if (activeId !== item.id) e.currentTarget.style.background = "rgba(var(--app-accent-rgb),0.08)" }}
+            onMouseLeave={e => { if (activeId !== item.id) e.currentTarget.style.background = "transparent" }}
+          >
+            <span style={{ fontSize: 15, width: 20, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {item.icon}
+            </span>
+            {item.label}
+          </div>
+        ))}
+
+        {/* Divider */}
+        <div style={{ margin: "6px 12px", borderTop: "1px solid rgba(var(--app-accent-rgb),0.12)" }} />
+
+        {/* Now Playing row */}
+        <div style={{ padding: "8px 12px 12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 8 }}>
+            {/* Thumbnail */}
+            <div style={{
+              width: 38, height: 38, borderRadius: 9, overflow: "hidden", flexShrink: 0,
+              border: "1px solid rgba(var(--app-accent-rgb),0.35)",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.7)",
+              background: "rgba(0,0,0,0.4)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              {currentSong?.cover_url
+                ? <img src={currentSong.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <div style={{ fontSize: 16 }}>🎵</div>
+              }
             </div>
-            {/* Waveform */}
-            <MiniWaveform isPlaying={isPlaying} />
-          </>
-        ) : (
-          <>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-              <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(var(--app-accent-rgb),0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, border: "1px solid rgba(var(--app-accent-rgb),0.25)" }}>🎵</div>
-              <div>
-                <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 11, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>QalbAudio</div>
-                <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 9.5 }}>Sound of Soul</div>
+
+            {/* Title + artist */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                color: "#fff", fontWeight: 700, fontSize: 12,
+                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                textShadow: "0 1px 6px rgba(0,0,0,0.9)",
+              }}>
+                {currentSong?.name || "QalbAudio"}
+              </div>
+              <div style={{
+                color: "rgba(255,255,255,0.5)", fontSize: 10.5, marginTop: 2,
+                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+              }}>
+                {currentSong?.artist || "Pick a song to play"}
               </div>
             </div>
-            <MiniWaveform isPlaying={false} />
-            <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 9.5, marginTop: 6, fontFamily: "'DM Sans',sans-serif" }}>Pick a song to play</div>
-          </>
-        )}
+
+            {/* Heart */}
+            <button
+              onClick={e => e.stopPropagation()}
+              style={{
+                width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+                background: "linear-gradient(135deg, var(--app-accent-strong), var(--app-accent))",
+                border: "none", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 2px 12px rgba(var(--app-accent-rgb),0.55)",
+                fontSize: 12, color: "#041307", transition: "transform 0.15s",
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = "scale(1.12)"}
+              onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+            >♥</button>
+          </div>
+
+          {/* Waveform */}
+          <MiniWaveform isPlaying={isPlaying} />
+        </div>
       </div>
     </div>
   )
 }
+function NowPlayingCard({ currentSong, isPlaying, togglePlay }) {
+  const MOSQUE_BG = "https://i.postimg.cc/pVSDtTMz/Chat-GPT-Image-May-31-2026-06-11-31-PM.png"
+  const bgImage = currentSong?.cover_url || MOSQUE_BG
 
+  return (
+    <div className="qa-np-card" style={{ minHeight: 100, borderRadius: 16 }}>
+
+      {/* Full background image — high opacity */}
+      <div style={{
+        position: "absolute", inset: 0,
+        backgroundImage: `url(${bgImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        borderRadius: 16,
+      }} />
+
+      {/* Grid mesh */}
+      <div style={{
+        position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", borderRadius: 16,
+        backgroundImage: `
+          linear-gradient(rgba(74,222,128,0.06) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(74,222,128,0.06) 1px, transparent 1px)
+        `,
+        backgroundSize: "16px 16px",
+      }} />
+
+      {/* Dark overlay — heavier at bottom so text is readable */}
+      <div style={{
+        position: "absolute", inset: 0, zIndex: 2, borderRadius: 16,
+        background: "linear-gradient(180deg, rgba(2,6,3,0.45) 0%, rgba(2,6,3,0.72) 55%, rgba(2,6,3,0.94) 100%)",
+      }} />
+
+      {/* Content */}
+      <div style={{ position: "relative", zIndex: 3, padding: "10px 12px 12px" }}>
+
+        {/* Song info row */}
+        <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 10 }}>
+
+          {/* Cover thumbnail */}
+          <div style={{
+            width: 38, height: 38, borderRadius: 9, overflow: "hidden", flexShrink: 0,
+            border: "1px solid rgba(var(--app-accent-rgb),0.35)",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.7)",
+            background: "rgba(0,0,0,0.4)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            {currentSong?.cover_url
+              ? <img src={currentSong.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              : <div style={{ fontSize: 16 }}>🎵</div>
+            }
+          </div>
+
+          {/* Title + artist */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              color: "#fff", fontWeight: 700, fontSize: 12,
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+              fontFamily: "'DM Sans',sans-serif",
+              textShadow: "0 1px 6px rgba(0,0,0,0.9)",
+            }}>
+              {currentSong?.name || "QalbAudio"}
+            </div>
+            <div style={{
+              color: "rgba(255,255,255,0.55)", fontSize: 10.5, marginTop: 2,
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+              fontFamily: "'DM Sans',sans-serif",
+            }}>
+              {currentSong?.artist || "Pick a song to play"}
+            </div>
+          </div>
+
+          {/* Heart button */}
+          <button
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+              background: "linear-gradient(135deg, var(--app-accent-strong), var(--app-accent))",
+              border: "none", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 2px 12px rgba(var(--app-accent-rgb),0.55)",
+              fontSize: 12, color: "#041307",
+              transition: "transform 0.15s",
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = "scale(1.12)"}
+            onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+          >♥</button>
+        </div>
+
+        {/* Waveform */}
+        <MiniWaveform isPlaying={isPlaying} />
+      </div>
+    </div>
+  )
+}
 export function HamburgerBtn({ onClick }) {
   return (
     <button className="qa-hamburger" onClick={onClick}>☰</button>

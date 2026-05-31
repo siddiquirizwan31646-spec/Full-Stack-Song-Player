@@ -238,6 +238,8 @@ const GLOBAL_CSS = `
   .gate-btn{width:100%;padding:13px 0;border-radius:12px;border:none;background:linear-gradient(135deg,var(--app-accent-strong),var(--app-accent));color:#000;font-family:'DM Sans',sans-serif;font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 4px 22px rgba(var(--app-accent-rgb),0.35);transition:transform 0.15s,opacity 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
   .gate-btn:hover:not(:disabled){transform:translateY(-1px)}
   .gate-btn:disabled{opacity:0.65;cursor:not-allowed}
+  .qa-sidebar-spacer { width: 210px; flex-shrink: 0; }
+  @media(max-width:768px) { .qa-sidebar-spacer { display: none; } }
 `;
 
 // ── ADMIN GATE ────────────────────────────────────────────────────────────────
@@ -1012,7 +1014,7 @@ function UploadCenter({ navigate, displayName, onLock }) {
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
       <style>{GLOBAL_CSS}</style>
 
-      <DashboardNavbar />
+      <DashboardNavbar onToggleSidebar={toggleSidebar} />
 
       {/* FIX: hidden file inputs — NO webkitdirectory, just multi-file accept.
           Folders are handled by drag-and-drop (dropzone). The picker opens a
@@ -1042,6 +1044,8 @@ function UploadCenter({ navigate, displayName, onLock }) {
       />
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+  <NavbarMenu sidebarOpen={sidebarOpen} onClose={closeSidebar} />
+  <div className="qa-sidebar-spacer" />
 
         {/* SIDEBAR */}
         
@@ -1051,7 +1055,6 @@ function UploadCenter({ navigate, displayName, onLock }) {
 
           {/* Top bar */}
           <div className="upload-topbar">
-            <HamburgerBtn onClick={toggleSidebar} />
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 18 }}>⬆</span>
               <span style={{ color: "var(--app-text-main)", fontSize: 16, fontWeight: 700 }}>Upload Audio</span>

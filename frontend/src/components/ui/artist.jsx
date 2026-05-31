@@ -4,10 +4,8 @@ import DashboardNavbar from "@/components/DashboardNavbar"
 import FavoriteButton from "@/components/FavoriteButton"
 import { usePersistentSongPlayer } from "@/hooks/usePersistentSongPlayer"
 import { useUser } from "@/context/userContext"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faPlay, faPause, faForwardFast, faBackwardFast } from "@fortawesome/free-solid-svg-icons"
 import NavbarMenu, { useNavbar, HamburgerBtn } from "@/components/ui/NavbarMenu"
-
+import PlayerBar from "@/components/ui/PlayerBar"
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 const H = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" }
@@ -939,23 +937,7 @@ export default function ArtistPage() {
         input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;outline:none;cursor:pointer}
         input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--app-accent);cursor:pointer;box-shadow:0 0 6px rgba(var(--app-accent-rgb),0.5)}
 
-        .player-bar{background:var(--app-shell-bg-alt);border-top:1px solid rgba(var(--app-accent-rgb),0.18);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-shrink:0;position:sticky;bottom:0;z-index:20;overflow:hidden}
-        .player-progress-line{position:absolute;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--app-accent-strong),var(--app-accent));transition:width 0.5s linear;pointer-events:none}
-        .player-wave{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
-        .player-controls{display:flex;align-items:center;gap:10px;flex-shrink:0}
-        .player-seek{display:flex;flex-direction:column;gap:3px;width:170px;flex-shrink:0}
-        .player-vol{display:flex;align-items:center;gap:8px;flex-shrink:0}
-        @media(max-width:1000px){.player-wave{display:none}}
-        @media(max-width:750px){.player-vol{display:none}}
-        @media(max-width:600px){.player-bar{padding:8px 10px;gap:8px}.player-seek{width:110px}}
-        @media(max-width:450px){.player-seek{display:none}}
-
-        .player-ctrl-btn{background:none;border:none;color:var(--app-text-muted);cursor:pointer;padding:7px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:color 0.15s,background 0.15s;font-size:15px;line-height:1}
-        .player-ctrl-btn:hover{color:var(--app-text-main);background:rgba(255,255,255,0.07)}
-        .player-ctrl-btn:active{transform:scale(0.92)}
-        .player-play-btn{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--app-accent-strong),var(--app-accent));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;flex-shrink:0;box-shadow:0 4px 14px rgba(var(--app-accent-rgb),0.4);transition:transform 0.15s,filter 0.15s}
-        .player-play-btn:hover{transform:scale(1.08);filter:brightness(1.1)}
-        .player-play-btn:active{transform:scale(0.95)}
+        
 
         .qa-right-panel{width:240px;background:var(--app-shell-bg-alt);border-left:1px solid rgba(var(--app-accent-rgb),0.08);padding:20px 16px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;flex-shrink:0}
         @media(max-width:1100px){.qa-right-panel{display:none}}
@@ -983,18 +965,13 @@ export default function ArtistPage() {
         }
         @media(max-width:400px){.hero-artist-portrait-img{width:46px;height:62px}}
       `}</style>
-
-      {/* ✅ DashboardNavbar at the top */}
-      <DashboardNavbar />
-
-      {/* ✅ Flex row: NavbarMenu INSIDE here so it sits beside main content */}
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-
-        {/* ✅ Sidebar — single render, correctly placed inside the flex row */}
-        <NavbarMenu sidebarOpen={sidebarOpen} onClose={closeSidebar} />
-
-        {/* ── MAIN ── */}
-        <div style={{ flex: 1, display: "flex", overflow: "hidden", minWidth: 0 }}>
+<DashboardNavbar onToggleSidebar={toggleSidebar} />
+<div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+  <NavbarMenu sidebarOpen={sidebarOpen} onClose={closeSidebar} />
+  <div className="qa-sidebar-spacer" />   {/* ← ADD THIS LINE */}
+  
+  {/* ── MAIN ── */}
+  <div style={{ flex: 1, display: "flex", overflow: "hidden", minWidth: 0 }}>
           <div
             style={{
               flex: 1,
@@ -1004,32 +981,6 @@ export default function ArtistPage() {
               flexDirection: "column",
             }}
           >
-            {/* Mobile toolbar */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "8px 14px",
-                background: "var(--app-shell-bg-alt)",
-                borderBottom: "1px solid rgba(var(--app-accent-rgb),0.08)",
-                flexShrink: 0,
-              }}
-            >
-              <HamburgerBtn onClick={toggleSidebar} />
-              <span
-                style={{
-                  color: "var(--app-text-main)",
-                  fontSize: 14,
-                  fontWeight: 700,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {decodedName}
-              </span>
-            </div>
 
             {/* ══ HERO ══ */}
             <div
@@ -1717,162 +1668,19 @@ export default function ArtistPage() {
           </div>
         </div>
       </div>
-
-      {/* ══ PLAYER BAR ══ */}
-      <div className="player-bar">
-        <div className="player-progress-line" style={{ width: `${progressPct}%` }} />
-
-        {/* Track info */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            flex: "0 0 auto",
-            width: 200,
-            minWidth: 0,
-          }}
-        >
-          <div
-            style={{
-              width: 42,
-              height: 42,
-              borderRadius: 9,
-              overflow: "hidden",
-              background: "var(--app-surface)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 18,
-              flexShrink: 0,
-              boxShadow: currentSong ? "0 0 12px rgba(var(--app-accent-rgb),0.25)" : "none",
-              position: "relative",
-            }}
-          >
-            {currentSong?.cover_url ? (
-              <img
-                src={currentSong.cover_url}
-                alt=""
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            ) : (
-              "🎵"
-            )}
-            {isPlaying && currentSong && (
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background: "rgba(0,0,0,0.3)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <MiniWave isPlaying={true} />
-              </div>
-            )}
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div
-              style={{
-                color: currentSong ? "var(--app-text-main)" : "var(--app-text-muted)",
-                fontWeight: 600,
-                fontSize: 13,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                maxWidth: 140,
-              }}
-            >
-              {currentSong?.name || "No Song Selected"}
-            </div>
-            <div
-              style={{
-                color: "var(--app-text-muted)",
-                fontSize: 11,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                maxWidth: 140,
-              }}
-            >
-              {currentSong?.artist || "Pick a song to play"}
-            </div>
-          </div>
-        </div>
-
-        {/* Waveform */}
-        <div className="player-wave">
-          <Waveform isPlaying={isPlaying} />
-        </div>
-
-        {/* Controls */}
-        <div className="player-controls">
-          <button className="player-ctrl-btn" onClick={playPrev} title="Previous">
-            <FontAwesomeIcon icon={faBackwardFast} style={{ fontSize: 15 }} />
-          </button>
-          <button
-            className="player-play-btn"
-            onClick={togglePlay}
-            title={isPlaying ? "Pause" : "Play"}
-          >
-            <FontAwesomeIcon
-              icon={isPlaying ? faPause : faPlay}
-              style={{ fontSize: 14, marginLeft: isPlaying ? 0 : 2 }}
-            />
-          </button>
-          <button className="player-ctrl-btn" onClick={playNext} title="Next">
-            <FontAwesomeIcon icon={faForwardFast} style={{ fontSize: 15 }} />
-          </button>
-          <button className="player-ctrl-btn" title="Repeat" style={{ opacity: 0.5 }}>
-            <span style={{ fontSize: 14 }}>🔁</span>
-          </button>
-        </div>
-
-        {/* Seek */}
-        <div className="player-seek">
-          <input
-            type="range"
-            min={0}
-            max={duration || 0}
-            value={currentTime}
-            onChange={(e) => seekTo(Number(e.target.value))}
-            style={{
-              width: "100%",
-              background: `linear-gradient(to right,var(--app-accent) ${progressPct}%,var(--app-border) 0%)`,
-            }}
-          />
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              color: "var(--app-text-muted)",
-              fontSize: 10,
-            }}
-          >
-            <span>{fmt(currentTime)}</span>
-            <span>{fmt(duration)}</span>
-          </div>
-        </div>
-
-        {/* Volume */}
-        <div className="player-vol">
-          <span style={{ color: "var(--app-text-muted)", fontSize: 14, flexShrink: 0 }}>🔊</span>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={volume}
-            onChange={(e) => setVolume(Number(e.target.value))}
-            style={{
-              width: 70,
-              background: `linear-gradient(to right,var(--app-accent) ${volume * 100}%,var(--app-border) 0%)`,
-            }}
-          />
-        </div>
-      </div>
+        <PlayerBar
+        currentSong={currentSong}
+        isPlaying={isPlaying}
+        currentTime={currentTime}
+        duration={duration}
+        volume={volume}
+        progressPct={progressPct}
+        togglePlay={togglePlay}
+        playNext={playNext}
+        playPrev={playPrev}
+        seekTo={seekTo}
+        setVolume={setVolume}
+      />
     </div>
   )
 }

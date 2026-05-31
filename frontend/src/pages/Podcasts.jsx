@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/DashboardNavbar";
+import PlayerBar from "@/components/ui/PlayerBar"
 import FavoriteButton from "@/components/FavoriteButton";
 import { useUser } from "@/context/userContext";
 import { usePersistentSongPlayer } from "@/hooks/usePersistentSongPlayer";
@@ -168,17 +169,17 @@ export default function PodcastsPage() {
 
   @media(max-width:500px){.song-duration{display:none!important}}
 `}</style>
-
-      <DashboardNavbar />
 <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
   <NavbarMenu sidebarOpen={sidebarOpen} onClose={closeSidebar} />
-
-        {/* ── MAIN ── */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+  <div className="qa-sidebar-spacer" />
+  {/* ── MAIN ── */}
+  <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+    
+    <DashboardNavbar onToggleSidebar={toggleSidebar} />
 
           {/* Toolbar */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "var(--app-shell-bg-alt)", borderBottom: "1px solid rgba(var(--app-accent-rgb),0.08)", flexShrink: 0 }}>
-            <HamburgerBtn onClick={toggleSidebar} />
+            
 
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 18 }}>🎙</span>
@@ -382,65 +383,19 @@ export default function PodcastsPage() {
           </div>
         </div>
       </div>
-
-      {/* ── PLAYER BAR ── */}
-      <div className="player-bar">
-        <div className="player-progress-line" style={{ width: `${progressPct}%` }} />
-
-        <div className="player-track">
-          <div style={{ width: 42, height: 42, borderRadius: 9, overflow: "hidden", background: "var(--app-surface)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, boxShadow: currentSong ? "0 0 12px rgba(var(--app-accent-rgb),0.25)" : "none", position: "relative" }}>
-            {currentSong?.cover_url ? <img src={currentSong.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🎙"}
-            {isPlaying && currentSong && (
-              <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <MiniWave isPlaying={true} />
-              </div>
-            )}
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ color: currentSong ? "var(--app-text-main)" : "var(--app-text-muted)", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 140 }}>
-              {currentSong?.name || "No Podcast Selected"}
-            </div>
-            <div style={{ color: "var(--app-text-muted)", fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 140 }}>
-              {currentSong?.artist || "Pick a podcast to play"}
-            </div>
-          </div>
-        </div>
-
-        <div className="player-wave"><Waveform isPlaying={isPlaying} /></div>
-
-        <div className="player-controls">
-          <button onClick={playPrev} style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 18, padding: 4, transition: "color 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.color = "var(--app-text-main)"}
-            onMouseLeave={e => e.currentTarget.style.color = "var(--app-text-muted)"}>⏮</button>
-          <button onClick={togglePlay} style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#000", fontSize: 14, fontWeight: 700, flexShrink: 0, boxShadow: "0 4px 14px rgba(var(--app-accent-rgb),0.4)", transition: "transform 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.transform = "scale(1.08)"}
-            onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
-            {isPlaying ? "⏸" : "▶"}
-          </button>
-          <button onClick={playNext} style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 18, padding: 4, transition: "color 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.color = "var(--app-text-main)"}
-            onMouseLeave={e => e.currentTarget.style.color = "var(--app-text-muted)"}>⏭</button>
-          <button style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 14, padding: 4 }}>🔁</button>
-        </div>
-
-        <div className="player-seek">
-          <input type="range" min={0} max={duration || 0} value={currentTime}
-            onChange={e => seekTo(Number(e.target.value))}
-            style={{ width: "100%", background: `linear-gradient(to right,var(--app-accent) ${progressPct}%,var(--app-border) 0%)` }}
-          />
-          <div style={{ display: "flex", justifyContent: "space-between", color: "var(--app-text-muted)", fontSize: 10 }}>
-            <span>{fmt(currentTime)}</span><span>{fmt(duration)}</span>
-          </div>
-        </div>
-
-        <div className="player-vol">
-          <span style={{ color: "var(--app-text-muted)", fontSize: 14, flexShrink: 0 }}>🔊</span>
-          <input type="range" min={0} max={1} step={0.01} value={volume}
-            onChange={e => setVolume(Number(e.target.value))}
-            style={{ width: 70, background: `linear-gradient(to right,var(--app-accent) ${volume * 100}%,var(--app-border) 0%)` }}
-          />
-        </div>
-      </div>
+                <PlayerBar
+  currentSong={currentSong}
+  isPlaying={isPlaying}
+  currentTime={currentTime}
+  duration={duration}
+  volume={volume}
+  progressPct={progressPct}
+  togglePlay={togglePlay}
+  playNext={playNext}
+  playPrev={playPrev}
+  seekTo={seekTo}
+  setVolume={setVolume}
+/>
     </div>
   );
 }

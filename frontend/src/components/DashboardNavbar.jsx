@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
-import { Heart, LogOut, Music2, Settings, Upload, User, ChevronDown, Bot, X, Bell, Search } from "lucide-react";
+import { Heart, LogOut, Music2, Settings, Upload, User, ChevronDown, Bot, X, Command } from "lucide-react";
 import { useUser } from "@/context/userContext";
 import {
   DropdownMenu,
@@ -16,6 +16,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { API_URL } from "@/lib/config";
 import ChatBotPopup from "./ChatBotPopup";
+import { HamburgerBtn } from "@/components/ui/NavbarMenu";
+// FIX 1: import FontAwesome properly
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import { library } from "@fortawesome/fontawesome-svg-core";
+import { fas } from "@fortawesome/free-solid-svg-icons";
+library.add(fas);
 
 const MENU_ITEMS = [
   { icon: User,    label: "Profile",     path: "/profile" },
@@ -35,14 +42,14 @@ const PingDot = ({ color = "var(--app-accent)" }) => (
   </span>
 );
 
-const DashboardNavbar = () => {
+// onSearch: callback from parent (QalbAudio), onToggleSidebar: hamburger on mobile
+const DashboardNavbar = ({ onSearch, searchValue, onToggleSidebar }) => {
   const { user, setUser, preferences } = useUser();
   const navigate = useNavigate();
-  const [scrolled, setScrolled]       = useState(false);
+  const [scrolled, setScrolled]         = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [chatOpen, setChatOpen]       = useState(false);
-  const [searchVal, setSearchVal]     = useState("");
-  const [isMobile, setIsMobile]       = useState(() =>
+  const [chatOpen, setChatOpen]         = useState(false);
+  const [isMobile, setIsMobile]         = useState(() =>
     typeof window !== "undefined" ? window.innerWidth < 760 : false
   );
 
@@ -76,7 +83,6 @@ const DashboardNavbar = () => {
 
   const avatarLetter = user?.username?.[0]?.toUpperCase() || "U";
   const radius       = useMemo(() => Math.max(16, Math.min(28, preferences?.roundedCorners || 24)), [preferences?.roundedCorners]);
-  const brandTarget  = user ? "/hero" : "/";
 
   return (
     <>
@@ -112,17 +118,20 @@ const DashboardNavbar = () => {
         .notif-btn:hover{ background:rgba(var(--app-accent-rgb),0.18);border-color:rgba(var(--app-accent-rgb),0.4) }
         .notif-dot{ position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--app-accent);border:2px solid var(--app-surface-solid) }
 
-        /* NAV SHELL */
         .dashboard-nav-shell{
-          max-width:1400px;margin:0 auto;padding:0 20px;
-          min-height:60px;display:grid;
-          grid-template-columns:auto 1fr auto;
-          align-items:center;gap:16px;position:relative;
+          padding: 0 20px;
+          min-height: 60px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          position: relative;
         }
 
-        /* CENTER SEARCH */
         .nav-search-wrap{
-          width:100%;max-width:420px;margin:0 auto;position:relative;
+          flex: 1;
+          max-width: 480px;
+          margin: 0 auto;
+          position: relative;
         }
         .nav-search-input{
           width:100%;background:rgba(var(--app-accent-rgb),0.06);
@@ -136,13 +145,8 @@ const DashboardNavbar = () => {
         .nav-search-icon{ position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none }
         .nav-search-kbd{ position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(var(--app-accent-rgb),0.12);border:1px solid rgba(var(--app-accent-rgb),0.2);border-radius:6px;padding:2px 7px;font-size:10px;color:var(--app-text-muted);font-family:monospace }
 
-        /* LOGO */
-        .nav-logo{ height:84px }
-
-        /* GREETING */
         .dashboard-greeting{ font-size:13px;color:var(--app-text-muted);font-family:'DM Sans',sans-serif;font-weight:500;white-space:nowrap }
 
-        /* RAMADAN BADGE */
         .dashboard-ramadan-badge{
           display:flex;align-items:center;gap:6px;
           background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.22);
@@ -153,13 +157,15 @@ const DashboardNavbar = () => {
 
         .nav-auth-row{ display:flex;align-items:center;gap:10px }
 
+        .nav-hamburger-mobile { display: none; }
+        @media(max-width:768px){ .nav-hamburger-mobile { display: flex; } }
+
         @media(max-width:960px){
           .nav-search-wrap{ max-width:280px }
           .dashboard-greeting{ display:none!important }
         }
         @media(max-width:760px){
-          .dashboard-nav-shell{ padding:8px 12px;min-height:54px;gap:10px;grid-template-columns:auto 1fr auto }
-          .nav-logo{ height:50px }
+          .dashboard-nav-shell{ padding:8px 12px;min-height:54px;gap:10px }
           .dashboard-ramadan-badge{ display:none!important }
           .nav-search-wrap{ max-width:none }
           .nav-search-kbd{ display:none }
@@ -167,9 +173,10 @@ const DashboardNavbar = () => {
           .chatbot-icon-btn,.notif-btn{ width:34px;height:34px }
         }
         @media(max-width:480px){
-          .dashboard-nav-shell{ padding:6px 10px }
-          .nav-logo{ height:42px }
-          .nav-search-wrap{ display:none }
+          .dashboard-nav-shell{ padding:6px 10px; gap:8px }
+          .nav-search-wrap{ display:block; max-width:none; flex:1 }
+          .nav-search-input{ padding:8px 10px 8px 34px; font-size:12px }
+          .nav-search-kbd{ display:none }
           .nav-auth-row button{ padding:8px 14px!important;font-size:12.5px!important }
         }
       `}</style>
@@ -180,13 +187,11 @@ const DashboardNavbar = () => {
         transition={{ duration: 0.55, ease: [0.22,1,0.36,1] }}
         style={{
           position: "sticky", top: 0, zIndex: 100, width: "100%",
-          background: scrolled ? "var(--app-surface-solid)" : "var(--app-surface)",
+          background: "var(--app-surface)",
           backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
-          borderBottom: scrolled
-            ? "1px solid rgba(var(--app-accent-rgb),0.18)"
-            : "1px solid rgba(var(--app-accent-rgb),0.08)",
+          borderBottom: "none",
           transition: "all 0.35s ease",
-          boxShadow: scrolled ? "0 16px 40px rgba(0,0,0,0.18)" : "none",
+          boxShadow: scrolled ? "0 4px 20px rgba(0,0,0,0.12)" : "none",
         }}
       >
         {/* Top accent line */}
@@ -198,39 +203,38 @@ const DashboardNavbar = () => {
 
         <div className="dashboard-nav-shell">
 
-          {/* ── LEFT: LOGO ── */}
-          <Link to={brandTarget} style={{ textDecoration:"none", flexShrink:0 }}>
-            <motion.div whileHover={{ scale:1.02 }} whileTap={{ scale:0.98 }} transition={{ duration:0.2 }}>
-              <img
-                src="https://i.postimg.cc/wMj8BDkS/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
-                alt="QalbAudio"
-                className="nav-logo"
-                style={{ width:"auto", objectFit:"contain", display:"block" }}
-              />
-            </motion.div>
-          </Link>
-
-          {/* ── CENTER: SEARCH ── */}
-          <div className="nav-search-wrap">
-            <Search size={14} color="var(--app-text-muted)" className="nav-search-icon" />
-            <input
-              className="nav-search-input"
-              value={searchVal}
-              onChange={e => setSearchVal(e.target.value)}
-              placeholder="Search nasheeds, reciters, artists..."
-            />
-            <span className="nav-search-kbd">⌘K</span>
+          {/* Hamburger — mobile only */}
+          <div className="nav-hamburger-mobile">
+            <HamburgerBtn onClick={onToggleSidebar} />
           </div>
 
-          {/* ── RIGHT: USER ACTIONS ── */}
+          {/* Search */}
+          {onSearch ? (
+            <div className="nav-search-wrap">
+              <span className="nav-search-icon">
+                {/* FIX 2: FontAwesomeIcon now properly imported above */}
+                <FontAwesomeIcon icon={faMagnifyingGlass} style={{ fontSize: 13, color: "var(--app-text-muted)" }} />
+              </span>
+              <input
+                className="nav-search-input"
+                value={searchValue || ""}
+                onChange={e => onSearch(e.target.value)}
+                placeholder="Search nasheeds, reciters, artists..."
+              />
+            </div>
+          ) : (
+            <div style={{ flex: 1 }} />
+          )}
+
+          {/* RIGHT: USER ACTIONS */}
           <motion.div
-            initial={{ opacity:0, x:18 }}
-            animate={{ opacity:1, x:0 }}
-            transition={{ delay:0.22, duration:0.42 }}
-            style={{ display:"flex", alignItems:"center", gap:10, flexShrink:0 }}
+            initial={{ opacity: 0, x: 18 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.22, duration: 0.42 }}
+            style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}
           >
             {user ? (
-              <div className="nav-user-row" style={{ display:"flex", alignItems:"center", gap:10 }}>
+              <div className="nav-user-row" style={{ display: "flex", alignItems: "center", gap: 10 }}>
 
                 {/* Ramadan badge */}
                 <div className="dashboard-ramadan-badge">🌙 Ramadan</div>
@@ -240,24 +244,18 @@ const DashboardNavbar = () => {
                   <span className="dashboard-greeting">
                     Assalamu Alaikum,{" "}
                     <span style={{
-                      fontWeight:800,
-                      background:"linear-gradient(90deg,var(--app-text-main),var(--app-accent))",
-                      WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
+                      fontWeight: 800,
+                      background: "linear-gradient(90deg,var(--app-text-main),var(--app-accent))",
+                      WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
                     }}>
                       {user.username || "User"}
                     </span>
                   </span>
                 )}
 
-                {/* Notification bell */}
-                <button className="notif-btn" title="Notifications">
-                  <Bell size={15} color="var(--app-accent)" />
-                  <span className="notif-dot" />
-                </button>
-
                 {/* Chatbot */}
                 <motion.button
-                  whileTap={{ scale:0.92 }}
+                  whileTap={{ scale: 0.92 }}
                   className={`chatbot-icon-btn ${chatOpen ? "active" : ""}`}
                   onClick={() => setChatOpen(p => !p)}
                   title="QalbAudio Assistant"
@@ -276,40 +274,40 @@ const DashboardNavbar = () => {
                       variant="outline"
                       className="avatar-btn"
                       style={{
-                        background:"rgba(var(--app-accent-rgb),0.08)",
-                        border:"1px solid rgba(var(--app-accent-rgb),0.24)",
-                        borderRadius:999,
+                        background: "rgba(var(--app-accent-rgb),0.08)",
+                        border: "1px solid rgba(var(--app-accent-rgb),0.24)",
+                        borderRadius: 999,
                         padding: isMobile ? "4px" : "4px 10px 4px 4px",
-                        display:"flex", alignItems:"center", gap:8,
-                        cursor:"pointer", transition:"all 0.25s ease", height:"auto",
+                        display: "flex", alignItems: "center", gap: 8,
+                        cursor: "pointer", transition: "all 0.25s ease", height: "auto",
                       }}
                     >
-                      <div style={{ position:"relative" }}>
-                        <Avatar style={{ width:32, height:32 }}>
+                      <div style={{ position: "relative" }}>
+                        <Avatar style={{ width: 32, height: 32 }}>
                           <AvatarImage src="" alt={user.username || "User"} />
                           <AvatarFallback style={{
-                            background:"linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))",
-                            color:"#041307", fontSize:12, fontWeight:800, fontFamily:"'DM Sans',sans-serif",
+                            background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))",
+                            color: "#041307", fontSize: 12, fontWeight: 800, fontFamily: "'DM Sans',sans-serif",
                           }}>
                             {avatarLetter}
                           </AvatarFallback>
                         </Avatar>
                         <div style={{
-                          position:"absolute", bottom:0, right:0,
-                          width:9, height:9, borderRadius:"50%",
-                          background:"#22c55e", border:"2px solid var(--app-surface-solid)",
+                          position: "absolute", bottom: 0, right: 0,
+                          width: 9, height: 9, borderRadius: "50%",
+                          background: "#22c55e", border: "2px solid var(--app-surface-solid)",
                         }} />
                       </div>
                       {!isMobile && (
                         <>
                           <span style={{
-                            fontFamily:"'DM Sans',sans-serif", fontSize:13, fontWeight:700,
-                            color:"var(--app-text-main)", maxWidth:90,
-                            overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
+                            fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 700,
+                            color: "var(--app-text-main)", maxWidth: 90,
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                           }}>
                             {user.username}
                           </span>
-                          <motion.div animate={{ rotate: dropdownOpen ? 180 : 0 }} transition={{ duration:0.2 }}>
+                          <motion.div animate={{ rotate: dropdownOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
                             <ChevronDown size={13} color="var(--app-text-muted)" />
                           </motion.div>
                         </>
@@ -321,45 +319,45 @@ const DashboardNavbar = () => {
                     align="end"
                     sideOffset={12}
                     style={{
-                      background:"var(--app-surface-solid)",
-                      border:"1px solid rgba(var(--app-accent-rgb),0.18)",
-                      borderRadius:radius,
-                      boxShadow:"0 24px 70px rgba(0,0,0,0.26)",
-                      minWidth:240,
+                      background: "var(--app-surface-solid)",
+                      border: "1px solid rgba(var(--app-accent-rgb),0.18)",
+                      borderRadius: radius,
+                      boxShadow: "0 24px 70px rgba(0,0,0,0.26)",
+                      minWidth: 240,
                       width: isMobile ? "min(260px,calc(100vw - 32px))" : "auto",
-                      maxWidth:"calc(100vw - 32px)",
-                      padding:8,
+                      maxWidth: "calc(100vw - 32px)",
+                      padding: 8,
                     }}
                   >
                     <div style={{
-                      padding:"12px 14px", display:"flex", alignItems:"center", gap:12,
-                      borderBottom:"1px solid rgba(var(--app-accent-rgb),0.1)", marginBottom:6,
+                      padding: "12px 14px", display: "flex", alignItems: "center", gap: 12,
+                      borderBottom: "1px solid rgba(var(--app-accent-rgb),0.1)", marginBottom: 6,
                     }}>
                       <div style={{
-                        width:44, height:44, borderRadius:"50%",
-                        background:"linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))",
-                        display:"flex", alignItems:"center", justifyContent:"center",
-                        fontSize:16, fontWeight:800, color:"#041307",
-                        boxShadow:"0 10px 24px rgba(var(--app-accent-rgb),0.28)", flexShrink:0,
+                        width: 44, height: 44, borderRadius: "50%",
+                        background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 16, fontWeight: 800, color: "#041307",
+                        boxShadow: "0 10px 24px rgba(var(--app-accent-rgb),0.28)", flexShrink: 0,
                       }}>
                         {avatarLetter}
                       </div>
-                      <div style={{ minWidth:0 }}>
+                      <div style={{ minWidth: 0 }}>
                         <div style={{
-                          fontFamily:"'DM Sans',sans-serif", fontWeight:800, fontSize:14,
-                          color:"var(--app-text-main)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
+                          fontFamily: "'DM Sans',sans-serif", fontWeight: 800, fontSize: 14,
+                          color: "var(--app-text-main)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                         }}>
                           {user.username}
                         </div>
                         <div style={{
-                          fontFamily:"'DM Sans',sans-serif", fontSize:12, color:"var(--app-text-muted)",
-                          overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", marginTop:2,
+                          fontFamily: "'DM Sans',sans-serif", fontSize: 12, color: "var(--app-text-muted)",
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2,
                         }}>
                           {user.email}
                         </div>
-                        <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:6 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
                           <PingDot />
-                          <span style={{ fontFamily:"'DM Sans',sans-serif", fontSize:11, color:"var(--app-accent)", fontWeight:700 }}>
+                          <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 11, color: "var(--app-accent)", fontWeight: 700 }}>
                             Active Session
                           </span>
                         </div>
@@ -373,10 +371,10 @@ const DashboardNavbar = () => {
                           className="nav-dropdown-item"
                           onClick={() => navigate(path)}
                           style={{
-                            color:"var(--app-text-main)", fontFamily:"'DM Sans',sans-serif",
-                            cursor:"pointer", borderRadius:Math.max(12, radius - 10),
-                            padding:"10px 12px", fontSize:13.5, gap:10,
-                            margin:"2px 0", transition:"all 0.15s ease",
+                            color: "var(--app-text-main)", fontFamily: "'DM Sans',sans-serif",
+                            cursor: "pointer", borderRadius: Math.max(12, radius - 10),
+                            padding: "10px 12px", fontSize: 13.5, gap: 10,
+                            margin: "2px 0", transition: "all 0.15s ease",
                           }}
                         >
                           <Icon size={14} color="var(--app-accent)" />
@@ -385,15 +383,15 @@ const DashboardNavbar = () => {
                       ))}
                     </DropdownMenuGroup>
 
-                    <div style={{ height:1, background:"rgba(var(--app-accent-rgb),0.1)", margin:"6px 0" }} />
+                    <div style={{ height: 1, background: "rgba(var(--app-accent-rgb),0.1)", margin: "6px 0" }} />
 
                     <DropdownMenuItem
                       onClick={logoutHandle}
                       className="nav-dropdown-item"
                       style={{
-                        color:"#f87171", fontFamily:"'DM Sans',sans-serif",
-                        cursor:"pointer", borderRadius:Math.max(12, radius - 10),
-                        padding:"10px 12px", fontSize:13.5, gap:10, margin:"2px 0",
+                        color: "#f87171", fontFamily: "'DM Sans',sans-serif",
+                        cursor: "pointer", borderRadius: Math.max(12, radius - 10),
+                        padding: "10px 12px", fontSize: 13.5, gap: 10, margin: "2px 0",
                       }}
                     >
                       <LogOut size={14} />
@@ -405,32 +403,32 @@ const DashboardNavbar = () => {
 
             ) : (
               <div className="nav-auth-row">
-                <Link to="/login" style={{ textDecoration:"none" }}>
+                <Link to="/login" style={{ textDecoration: "none" }}>
                   <motion.button
-                    whileHover={{ scale:1.02 }} whileTap={{ scale:0.98 }}
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                     className="nav-outline-btn"
                     style={{
-                      padding:"9px 20px", borderRadius:999,
-                      border:"1px solid rgba(var(--app-accent-rgb),0.24)",
-                      background:"transparent", color:"var(--app-text-main)",
-                      fontFamily:"'DM Sans',sans-serif", fontWeight:700,
-                      fontSize:13.5, cursor:"pointer", transition:"all 0.2s ease",
+                      padding: "9px 20px", borderRadius: 999,
+                      border: "1px solid rgba(var(--app-accent-rgb),0.24)",
+                      background: "transparent", color: "var(--app-text-main)",
+                      fontFamily: "'DM Sans',sans-serif", fontWeight: 700,
+                      fontSize: 13.5, cursor: "pointer", transition: "all 0.2s ease",
                     }}
                   >
                     Login
                   </motion.button>
                 </Link>
-                <Link to="/signup" style={{ textDecoration:"none" }}>
+                <Link to="/signup" style={{ textDecoration: "none" }}>
                   <motion.button
-                    whileHover={{ scale:1.02 }} whileTap={{ scale:0.98 }}
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                     className="nav-primary-btn"
                     style={{
-                      padding:"9px 22px", borderRadius:999, border:"none",
-                      background:"linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))",
-                      color:"#041307", fontFamily:"'DM Sans',sans-serif",
-                      fontWeight:800, fontSize:13.5, cursor:"pointer",
-                      boxShadow:"0 10px 22px rgba(var(--app-accent-rgb),0.24)",
-                      transition:"all 0.2s ease",
+                      padding: "9px 22px", borderRadius: 999, border: "none",
+                      background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))",
+                      color: "#041307", fontFamily: "'DM Sans',sans-serif",
+                      fontWeight: 800, fontSize: 13.5, cursor: "pointer",
+                      boxShadow: "0 10px 22px rgba(var(--app-accent-rgb),0.24)",
+                      transition: "all 0.2s ease",
                     }}
                   >
                     Get Started
@@ -439,6 +437,7 @@ const DashboardNavbar = () => {
               </div>
             )}
           </motion.div>
+
         </div>
       </motion.nav>
 

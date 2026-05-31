@@ -4,8 +4,8 @@ import DashboardNavbar from "@/components/DashboardNavbar"
 import { useUser } from "@/context/userContext"
 import FavoriteButton from "@/components/FavoriteButton"
 import { usePersistentSongPlayer } from "@/hooks/usePersistentSongPlayer"
-import NavbarMenu, { useNavbar, HamburgerBtn } from "@/components/ui/NavbarMenu"
-
+import NavbarMenu, { useNavbar } from "@/components/ui/NavbarMenu"
+import PlayerBar from "@/components/ui/PlayerBar"
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 const H = {
@@ -201,7 +201,7 @@ function ArtistCard({ artistName, imageUrl, songCount, onClick }) {
   )
 }
 
-// ── Song thumbnail card (Trending / grid) ─────────────────────────────────────
+// ── Song thumbnail card ───────────────────────────────────────────────────────
 function SongThumbCard({ song, isActive, onPlay, currentTime, duration, userId }) {
   const progress = isActive && duration > 0 ? currentTime / duration : 0
   const [open, setOpen] = useState(false)
@@ -239,7 +239,7 @@ function SongThumbCard({ song, isActive, onPlay, currentTime, duration, userId }
   )
 }
 
-// ── Continue Listening / Recently Played horizontal card ──────────────────────
+// ── Continue Listening card ───────────────────────────────────────────────────
 function CLCard({ song, isActive, onPlay, currentTime, duration, userId }) {
   const progress = isActive && duration > 0 ? currentTime / duration : 0
   const [open, setOpen] = useState(false)
@@ -359,6 +359,7 @@ export default function QalbAudio() {
 
   useEffect(() => { fetchSongs() }, [fetchSongs])
 
+  // Unified search handler — used by navbar search and nothing else
   const handleSearch = (val) => {
     setSearch(val); setPage(0)
     clearTimeout(searchTimer.current)
@@ -369,311 +370,309 @@ export default function QalbAudio() {
 
   return (
     // ── ROOT: full viewport height, column flex ──────────────────────────────
-    <div style={{
+    <div className="qa-page-root" style={{
       display: "flex", flexDirection: "column",
       height: "100dvh",
       background: "var(--app-shell-bg)",
-      color: "var(--app-text-main)",
-      fontFamily: "'DM Sans',sans-serif",
       overflow: "hidden",
+      // marginLeft gone — handled by CSS class only
     }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       <style>{`
-        *{box-sizing:border-box}
-        ::-webkit-scrollbar{width:4px;height:4px}
-        ::-webkit-scrollbar-thumb{background:rgba(var(--app-accent-rgb),0.2);border-radius:2px}
+          *{box-sizing:border-box}
+          ::-webkit-scrollbar{width:4px;height:4px}
+          ::-webkit-scrollbar-thumb{background:rgba(var(--app-accent-rgb),0.2);border-radius:2px}
 
-        .song-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;border-left:3px solid transparent;margin-bottom:2px;transition:all 0.18s;position:relative}
-        .song-row:hover{background:var(--app-surface)}
-        .song-row.active-row{border-left-color:var(--app-accent);background:rgba(var(--app-accent-rgb),0.06)}
+          .song-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;border-left:3px solid transparent;margin-bottom:2px;transition:all 0.18s;position:relative}
+          .song-row:hover{background:var(--app-surface)}
+          .song-row.active-row{border-left-color:var(--app-accent);background:rgba(var(--app-accent-rgb),0.06)}
 
-        input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;outline:none;cursor:pointer}
-        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--app-accent);cursor:pointer;box-shadow:0 0 6px rgba(var(--app-accent-rgb),0.5)}
+          input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;outline:none;cursor:pointer}
+          input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--app-accent);cursor:pointer;box-shadow:0 0 6px rgba(var(--app-accent-rgb),0.5)}
 
-        @keyframes wave{from{transform:scaleY(0.35)}to{transform:scaleY(1)}}
-        @keyframes pulse{0%,100%{opacity:0.5}50%{opacity:1}}
-        @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:calc(200px + 100%) 0}}
-        @keyframes fadeInUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+          @keyframes wave{from{transform:scaleY(0.35)}to{transform:scaleY(1)}}
+          @keyframes pulse{0%,100%{opacity:0.5}50%{opacity:1}}
+          @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:calc(200px + 100%) 0}}
+          @keyframes fadeInUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 
-        .skeleton{background:linear-gradient(90deg,var(--app-surface) 25%,rgba(var(--app-accent-rgb),0.06) 50%,var(--app-surface) 75%);background-size:400px 100%;animation:shimmer 1.4s ease infinite}
+          .skeleton{background:linear-gradient(90deg,var(--app-surface) 25%,rgba(var(--app-accent-rgb),0.06) 50%,var(--app-surface) 75%);background-size:400px 100%;animation:shimmer 1.4s ease infinite}
 
-        /* ── RIGHT PANEL ── */
-        .right-panel{width:240px;background:var(--app-shell-bg-alt);border-left:1px solid rgba(var(--app-accent-rgb),0.08);padding:16px 14px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;flex-shrink:0}
-        @media(max-width:1100px){.right-panel{display:none}}
+          /* ── RIGHT PANEL ── */
+          .right-panel{width:240px;background:var(--app-shell-bg-alt);border-left:1px solid rgba(var(--app-accent-rgb),0.08);padding:16px 14px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;flex-shrink:0}
+          @media(max-width:1100px){.right-panel{display:none}}
 
-        /* ── PLAYER BAR ── */
-        .player-bar{
-          background:var(--app-shell-bg-alt);
-          border-top:1px solid rgba(var(--app-accent-rgb),0.18);
-          padding:10px 16px;
-          display:flex;align-items:center;gap:14px;
-          flex-shrink:0;
-          /* stays at bottom, outside the middle flex row */
-          position:relative;
-          z-index:20;
-          overflow:hidden;
-        }
-        .player-progress-line{position:absolute;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--app-accent-strong),var(--app-accent));transition:width 0.5s linear;pointer-events:none}
-        .player-track{display:flex;align-items:center;gap:10px;flex:0 0 auto;width:200px;min-width:0}
-        .player-wave{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
-        .player-controls{display:flex;align-items:center;gap:10px;flex-shrink:0}
-        .player-seek{display:flex;flex-direction:column;gap:3px;width:180px;flex-shrink:0}
-        .player-vol{display:flex;align-items:center;gap:8px;flex-shrink:0}
-        @media(max-width:1000px){.player-wave{display:none}}
-        @media(max-width:750px){.player-vol{display:none}}
-        @media(max-width:600px){.player-bar{padding:8px 10px;gap:8px}.player-track{width:auto;flex:1;min-width:0}.player-seek{width:110px}}
-        @media(max-width:450px){.player-seek{display:none}}
+          /* ── PLAYER BAR ── */
+          .player-bar{
+            background:var(--app-shell-bg-alt);
+            border-top:1px solid rgba(var(--app-accent-rgb),0.18);
+            padding:10px 16px;
+            display:flex;align-items:center;gap:14px;
+            flex-shrink:0;
+            position:relative;
+            z-index:20;
+            overflow:hidden;
+          }
+          .player-progress-line{position:absolute;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--app-accent-strong),var(--app-accent));transition:width 0.5s linear;pointer-events:none}
+          .player-track{display:flex;align-items:center;gap:10px;flex:0 0 auto;width:200px;min-width:0}
+          .player-wave{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
+          .player-controls{display:flex;align-items:center;gap:10px;flex-shrink:0}
+          .player-seek{display:flex;flex-direction:column;gap:3px;width:180px;flex-shrink:0}
+          .player-vol{display:flex;align-items:center;gap:8px;flex-shrink:0}
+          @media(max-width:1000px){.player-wave{display:none}}
+          @media(max-width:750px){.player-vol{display:none}}
+          @media(max-width:600px){.player-bar{padding:8px 10px;gap:8px}.player-track{width:auto;flex:1;min-width:0}.player-seek{width:110px}}
+          @media(max-width:450px){.player-seek{display:none}}
+          @media(max-width: 768px) {.qa-page-root { margin-left: 0}}
+          /* HERO BANNER */
+          .hero-banner{position:relative;border-radius:18px;overflow:hidden;min-height:280px;display:flex;align-items:flex-end;background:#071a0a;margin-bottom:22px;flex-shrink:0}
+.hero-banner-bg{position:absolute;inset:0;background-size:cover;background-position:center 33%;opacity:0.7}
+.hero-banner-overlay{position:absolute;inset:0;background:linear-gradient(to right,rgba(4,13,6,0.88) 0%,rgba(4,13,6,0.55) 50%,rgba(4,13,6,0.1) 100%)}
+.hero-banner-content{position:relative;z-index:2;padding:15px 20px;width:100%}
+.hero-banner-inner{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hero-banner-text{flex:1;min-width:0}
+.hero-banner-action{flex-shrink:0}
+@media(max-width:480px){
+  .hero-banner{min-height:210px}
+  .hero-banner-content{padding:18px 16px}
+}
+          .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+          .view-all-btn{background:none;border:none;color:var(--app-text-muted);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;transition:color 0.15s}
+          .view-all-btn:hover{color:var(--app-accent)}
 
-        /* HERO BANNER */
-        .hero-banner{position:relative;border-radius:18px;overflow:hidden;min-height:210px;display:flex;align-items:flex-end;background:#071a0a;margin-bottom:22px;flex-shrink:0}
-        .hero-banner-bg{position:absolute;inset:0;background-size:cover;background-position:center top;opacity:0.7}
-        .hero-banner-overlay{position:absolute;inset:0;background:linear-gradient(90deg,rgba(4,13,6,0.92) 0%,rgba(4,13,6,0.65) 45%,rgba(4,13,6,0.1) 100%)}
-        .hero-banner-content{position:relative;z-index:2;padding:28px 32px;max-width:55%}
+          .h-scroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+          .h-scroll::-webkit-scrollbar{height:3px}
 
-        .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-        .view-all-btn{background:none;border:none;color:var(--app-text-muted);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;transition:color 0.15s}
-        .view-all-btn:hover{color:var(--app-accent)}
+          .cl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+          @media(max-width:600px){.cl-grid{grid-template-columns:1fr 1fr}}
+          @media(max-width:380px){.cl-grid{grid-template-columns:1fr}}
 
-        .h-scroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
-        .h-scroll::-webkit-scrollbar{height:3px}
+          .stat-card{background:var(--app-surface);border:1px solid var(--app-border);border-radius:10px;padding:12px 10px}
+          .fade-in-up{animation:fadeInUp 0.45s ease both}
+          @media(max-width:500px){.song-duration{display:none!important}}
+        `}</style>
 
-        .cl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
-        @media(max-width:600px){.cl-grid{grid-template-columns:1fr 1fr}}
-        @media(max-width:380px){.cl-grid{grid-template-columns:1fr}}
-
-        .stat-card{background:var(--app-surface);border:1px solid var(--app-border);border-radius:10px;padding:12px 10px}
-        .fade-in-up{animation:fadeInUp 0.45s ease both}
-        @media(max-width:500px){.song-duration{display:none!important}}
-      `}</style>
-
-      {/* ── 1. NAVBAR — full width at top, NOT part of the sidebar row ── */}
-      <DashboardNavbar onSearch={handleSearch} searchValue={search} />
-
-      {/* ── 2. MIDDLE ROW: sidebar + main + right panel ── */}
-      {/*    This row fills all remaining height between navbar and player bar */}
+      {/* ── LAYOUT: sidebar on left (full height), right side stacks navbar + content + player ── */}
       <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
 
-        {/* ── SIDEBAR (full height of this row) ── */}
+        {/* ── SIDEBAR: full height, from very top to very bottom ── */}
         <NavbarMenu sidebarOpen={sidebarOpen} onClose={closeSidebar} />
 
-        {/* ── MAIN CONTENT ── */}
+        {/* ── RIGHT SIDE: navbar + scrollable content + player bar ── */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
 
-          {/* Sub-toolbar: hamburger + title + search */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 14px", background: "var(--app-shell-bg-alt)", borderBottom: "1px solid rgba(var(--app-accent-rgb),0.08)", flexShrink: 0 }}>
-            <HamburgerBtn onClick={toggleSidebar} />
-            <span style={{ color: "var(--app-text-main)", fontSize: 15, fontWeight: 700, flexShrink: 0 }}>Home</span>
-            <div style={{ flex: 1 }} />
-            <div style={{ position: "relative", width: "min(220px, 100%)" }}>
-              <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--app-text-muted)", fontSize: 13, pointerEvents: "none" }}>🔍</span>
-              <input value={search} onChange={e => handleSearch(e.target.value)} placeholder="Search songs, reciters..."
-                style={{ background: "var(--app-surface)", border: "1px solid var(--app-border)", borderRadius: 9, padding: "8px 12px 8px 32px", color: "var(--app-text-main)", fontSize: 13, outline: "none", width: "100%", fontFamily: "'DM Sans',sans-serif", transition: "border-color 0.2s" }}
-                onFocus={e => e.target.style.borderColor = "var(--app-accent)"}
-                onBlur={e => e.target.style.borderColor = "var(--app-border)"}
-              />
-            </div>
-          </div>
+          {/* ── NAVBAR — sits at top of right-side column, no border ── */}
+          {/* Pass search handlers so navbar search = same as content search */}
+          <DashboardNavbar
+            onSearch={handleSearch}
+            searchValue={search}
+            onToggleSidebar={toggleSidebar}
+          />
 
-          {/* Scrollable content */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 8px" }}>
+          {/* ── CONTENT ROW: main scroll area + right panel ── */}
+          <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
 
-            {/* HERO BANNER */}
-            <div className="hero-banner fade-in-up">
-              <div className="hero-banner-bg" style={{ backgroundImage: "url(https://i.postimg.cc/Zn7K81b5/Chat-GPT-Image-May-31-2026-05-18-46-PM.png)" }} />
-              <div className="hero-banner-overlay" />
-              <div className="hero-banner-content">
-                <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 14, fontWeight: 500, marginBottom: 4 }}>Assalamu Alaikum,</div>
-                <div style={{ fontSize: "clamp(20px,4vw,32px)", fontWeight: 800, marginBottom: 10, lineHeight: 1.15 }}>
-                  <span style={{ background: "linear-gradient(90deg,var(--app-accent),#86efac)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{displayName} 👋</span>
-                </div>
-                <div style={{ color: "rgba(255,255,255,0.62)", fontSize: 13, lineHeight: 1.6, marginBottom: 18, maxWidth: 320 }}>
-                  Discover heart touching nasheeds<br />and soulful recitations.
-                </div>
-                <button onClick={() => navigate("/explore")} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 22px", background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))", border: "none", borderRadius: 999, color: "#041307", fontFamily: "'DM Sans',sans-serif", fontWeight: 800, fontSize: 13, cursor: "pointer", boxShadow: "0 8px 20px rgba(var(--app-accent-rgb),0.35)", transition: "transform 0.2s, box-shadow 0.2s" }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 12px 28px rgba(var(--app-accent-rgb),0.45)" }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 8px 20px rgba(var(--app-accent-rgb),0.35)" }}
-                >Explore Now ✨</button>
-              </div>
-            </div>
+            {/* ── MAIN SCROLLABLE CONTENT ── */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 8px" }}>
+              {/* HERO BANNER */}
+              <div className="hero-banner fade-in-up">
+                <div className="hero-banner-bg" style={{ backgroundImage: "url(https://i.postimg.cc/Zn7K81b5/Chat-GPT-Image-May-31-2026-05-18-46-PM.png)" }} />
 
-            {/* ARTISTS */}
-            <ArtistsSection />
+                {/* Left-side text readability fade */}
+                <div style={{
+                  position: "absolute", inset: 0, zIndex: 2,
+                  background: "linear-gradient(to right, rgba(4,13,6,0.92) 0%, rgba(4,13,6,0.6) 45%, rgba(4,13,6,0.15) 100%)",
+                }} />
 
-            {/* CONTINUE LISTENING */}
-            <div style={{ marginBottom: 22 }}>
-              <div className="section-header"><span style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 15 }}>Continue Listening</span></div>
-              <div className="cl-grid">
-                {loading
-                  ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" style={{ borderRadius: 14, height: 78 }} />)
-                  : songs.slice(0, 4).map(s => <CLCard key={s.id} song={s} isActive={currentSong?.id === s.id} onPlay={playSongFromList} {...cardProps} />)
-                }
-              </div>
-            </div>
+                {/* Bottom fade — image bleeds into page bg */}
+                <div style={{
+                  position: "absolute", bottom: 0, left: 0, right: 0, height: "55%", zIndex: 2,
+                  background: "linear-gradient(to bottom, transparent 0%, var(--app-shell-bg) 100%)",
+                }} />
 
-            {/* TRENDING NOW */}
-            <div style={{ marginBottom: 22 }}>
-              <div className="section-header">
-                <span style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 15 }}>Trending Now 🔥</span>
-                <button className="view-all-btn">View All ›</button>
-              </div>
-              <div className="h-scroll">
-                {(loading ? Array.from({ length: 7 }) : songs.slice(0, 8)).map((s, i) =>
-                  s ? <SongThumbCard key={s.id} song={s} isActive={currentSong?.id === s.id} onPlay={playSongFromList} {...cardProps} />
-                    : <div key={i} className="skeleton" style={{ width: 155, height: 210, borderRadius: 14, flexShrink: 0 }} />
-                )}
-              </div>
-            </div>
-
-            {/* RECENTLY PLAYED */}
-            <div style={{ marginBottom: 22 }}>
-              <div className="section-header">
-                <span style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 15 }}>Recently Played</span>
-                <button className="view-all-btn">View All ›</button>
-              </div>
-              <div className="h-scroll">
-                {(loading ? Array.from({ length: 5 }) : songs.slice(0, 5)).map((s, i) =>
-                  s ? <CLCard key={s.id} song={s} isActive={currentSong?.id === s.id} onPlay={playSongFromList} {...cardProps} />
-                    : <div key={i} className="skeleton" style={{ width: 260, height: 78, borderRadius: 14, flexShrink: 0 }} />
-                )}
-              </div>
-            </div>
-
-            {/* ALL SONGS */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-              <span style={{ color: "var(--app-text-muted)", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", flexShrink: 0 }}>
-                {loading ? "LOADING..." : `ALL SONGS · ${total}`}
-              </span>
-              <div style={{ flex: 1, height: 1, background: "linear-gradient(to right,var(--app-border),transparent)" }} />
-            </div>
-
-            {songs.map(song => {
-              const active = currentSong?.id === song.id
-              return (
-                <div key={song.id} className={`song-row${active ? " active-row" : ""}`}>
-                  <div onClick={() => playSongFromList(song)} style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 9, overflow: "hidden", background: "var(--app-surface)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, position: "relative", boxShadow: active ? "0 0 14px rgba(var(--app-accent-rgb),0.35)" : "none" }}>
-                      {song.cover_url ? <img src={song.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🎵"}
-                      {active && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center" }}><MiniWave isPlaying={isPlaying} /></div>}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ color: active ? "var(--app-accent)" : "var(--app-text-main)", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{song.name}</div>
-                      <div style={{ color: "var(--app-text-muted)", fontSize: 11, marginTop: 2, display: "flex", alignItems: "center", gap: 5, overflow: "hidden" }}>
-                        <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{song.artist}{song.location ? ` · ${song.location}` : ""}</span>
-                        {song.music_type && <span style={{ color: "var(--app-accent)", fontSize: 10, background: "rgba(var(--app-accent-rgb),0.1)", padding: "1px 6px", borderRadius: 4, textTransform: "capitalize", flexShrink: 0 }}>{song.music_type}</span>}
+                <div className="hero-banner-content">
+                  <div className="hero-banner-inner">
+                    <div className="hero-banner-text">
+                      <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, fontWeight: 500, marginBottom: 2 }}>Assalamu Alaikum,</div>
+                      <div style={{ fontSize: "clamp(16px,4vw,26px)", fontWeight: 800, marginBottom: 6, lineHeight: 1.2 }}>
+                        <span style={{ background: "linear-gradient(90deg,var(--app-accent),#86efac)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{displayName} 👋</span>
                       </div>
-                      {active && <div style={{ marginTop: 5 }}><ProgressBar progress={duration > 0 ? currentTime / duration : 0} isActive /></div>}
+                      <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, lineHeight: 1.5, marginBottom: 0, maxWidth: 200 }}>
+                        Discover heart touching nasheeds & soulful recitations.
+                      </div>
                     </div>
-                    <div className="song-duration" style={{ color: "var(--app-text-muted)", fontSize: 12, fontFamily: "monospace", flexShrink: 0 }}>{fmt(song.duration)}</div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                    <FavoriteButton song={song} />
-                    <PlusBtn song={song} userId={userId} />
+                    <div className="hero-banner-action">
+                      <button onClick={() => navigate("/explore")} style={{
+                        display: "inline-flex", alignItems: "center", gap: 6,
+                        padding: "10px 16px",
+                        background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))",
+                        border: "none", borderRadius: 999, color: "#041307",
+                        fontFamily: "'DM Sans',sans-serif", fontWeight: 800, fontSize: 12,
+                        cursor: "pointer", whiteSpace: "nowrap",
+                        boxShadow: "0 6px 18px rgba(var(--app-accent-rgb),0.4)",
+                      }}>
+                        Explore Now ✨
+                      </button>
+                    </div>
                   </div>
                 </div>
-              )
-            })}
-
-            {songs.length < total && (
-              <button onClick={() => { const p = page + 1; setPage(p); fetchSongs(search, p, true) }}
-                style={{ display: "block", margin: "18px auto 8px", background: "none", border: "1px solid rgba(var(--app-accent-rgb),0.3)", borderRadius: 9, color: "var(--app-text-muted)", cursor: "pointer", padding: "10px 32px", fontSize: 13, fontFamily: "'DM Sans',sans-serif", transition: "all 0.2s" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--app-accent)"; e.currentTarget.style.color = "var(--app-accent)" }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(var(--app-accent-rgb),0.3)"; e.currentTarget.style.color = "var(--app-text-muted)" }}
-              >Load More</button>
-            )}
-          </div>
-        </div>
-
-        {/* ── RIGHT PANEL ── */}
-        <div className="right-panel">
-          <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <span style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 13 }}>Analytics</span>
-              <span style={{ color: "var(--app-text-muted)", fontSize: 11 }}>This Month ▾</span>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              {[{ label: "Total Plays", value: "155", icon: "📈" }, { label: "Listeners", value: "5.8K", icon: "👥" }, { label: "Saves", value: "940", icon: "🔖" }, { label: "Likes", value: "11.2K", icon: "♥" }].map(s => (
-                <div key={s.label} className="stat-card">
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-                    <div style={{ color: "var(--app-text-muted)", fontSize: 10 }}>{s.label}</div>
-                    <span style={{ fontSize: 12 }}>{s.icon}</span>
-                  </div>
-                  <div style={{ color: "var(--app-text-main)", fontWeight: 800, fontSize: 20 }}>{s.value}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ background: "rgba(var(--app-accent-rgb),0.06)", border: "1px solid rgba(var(--app-accent-rgb),0.15)", borderRadius: 12, padding: "16px 14px", textAlign: "center" }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>⬆️</div>
-            <div style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 13, marginBottom: 6 }}>Share Your Audio</div>
-            <div style={{ color: "var(--app-text-muted)", fontSize: 11, marginBottom: 12, lineHeight: 1.5 }}>Upload nasheeds, naats, recitations & more</div>
-            <button onClick={() => navigate("/upload")} style={{ width: "100%", padding: "9px 0", background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))", border: "none", borderRadius: 8, color: "#041307", fontWeight: 800, fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>Upload Audio</button>
-          </div>
-
-          <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-              <span style={{ color: "var(--app-text-main)", fontWeight: 600, fontSize: 13 }}>AI Recommendations</span>
-              <span style={{ fontSize: 14 }}>✨</span>
-            </div>
-            <div style={{ color: "var(--app-text-muted)", fontSize: 11, marginBottom: 8 }}>Based on your listening</div>
-            <div style={{ height: 60, background: "var(--app-surface)", borderRadius: 8, overflow: "hidden" }}>
-              <svg viewBox="0 0 200 60" style={{ width: "100%", height: "100%" }}>
-                <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--app-accent)" stopOpacity="0.3" /><stop offset="100%" stopColor="var(--app-accent)" stopOpacity="0.02" /></linearGradient></defs>
-                <polyline points="0,55 22,42 44,46 66,30 88,38 110,20 132,30 154,18 176,26 200,14" fill="none" stroke="var(--app-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <polygon points="0,55 22,42 44,46 66,30 88,38 110,20 132,30 154,18 176,26 200,14 200,60 0,60" fill="url(#cg)" />
-              </svg>
-            </div>
-          </div>
-
-          {currentSong && (
-            <div style={{ background: "rgba(var(--app-accent-rgb),0.06)", border: "1px solid rgba(var(--app-accent-rgb),0.2)", borderRadius: 12, padding: "14px", textAlign: "center" }}>
-              <div style={{ color: "var(--app-text-muted)", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", marginBottom: 10 }}>Now Playing</div>
-              <div style={{ width: 64, height: 64, borderRadius: 10, overflow: "hidden", margin: "0 auto 10px", background: "var(--app-surface)", boxShadow: "0 4px 16px rgba(var(--app-accent-rgb),0.25)" }}>
-                {currentSong.cover_url ? <img src={currentSong.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>🎵</div>}
               </div>
-              <div style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 13, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{currentSong.name}</div>
-              <div style={{ color: "var(--app-text-muted)", fontSize: 11, marginBottom: 10 }}>{currentSong.artist}</div>
-              <div style={{ display: "flex", justifyContent: "center" }}><Waveform isPlaying={isPlaying} bars={20} height={28} /></div>
+
+              {/* ARTISTS */}
+              <ArtistsSection />
+
+              {/* CONTINUE LISTENING */}
+              <div style={{ marginBottom: 22 }}>
+                <div className="section-header"><span style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 15 }}>Continue Listening</span></div>
+                <div className="cl-grid">
+                  {loading
+                    ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" style={{ borderRadius: 14, height: 78 }} />)
+                    : songs.slice(0, 4).map(s => <CLCard key={s.id} song={s} isActive={currentSong?.id === s.id} onPlay={playSongFromList} {...cardProps} />)
+                  }
+                </div>
+              </div>
+
+              {/* TRENDING NOW */}
+              <div style={{ marginBottom: 22 }}>
+                <div className="section-header">
+                  <span style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 15 }}>Trending Now 🔥</span>
+                  <button className="view-all-btn">View All ›</button>
+                </div>
+                <div className="h-scroll">
+                  {(loading ? Array.from({ length: 7 }) : songs.slice(0, 8)).map((s, i) =>
+                    s ? <SongThumbCard key={s.id} song={s} isActive={currentSong?.id === s.id} onPlay={playSongFromList} {...cardProps} />
+                      : <div key={i} className="skeleton" style={{ width: 155, height: 210, borderRadius: 14, flexShrink: 0 }} />
+                  )}
+                </div>
+              </div>
+
+              {/* RECENTLY PLAYED */}
+              <div style={{ marginBottom: 22 }}>
+                <div className="section-header">
+                  <span style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 15 }}>Recently Played</span>
+                  <button className="view-all-btn">View All ›</button>
+                </div>
+                <div className="h-scroll">
+                  {(loading ? Array.from({ length: 5 }) : songs.slice(0, 5)).map((s, i) =>
+                    s ? <CLCard key={s.id} song={s} isActive={currentSong?.id === s.id} onPlay={playSongFromList} {...cardProps} />
+                      : <div key={i} className="skeleton" style={{ width: 260, height: 78, borderRadius: 14, flexShrink: 0 }} />
+                  )}
+                </div>
+              </div>
+
+              {/* ALL SONGS */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <span style={{ color: "var(--app-text-muted)", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", flexShrink: 0 }}>
+                  {loading ? "LOADING..." : `ALL SONGS · ${total}`}
+                </span>
+                <div style={{ flex: 1, height: 1, background: "linear-gradient(to right,var(--app-border),transparent)" }} />
+              </div>
+
+              {songs.map(song => {
+                const active = currentSong?.id === song.id
+                return (
+                  <div key={song.id} className={`song-row${active ? " active-row" : ""}`}>
+                    <div onClick={() => playSongFromList(song)} style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+                      <div style={{ width: 44, height: 44, borderRadius: 9, overflow: "hidden", background: "var(--app-surface)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, position: "relative", boxShadow: active ? "0 0 14px rgba(var(--app-accent-rgb),0.35)" : "none" }}>
+                        {song.cover_url ? <img src={song.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🎵"}
+                        {active && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center" }}><MiniWave isPlaying={isPlaying} /></div>}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ color: active ? "var(--app-accent)" : "var(--app-text-main)", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{song.name}</div>
+                        <div style={{ color: "var(--app-text-muted)", fontSize: 11, marginTop: 2, display: "flex", alignItems: "center", gap: 5, overflow: "hidden" }}>
+                          <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{song.artist}{song.location ? ` · ${song.location}` : ""}</span>
+                          {song.music_type && <span style={{ color: "var(--app-accent)", fontSize: 10, background: "rgba(var(--app-accent-rgb),0.1)", padding: "1px 6px", borderRadius: 4, textTransform: "capitalize", flexShrink: 0 }}>{song.music_type}</span>}
+                        </div>
+                        {active && <div style={{ marginTop: 5 }}><ProgressBar progress={duration > 0 ? currentTime / duration : 0} isActive /></div>}
+                      </div>
+                      <div className="song-duration" style={{ color: "var(--app-text-muted)", fontSize: 12, fontFamily: "monospace", flexShrink: 0 }}>{fmt(song.duration)}</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                      <FavoriteButton song={song} />
+                      <PlusBtn song={song} userId={userId} />
+                    </div>
+                  </div>
+                )
+              })}
+
+              {songs.length < total && (
+                <button onClick={() => { const p = page + 1; setPage(p); fetchSongs(search, p, true) }}
+                  style={{ display: "block", margin: "18px auto 8px", background: "none", border: "1px solid rgba(var(--app-accent-rgb),0.3)", borderRadius: 9, color: "var(--app-text-muted)", cursor: "pointer", padding: "10px 32px", fontSize: 13, fontFamily: "'DM Sans',sans-serif", transition: "all 0.2s" }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--app-accent)"; e.currentTarget.style.color = "var(--app-accent)" }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(var(--app-accent-rgb),0.3)"; e.currentTarget.style.color = "var(--app-text-muted)" }}
+                >Load More</button>
+              )}
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* ── 3. PLAYER BAR — full width at bottom ── */}
-      <div className="player-bar">
-        <div className="player-progress-line" style={{ width: `${progressPct}%` }} />
-        <div className="player-track">
-          <div style={{ width: 42, height: 42, borderRadius: 9, overflow: "hidden", background: "var(--app-surface)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, boxShadow: currentSong ? "0 0 12px rgba(var(--app-accent-rgb),0.25)" : "none", position: "relative" }}>
-            {currentSong?.cover_url ? <img src={currentSong.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🎵"}
-            {isPlaying && currentSong && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}><MiniWave isPlaying={true} /></div>}
+            {/* ── RIGHT PANEL ── */}
+            <div className="right-panel">
+              <div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                  <span style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 13 }}>Analytics</span>
+                  <span style={{ color: "var(--app-text-muted)", fontSize: 11 }}>This Month ▾</span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {[{ label: "Total Plays", value: "155", icon: "📈" }, { label: "Listeners", value: "5.8K", icon: "👥" }, { label: "Saves", value: "940", icon: "🔖" }, { label: "Likes", value: "11.2K", icon: "♥" }].map(s => (
+                    <div key={s.label} className="stat-card">
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                        <div style={{ color: "var(--app-text-muted)", fontSize: 10 }}>{s.label}</div>
+                        <span style={{ fontSize: 12 }}>{s.icon}</span>
+                      </div>
+                      <div style={{ color: "var(--app-text-main)", fontWeight: 800, fontSize: 20 }}>{s.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ background: "rgba(var(--app-accent-rgb),0.06)", border: "1px solid rgba(var(--app-accent-rgb),0.15)", borderRadius: 12, padding: "16px 14px", textAlign: "center" }}>
+                <div style={{ fontSize: 28, marginBottom: 8 }}>⬆️</div>
+                <div style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 13, marginBottom: 6 }}>Share Your Audio</div>
+                <div style={{ color: "var(--app-text-muted)", fontSize: 11, marginBottom: 12, lineHeight: 1.5 }}>Upload nasheeds, naats, recitations & more</div>
+                <button onClick={() => navigate("/upload")} style={{ width: "100%", padding: "9px 0", background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))", border: "none", borderRadius: 8, color: "#041307", fontWeight: 800, fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>Upload Audio</button>
+              </div>
+
+              <div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <span style={{ color: "var(--app-text-main)", fontWeight: 600, fontSize: 13 }}>AI Recommendations</span>
+                  <span style={{ fontSize: 14 }}>✨</span>
+                </div>
+                <div style={{ color: "var(--app-text-muted)", fontSize: 11, marginBottom: 8 }}>Based on your listening</div>
+                <div style={{ height: 60, background: "var(--app-surface)", borderRadius: 8, overflow: "hidden" }}>
+                  <svg viewBox="0 0 200 60" style={{ width: "100%", height: "100%" }}>
+                    <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--app-accent)" stopOpacity="0.3" /><stop offset="100%" stopColor="var(--app-accent)" stopOpacity="0.02" /></linearGradient></defs>
+                    <polyline points="0,55 22,42 44,46 66,30 88,38 110,20 132,30 154,18 176,26 200,14" fill="none" stroke="var(--app-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <polygon points="0,55 22,42 44,46 66,30 88,38 110,20 132,30 154,18 176,26 200,14 200,60 0,60" fill="url(#cg)" />
+                  </svg>
+                </div>
+              </div>
+
+              {currentSong && (
+                <div style={{ background: "rgba(var(--app-accent-rgb),0.06)", border: "1px solid rgba(var(--app-accent-rgb),0.2)", borderRadius: 12, padding: "14px", textAlign: "center" }}>
+                  <div style={{ color: "var(--app-text-muted)", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", marginBottom: 10 }}>Now Playing</div>
+                  <div style={{ width: 64, height: 64, borderRadius: 10, overflow: "hidden", margin: "0 auto 10px", background: "var(--app-surface)", boxShadow: "0 4px 16px rgba(var(--app-accent-rgb),0.25)" }}>
+                    {currentSong.cover_url ? <img src={currentSong.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>🎵</div>}
+                  </div>
+                  <div style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 13, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{currentSong.name}</div>
+                  <div style={{ color: "var(--app-text-muted)", fontSize: 11, marginBottom: 10 }}>{currentSong.artist}</div>
+                  <div style={{ display: "flex", justifyContent: "center" }}><Waveform isPlaying={isPlaying} bars={20} height={28} /></div>
+                </div>
+              )}
+            </div>
           </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ color: currentSong ? "var(--app-text-main)" : "var(--app-text-muted)", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 140 }}>{currentSong?.name || "No Song Selected"}</div>
-            <div style={{ color: "var(--app-text-muted)", fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 140 }}>{currentSong?.artist || "Pick a song to play"}</div>
-          </div>
-        </div>
 
-        <div className="player-wave"><Waveform isPlaying={isPlaying} /></div>
+          <PlayerBar
+            currentSong={currentSong}
+            isPlaying={isPlaying}
+            currentTime={currentTime}
+            duration={duration}
+            volume={volume}
+            progressPct={progressPct}
+            togglePlay={togglePlay}
+            playNext={playNext}
+            playPrev={playPrev}
+            seekTo={seekTo}
+            setVolume={setVolume}
+          />
 
-        <div className="player-controls">
-          <button onClick={playPrev} style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 18, padding: 4 }} onMouseEnter={e => e.currentTarget.style.color = "var(--app-text-main)"} onMouseLeave={e => e.currentTarget.style.color = "var(--app-text-muted)"}>⏮</button>
-          <button onClick={togglePlay} style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#000", fontSize: 15, fontWeight: 700, flexShrink: 0, boxShadow: "0 4px 14px rgba(var(--app-accent-rgb),0.4)", transition: "transform 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.transform = "scale(1.08)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-          >{isPlaying ? "⏸" : "▶"}</button>
-          <button onClick={playNext} style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 18, padding: 4 }} onMouseEnter={e => e.currentTarget.style.color = "var(--app-text-main)"} onMouseLeave={e => e.currentTarget.style.color = "var(--app-text-muted)"}>⏭</button>
-          <button style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 14, padding: 4 }}>🔁</button>
-        </div>
-
-        <div className="player-seek">
-          <input type="range" min={0} max={duration || 0} value={currentTime} onChange={e => seekTo(Number(e.target.value))} style={{ width: "100%", background: `linear-gradient(to right,var(--app-accent) ${progressPct}%,var(--app-border) 0%)` }} />
-          <div style={{ display: "flex", justifyContent: "space-between", color: "var(--app-text-muted)", fontSize: 10 }}>
-            <span>{fmt(currentTime)}</span><span>{fmt(duration)}</span>
-          </div>
-        </div>
-
-        <div className="player-vol">
-          <span style={{ color: "var(--app-text-muted)", fontSize: 14, flexShrink: 0 }}>🔊</span>
-          <input type="range" min={0} max={1} step={0.01} value={volume} onChange={e => setVolume(Number(e.target.value))} style={{ width: 70, background: `linear-gradient(to right,var(--app-accent) ${volume * 100}%,var(--app-border) 0%)` }} />
         </div>
       </div>
     </div>
