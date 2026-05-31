@@ -5,7 +5,7 @@ import FavoriteButton from "@/components/FavoriteButton"
 import { usePersistentSongPlayer } from "@/hooks/usePersistentSongPlayer"
 import { useUser } from "@/context/userContext"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { byPrefixAndName } from "@awesome.me/kit-KIT_CODE/icons"
+import { faPlay, faPause, faForwardFast, faBackwardFast } from "@fortawesome/free-solid-svg-icons"
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -836,18 +836,18 @@ export default function ArtistPage() {
         {/* Controls — FontAwesome icons */}
         <div className="player-controls">
           <button className="player-ctrl-btn" onClick={playPrev} title="Previous">
-            <FontAwesomeIcon icon={byPrefixAndName.fas["backward-fast"]} style={{ fontSize: 15 }} />
+            <FontAwesomeIcon icon={faBackwardFast} style={{ fontSize: 15 }} />
           </button>
 
           <button className="player-play-btn" onClick={togglePlay} title={isPlaying ? "Pause" : "Play"}>
             <FontAwesomeIcon
-              icon={isPlaying ? byPrefixAndName.fas["pause"] : byPrefixAndName.fas["play"]}
+              icon={isPlaying ? faPause : faPlay}
               style={{ fontSize: 14, marginLeft: isPlaying ? 0 : 2 }}
             />
           </button>
 
           <button className="player-ctrl-btn" onClick={playNext} title="Next">
-            <FontAwesomeIcon icon={byPrefixAndName.fas["forward-fast"]} style={{ fontSize: 15 }} />
+            <FontAwesomeIcon icon={faForwardFast} style={{ fontSize: 15 }} />
           </button>
 
           <button className="player-ctrl-btn" title="Repeat" style={{ opacity: 0.5 }}>
