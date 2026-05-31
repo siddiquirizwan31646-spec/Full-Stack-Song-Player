@@ -175,16 +175,9 @@ export default function QawwaliPage() {
   @media(max-width:500px){.song-duration{display:none!important}}
 `}</style>
 
-      <DashboardNavbar />
-
-      {/* Mobile overlay */}
-      <NavbarMenu sidebarOpen={sidebarOpen} onClose={closeSidebar} />
-
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-
-        {/* ── SIDEBAR ── */}
-        
-
+    <DashboardNavbar />
+<div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+  <NavbarMenu sidebarOpen={sidebarOpen} onClose={closeSidebar} />
         {/* ── MAIN ── */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
 

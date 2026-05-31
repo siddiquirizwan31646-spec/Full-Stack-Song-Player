@@ -6,6 +6,7 @@ import DashboardNavbar from "@/components/DashboardNavbar"
 import FavoriteButton from "@/components/FavoriteButton"
 import { useUser } from "@/context/userContext"
 import { usePersistentSongPlayer } from "@/hooks/usePersistentSongPlayer"
+import NavbarMenu, { useNavbar, HamburgerBtn } from "@/components/ui/NavbarMenu"
 
 const SUPABASE_URL = "https://bnxahrapojygsulzfqpw.supabase.co"
 const SUPABASE_KEY =
@@ -15,23 +16,6 @@ const H = {
   Authorization: `Bearer ${SUPABASE_KEY}`,
   "Content-Type": "application/json",
 }
-
-const NAV_ITEMS = [
-  { icon: "🏠", label: "Home", id: "home", path: "/hero" },
-  { icon: "🔍", label: "Explore", id: "explore", path: "/explore" },
-  { icon: "📖", label: "Quran", id: "quran", path: "/quran" },
-  { icon: "🎵", label: "Nasheed", id: "nasheed", path: "/nasheed" },
-  { icon: "🎤", label: "Naat", id: "naat", path: "/naat" },
-  { icon: "🎼", label: "Qawwali", id: "qawwali", path: "/qawwali" },
-  { icon: "🎙", label: "Podcasts", id: "podcasts", path: "/podcasts" },
-  { icon: "📋", label: "Playlists", id: "playlists", path: "/playlists" },
-]
-
-const NAV_BOTTOM = [
-  { icon: "⬆", label: "Upload Audio", id: "upload", path: "/upload" },
-  { icon: "♡", label: "Favorites", id: "favorites", path: "/favorites" },
-  { icon: "⚙", label: "Settings", id: "settings", path: "/settings" },
-]
 
 const fmt = (s) =>
   !s || isNaN(s)
@@ -187,29 +171,20 @@ function ContinueCard({ song, currentSong, isPlaying, onPlay, currentTime, durat
 export default function Explore() {
   const navigate = useNavigate()
   const { user } = useUser()
-  const displayName = user?.username || "Guest"
 
   const [songs, setSongs] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [page, setPage] = useState(0)
 
+  const { sidebarOpen, toggleSidebar, closeSidebar } = useNavbar()
   const searchTimer = useRef(null)
+
   const {
-    currentSong,
-    isPlaying,
-    currentTime,
-    duration,
-    volume,
-    progressPct,
-    playSongFromList,
-    togglePlay,
-    playNext,
-    playPrev,
-    seekTo,
-    setVolume,
+    currentSong, isPlaying, currentTime, duration,
+    volume, progressPct, playSongFromList, togglePlay,
+    playNext, playPrev, seekTo, setVolume,
   } = usePersistentSongPlayer(songs)
 
   const fetchSongs = useCallback(async (q = "", p = 0, append = false) => {
@@ -251,27 +226,26 @@ export default function Explore() {
         ::-webkit-scrollbar{width:4px;height:4px}
         ::-webkit-scrollbar-thumb{background:rgba(var(--app-accent-rgb),0.2);border-radius:2px}
 
-        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;margin-bottom:3px;font-size:13px;font-weight:500;color:var(--app-text-muted);border-left:3px solid transparent;transition:all 0.18s}
-        .nav-item:hover{background:var(--app-surface);color:var(--app-text-main)}
-        .nav-item.active{background:rgba(var(--app-accent-rgb),0.12);border-left-color:var(--app-accent);color:var(--app-accent);font-weight:700}
+        input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;outline:none;cursor:pointer}
+        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--app-accent);cursor:pointer;box-shadow:0 0 6px rgba(var(--app-accent-rgb),0.5)}
 
-        /* SIDEBAR */
-        .sidebar{width:216px;background:var(--app-shell-bg-alt);border-right:1px solid rgba(var(--app-accent-rgb),0.1);display:flex;flex-direction:column;flex-shrink:0;transition:transform 0.28s cubic-bezier(.4,0,.2,1)}
-        @media(max-width:768px){
-          .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:200;width:250px;transform:translateX(-100%);box-shadow:4px 0 40px rgba(0,0,0,0.6)}
-          .sidebar.open{transform:translateX(0)}
-        }
+        @keyframes wave{from{transform:scaleY(0.35)}to{transform:scaleY(1)}}
+        @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
+        .skeleton{background:linear-gradient(90deg,var(--app-surface) 25%,rgba(var(--app-accent-rgb),0.06) 50%,var(--app-surface) 75%);background-size:400px 100%;animation:shimmer 1.4s ease infinite}
 
-        /* HAMBURGER */
-        .hamburger{display:none;background:none;border:none;color:var(--app-text-main);font-size:20px;cursor:pointer;padding:6px 8px;border-radius:8px;flex-shrink:0;line-height:1;transition:background 0.15s}
-        .hamburger:hover{background:var(--app-surface)}
-        @media(max-width:768px){.hamburger{display:flex;align-items:center;justify-content:center}}
+        .topbar-search{width:220px}
+        @media(max-width:600px){.topbar-search{width:140px}}
+        @media(max-width:420px){.topbar-search{display:none}}
 
-        /* MOBILE OVERLAY */
-        .mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:199;backdrop-filter:blur(3px)}
-        @media(max-width:768px){.mob-overlay.visible{display:block}}
+        .continue-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+        @media(max-width:600px){.continue-grid{grid-template-columns:1fr}}
 
-        /* PLAYER */
+        .explore-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
+        @media(max-width:480px){.explore-grid{grid-template-columns:1fr 1fr;gap:10px}}
+
+        .h-scroll{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+        .h-scroll::-webkit-scrollbar{height:3px}
+
         .player-bar{background:var(--app-shell-bg-alt);border-top:1px solid rgba(var(--app-accent-rgb),0.18);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-shrink:0;position:sticky;bottom:0;z-index:20;overflow:hidden}
         .player-progress-line{position:absolute;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--app-accent-strong),var(--app-accent));transition:width 0.5s linear;pointer-events:none}
         .player-track{display:flex;align-items:center;gap:10px;flex:0 0 auto;width:200px;min-width:0}
@@ -281,86 +255,22 @@ export default function Explore() {
         .player-vol{display:flex;align-items:center;gap:8px;flex-shrink:0}
         @media(max-width:1000px){.player-wave{display:none}}
         @media(max-width:750px){.player-vol{display:none}}
-        @media(max-width:600px){
-          .player-bar{padding:8px 10px;gap:8px}
-          .player-track{width:auto;flex:1;min-width:0}
-          .player-seek{width:110px}
-        }
+        @media(max-width:600px){.player-bar{padding:8px 10px;gap:8px}.player-track{width:auto;flex:1;min-width:0}.player-seek{width:110px}}
         @media(max-width:450px){.player-seek{display:none}}
-
-        /* SEARCH */
-        .topbar-search{width:220px}
-        @media(max-width:600px){.topbar-search{width:140px}}
-        @media(max-width:420px){.topbar-search{display:none}}
-
-        /* GRIDS */
-        .continue-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
-        @media(max-width:600px){.continue-grid{grid-template-columns:1fr}}
-
-        .explore-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
-        @media(max-width:480px){.explore-grid{grid-template-columns:1fr 1fr;gap:10px}}
-
-        /* H-SCROLL */
-        .h-scroll{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
-        .h-scroll::-webkit-scrollbar{height:3px}
-
-        input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;outline:none;cursor:pointer}
-        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--app-accent);cursor:pointer;box-shadow:0 0 6px rgba(var(--app-accent-rgb),0.5)}
-
-        @keyframes wave{from{transform:scaleY(0.35)}to{transform:scaleY(1)}}
-        @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
-        .skeleton{background:linear-gradient(90deg,var(--app-surface) 25%,rgba(var(--app-accent-rgb),0.06) 50%,var(--app-surface) 75%);background-size:400px 100%;animation:shimmer 1.4s ease infinite}
+        @media(max-width:500px){.song-duration{display:none!important}}
       `}</style>
 
       <DashboardNavbar />
 
-      {/* Mobile overlay */}
-      <div className={`mob-overlay${sidebarOpen ? " visible" : ""}`} onClick={() => setSidebarOpen(false)} />
-
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {/* ── SIDEBAR ── */}
-        <div className={`sidebar${sidebarOpen ? " open" : ""}`}>
-          {/* Logo header — matches hero page */}
-          <div style={{ padding: "14px 12px 10px", borderBottom: "1px solid rgba(var(--app-accent-rgb),0.08)", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <img
-              src="https://i.postimg.cc/wMj8BDkS/Chat-GPT-Image-May-11-2026-02-56-29-PM.png"
-              alt="QalbAudio"
-              onClick={() => { navigate("/"); setSidebarOpen(false) }}
-              style={{ height: 60, width: "auto", maxWidth: "88%", objectFit: "contain", cursor: "pointer", display: "block" }}
-            />
-            <div style={{ fontSize: 11, color: "var(--app-text-muted)", textAlign: "center" }}>
-              <span style={{ color: "var(--app-accent)", fontWeight: 600 }}>{displayName}</span>
-            </div>
-          </div>
-
-          {/* Nav links */}
-          <nav style={{ flex: 1, padding: "10px 8px", overflowY: "auto" }}>
-            {NAV_ITEMS.map(item => (
-              <div key={item.id}
-                className={`nav-item${item.id === "explore" ? " active" : ""}`}
-                onClick={() => { navigate(item.path); setSidebarOpen(false) }}>
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
-                {item.label}
-              </div>
-            ))}
-            <div style={{ margin: "10px 0", borderTop: "1px solid var(--app-border)" }} />
-            {NAV_BOTTOM.map(item => (
-              <div key={item.id} className="nav-item"
-                style={{ color: item.id === "upload" ? "var(--app-accent)" : undefined }}
-                onClick={() => { navigate(item.path); setSidebarOpen(false) }}>
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
-                {item.label}
-              </div>
-            ))}
-          </nav>
-        </div>
+        <NavbarMenu sidebarOpen={sidebarOpen} onClose={closeSidebar} />
 
         {/* ── MAIN ── */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
 
           {/* Toolbar */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "var(--app-shell-bg-alt)", borderBottom: "1px solid rgba(var(--app-accent-rgb),0.08)", flexShrink: 0 }}>
-            <button className="hamburger" onClick={() => setSidebarOpen(v => !v)}>☰</button>
+            <HamburgerBtn onClick={toggleSidebar} />
 
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 18 }}>🔍</span>
@@ -473,7 +383,6 @@ export default function Explore() {
       <div className="player-bar">
         <div className="player-progress-line" style={{ width: `${progressPct}%` }} />
 
-        {/* Track info */}
         <div className="player-track">
           <div style={{ width: 42, height: 42, borderRadius: 9, overflow: "hidden", background: "var(--app-surface)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, boxShadow: currentSong ? "0 0 12px rgba(var(--app-accent-rgb),0.25)" : "none", position: "relative" }}>
             {currentSong?.cover_url ? <img src={currentSong.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🎵"}
@@ -493,28 +402,24 @@ export default function Explore() {
           </div>
         </div>
 
-        {/* Waveform */}
         <div className="player-wave"><Waveform isPlaying={isPlaying} /></div>
 
-        {/* Controls */}
         <div className="player-controls">
-          <button onClick={playPrev} title="Previous"
-            style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 18, padding: 4, transition: "color 0.15s" }}
+          <button onClick={playPrev} style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 18, padding: 4, transition: "color 0.15s" }}
             onMouseEnter={e => e.currentTarget.style.color = "var(--app-text-main)"}
             onMouseLeave={e => e.currentTarget.style.color = "var(--app-text-muted)"}>⏮</button>
-          <button onClick={togglePlay} title={isPlaying ? "Pause" : "Play"}
+          <button onClick={togglePlay}
             style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#000", fontSize: 14, fontWeight: 700, flexShrink: 0, boxShadow: "0 4px 14px rgba(var(--app-accent-rgb),0.4)", transition: "transform 0.15s" }}
             onMouseEnter={e => e.currentTarget.style.transform = "scale(1.08)"}
-            onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-          >{isPlaying ? "⏸" : "▶"}</button>
-          <button onClick={playNext} title="Next"
-            style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 18, padding: 4, transition: "color 0.15s" }}
+            onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
+            {isPlaying ? "⏸" : "▶"}
+          </button>
+          <button onClick={playNext} style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 18, padding: 4, transition: "color 0.15s" }}
             onMouseEnter={e => e.currentTarget.style.color = "var(--app-text-main)"}
             onMouseLeave={e => e.currentTarget.style.color = "var(--app-text-muted)"}>⏭</button>
-          <button title="Repeat" style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 14, padding: 4 }}>🔁</button>
+          <button style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 14, padding: 4 }}>🔁</button>
         </div>
 
-        {/* Seek */}
         <div className="player-seek">
           <input type="range" min={0} max={duration || 0} value={currentTime}
             onChange={e => seekTo(Number(e.target.value))}
@@ -525,7 +430,6 @@ export default function Explore() {
           </div>
         </div>
 
-        {/* Volume */}
         <div className="player-vol">
           <span style={{ color: "var(--app-text-muted)", fontSize: 14, flexShrink: 0 }}>🔊</span>
           <input type="range" min={0} max={1} step={0.01} value={volume}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Download, ListMusic, Music2, Pause, Play, Repeat2,
   SkipBack, SkipForward, Trash2, Volume2, Plus, X
@@ -92,13 +92,8 @@ const SeekSlider = ({ min = 0, max, value, onChange, style }) => (
 export default function PlaylistPage() {
   const { user, setUser, loading } = useUser();
   const navigate  = useNavigate();
-  const location  = useLocation();
-
   const displayName = user?.username || "Guest";
 
-  // derive active nav from current path — never hardcode
-  const activeNav = [...NAV_ITEMS, ...NAV_BOTTOM]
-    .find(i => i.path === location.pathname)?.id || "playlists";
 
   const [playlists,        setPlaylists]        = useState([]);
   const [selectedId,       setSelectedId]       = useState(null);
@@ -130,12 +125,11 @@ export default function PlaylistPage() {
     resetPlayer,
   } = usePersistentSongPlayer(songs);
 
-  const goTo = useCallback((path) => {
-    setSidebarOpen(false);
-    setPlaylistOpen(false);
-    navigate(path);
-  }, [navigate]);
-
+ const goTo = useCallback((path) => {
+  closeSidebar();  // ← correct
+  setPlaylistOpen(false);
+  navigate(path);
+}, [navigate, closeSidebar]);
   const handleUnauthorized = useCallback(() => {
     setUser(null);
     localStorage.removeItem("accessToken");
@@ -278,15 +272,12 @@ const iconBtn = {
   @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 `}</style>
 
-      <DashboardNavbar />
+     <DashboardNavbar />
 
-      {/* ── mobile overlays ── */}
-      <NavbarMenu sidebarOpen={sidebarOpen} onClose={closeSidebar} />
-      {playlistOpen && <div className="mob-overlay-pl"  onClick={() => setPlaylistOpen(false)} />}
+{playlistOpen && <div className="mob-overlay-pl" onClick={() => setPlaylistOpen(false)} />}
 
-      <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
-
-        {/* ══ NAV SIDEBAR ══ */}
+<div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
+  <NavbarMenu sidebarOpen={sidebarOpen} onClose={closeSidebar} />
        
 
         {/* ══ PLAYLIST PANEL ══ */}

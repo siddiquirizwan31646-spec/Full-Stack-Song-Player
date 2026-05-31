@@ -1013,7 +1013,6 @@ function UploadCenter({ navigate, displayName, onLock }) {
       <style>{GLOBAL_CSS}</style>
 
       <DashboardNavbar />
-      <NavbarMenu sidebarOpen={sidebarOpen} onClose={closeSidebar} />
 
       {/* FIX: hidden file inputs — NO webkitdirectory, just multi-file accept.
           Folders are handled by drag-and-drop (dropzone). The picker opens a
