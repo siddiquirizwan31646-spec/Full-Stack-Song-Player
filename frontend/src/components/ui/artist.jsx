@@ -16,7 +16,7 @@ function dicebearUrl(name) {
   return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=0a0a0a,111827,1a1a2e,0d1117&fontFamily=sans-serif&fontSize=38&fontWeight=700`
 }
 
-// ── Waveform (full — used in player bar center) ───────────────────────────────
+// ── Waveform ──────────────────────────────────────────────────────────────────
 const Waveform = ({ isPlaying }) => (
   <div style={{ display: "flex", alignItems: "center", gap: 2, height: 32 }}>
     {Array.from({ length: 28 }).map((_, i) => {
@@ -35,7 +35,6 @@ const Waveform = ({ isPlaying }) => (
   </div>
 )
 
-// ── Mini Waveform ─────────────────────────────────────────────────────────────
 const MiniWave = ({ isPlaying }) => (
   <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 16 }}>
     {[0, 1, 2].map(i => (
@@ -48,102 +47,76 @@ const MiniWave = ({ isPlaying }) => (
   </div>
 )
 
-// ── Artist Card (same as hero page) ──────────────────────────────────────────
-function ArtistCard({ artistName, imageUrl, songCount, onClick }) {
-  const [loaded, setLoaded] = useState(false)
-  const imgSrc = imageUrl || dicebearUrl(artistName)
-  return (
-    <div
-      onClick={() => onClick(artistName)}
-      style={{ flexShrink: 0, width: 110, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, transition: "transform 0.2s" }}
-      onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"}
-      onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
-    >
-      <div
-        style={{ width: 80, height: 80, borderRadius: "50%", overflow: "hidden", background: "var(--app-surface)", border: "2px solid rgba(var(--app-accent-rgb),0.25)", boxShadow: "0 4px 18px rgba(0,0,0,0.35)", position: "relative", transition: "border-color 0.2s, box-shadow 0.2s" }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--app-accent)"; e.currentTarget.style.boxShadow = "0 4px 22px rgba(var(--app-accent-rgb),0.35)" }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(var(--app-accent-rgb),0.25)"; e.currentTarget.style.boxShadow = "0 4px 18px rgba(0,0,0,0.35)" }}
-      >
-        {!loaded && (
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg,var(--app-surface) 25%,rgba(var(--app-accent-rgb),0.06) 50%,var(--app-surface) 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s ease infinite" }} />
-        )}
-        <img
-          src={imgSrc} alt={artistName}
-          onLoad={() => setLoaded(true)}
-          onError={e => { e.target.src = dicebearUrl(artistName); setLoaded(true) }}
-          style={{ width: "100%", height: "100%", objectFit: "cover", opacity: loaded ? 1 : 0, transition: "opacity 0.3s" }}
-        />
-      </div>
-      <div style={{ textAlign: "center" }}>
-        <div style={{ color: "var(--app-text-main)", fontWeight: 600, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 105 }}>{artistName}</div>
-        <div style={{ color: "var(--app-text-muted)", fontSize: 10, marginTop: 2 }}>{songCount} song{songCount !== 1 ? "s" : ""}</div>
-      </div>
-    </div>
-  )
-}
-
-// ── Artists Section (same as hero page) ───────────────────────────────────────
-function ArtistsSection({ navigate, currentArtist }) {
-  const [artistMap, setArtistMap] = useState({})
-  const [displayed, setDisplayed] = useState([])
+// ── Top Artists (right panel) ─────────────────────────────────────────────────
+function TopArtists({ navigate, currentArtist }) {
+  const [artists, setArtists] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
     fetch(`${SUPABASE_URL}/rest/v1/artists?select=name,image_url&order=name.asc`, { headers: H })
       .then(r => r.json())
-      .then(async artistRows => {
-        if (!Array.isArray(artistRows) || artistRows.length === 0) return
+      .then(async rows => {
+        if (!Array.isArray(rows) || rows.length === 0) return
         const songsRes = await fetch(`${SUPABASE_URL}/rest/v1/songs?select=artist&artist=not.is.null`, { headers: H })
         const songRows = await songsRes.json()
         const countMap = {}
         if (Array.isArray(songRows)) songRows.forEach(r => { const a = (r.artist || "").trim(); if (a) countMap[a.toLowerCase()] = (countMap[a.toLowerCase()] || 0) + 1 })
-        const map = {}
-        artistRows.forEach(r => { if (r.name && r.image_url) map[r.name] = { imageUrl: r.image_url, count: countMap[r.name.toLowerCase()] || 0 } })
-        if (!cancelled) { setArtistMap(map); pickRandom(map) }
+        const all = rows
+          .filter(r => r.name && r.image_url)
+          .map(r => ({ name: r.name, imageUrl: r.image_url, count: countMap[r.name.toLowerCase()] || 0 }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 6)
+        if (!cancelled) setArtists(all)
       })
       .catch(console.error)
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [])
 
-  const pickRandom = (map) => {
-    const all = Object.keys(map)
-    setDisplayed([...all].sort(() => Math.random() - 0.5).slice(0, 10))
-  }
-
-  if (!loading && displayed.length === 0) return null
-
   return (
-    <div style={{ marginBottom: 22 }}>
-      <div style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>🎤 Artists</span>
-        <div style={{ flex: 1, height: 1, background: "linear-gradient(to right,rgba(var(--app-accent-rgb),0.2),transparent)" }} />
-        <button
-          onClick={() => pickRandom(artistMap)}
-          style={{ background: "none", border: "1px solid rgba(var(--app-accent-rgb),0.25)", borderRadius: 7, color: "var(--app-text-muted)", cursor: "pointer", padding: "3px 10px", fontSize: 11, fontFamily: "'DM Sans',sans-serif", transition: "all 0.18s" }}
-          onMouseEnter={e => { e.currentTarget.style.color = "var(--app-accent)"; e.currentTarget.style.borderColor = "var(--app-accent)" }}
-          onMouseLeave={e => { e.currentTarget.style.color = "var(--app-text-muted)"; e.currentTarget.style.borderColor = "rgba(var(--app-accent-rgb),0.25)" }}
-        >🔀 Shuffle</button>
+    <div>
+      <div style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 12.5, marginBottom: 12, letterSpacing: "0.05em" }}>
+        🎤 Top Artists
       </div>
-      <div style={{ display: "flex", gap: 18, overflowX: "auto", paddingBottom: 8, paddingTop: 4, WebkitOverflowScrolling: "touch" }}>
-        {loading
-          ? Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                <div className="qa-skeleton" style={{ width: 80, height: 80, borderRadius: "50%" }} />
-                <div className="qa-skeleton" style={{ width: 70, height: 10, borderRadius: 4 }} />
+      {loading
+        ? Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+              <div className="qa-skeleton" style={{ width: 38, height: 38, borderRadius: "50%", flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <div className="qa-skeleton" style={{ width: "70%", height: 10, borderRadius: 4, marginBottom: 5 }} />
+                <div className="qa-skeleton" style={{ width: "40%", height: 8, borderRadius: 4 }} />
               </div>
-            ))
-          : displayed.map(name => (
-              <ArtistCard
-                key={name}
-                artistName={name}
-                imageUrl={artistMap[name]?.imageUrl}
-                songCount={artistMap[name]?.count || 0}
-                onClick={(n) => navigate(`/hero/artist/${encodeURIComponent(n)}`)}
-              />
-            ))}
-      </div>
+            </div>
+          ))
+        : artists.map(a => {
+            const isActive = a.name === currentArtist
+            return (
+              <div
+                key={a.name}
+                onClick={() => navigate(`/hero/artist/${encodeURIComponent(a.name)}`)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 10, padding: "7px 8px",
+                  borderRadius: 9, cursor: "pointer", marginBottom: 2,
+                  background: isActive ? "rgba(var(--app-accent-rgb),0.1)" : "transparent",
+                  border: isActive ? "1px solid rgba(var(--app-accent-rgb),0.2)" : "1px solid transparent",
+                  transition: "all 0.15s",
+                }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--app-surface)" }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent" }}
+              >
+                <div style={{ width: 38, height: 38, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `2px solid ${isActive ? "var(--app-accent)" : "rgba(var(--app-accent-rgb),0.2)"}`, background: "var(--app-surface)" }}>
+                  <img src={a.imageUrl} alt={a.name} style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    onError={e => { e.target.src = dicebearUrl(a.name) }} />
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ color: isActive ? "var(--app-accent)" : "var(--app-text-main)", fontWeight: 600, fontSize: 12.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.name}</div>
+                  <div style={{ color: "var(--app-text-muted)", fontSize: 10.5, marginTop: 1 }}>{a.count} song{a.count !== 1 ? "s" : ""}</div>
+                </div>
+                {isActive && <span style={{ color: "var(--app-accent)", fontSize: 10, flexShrink: 0 }}>●</span>}
+              </div>
+            )
+          })}
     </div>
   )
 }
@@ -212,7 +185,7 @@ function AddToPlaylistDropdown({ song, userId, onClose }) {
   )
 }
 
-// ── Nav config ────────────────────────────────────────────────────────────────
+// ── Nav ───────────────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
   { icon: "🏠", label: "Home", id: "home", path: "/hero" },
   { icon: "🔍", label: "Explore", id: "explore", path: "/explore" },
@@ -229,7 +202,7 @@ const NAV_BOTTOM = [
   { icon: "⚙", label: "Settings", id: "settings", path: "/settings" },
 ]
 
-// ── Main Artist Page ──────────────────────────────────────────────────────────
+// ── Main ──────────────────────────────────────────────────────────────────────
 export default function ArtistPage() {
   const { artistName } = useParams()
   const navigate = useNavigate()
@@ -278,7 +251,6 @@ export default function ArtistPage() {
   const bgImage = mongoArtist?.background_image || artistData?.background_image || null
   const bio = mongoArtist?.bio || artistData?.bio || null
   const location = mongoArtist?.location || artistData?.location || null
-  const tagline = mongoArtist?.tagline || null
   const quote = mongoArtist?.quote || null
   const monthlyListeners = mongoArtist?.monthly_listeners || null
   const avgRating = mongoArtist?.avg_rating || null
@@ -304,11 +276,10 @@ export default function ArtistPage() {
         @keyframes wave{from{transform:scaleY(0.35)}to{transform:scaleY(1)}}
         @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:calc(200px + 100%) 0}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes pulse{0%,100%{opacity:0.5}50%{opacity:1}}
 
         .qa-skeleton{background:linear-gradient(90deg,var(--app-surface) 25%,rgba(var(--app-accent-rgb),0.06) 50%,var(--app-surface) 75%);background-size:400px 100%;animation:shimmer 1.4s ease infinite}
 
-        /* ── Sidebar — identical to hero ── */
+        /* ── Sidebar ── */
         .qa-sidebar{width:216px;background:var(--app-shell-bg-alt);border-right:1px solid rgba(var(--app-accent-rgb),0.1);display:flex;flex-direction:column;flex-shrink:0;transition:transform 0.28s cubic-bezier(.4,0,.2,1)}
         @media(max-width:768px){.qa-sidebar{position:fixed;left:0;top:0;bottom:0;z-index:200;width:250px;transform:translateX(-100%);box-shadow:4px 0 40px rgba(0,0,0,0.6)}.qa-sidebar.open{transform:translateX(0)}}
         .mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:199;backdrop-filter:blur(3px)}
@@ -328,7 +299,7 @@ export default function ArtistPage() {
         .qa-song-row:hover{background:var(--app-surface)}
         .qa-song-row.active-row{border-left-color:var(--app-accent);background:rgba(var(--app-accent-rgb),0.06)}
 
-        /* ── Action Buttons ── */
+        /* ── Buttons ── */
         .qa-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:50px;cursor:pointer;font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif;letter-spacing:0.04em;transition:all 0.18s;outline:none;white-space:nowrap;user-select:none}
         .qa-btn-primary{background:linear-gradient(135deg,var(--app-accent-strong),var(--app-accent));border:none;color:#000}
         .qa-btn-primary:hover{transform:scale(1.04);filter:brightness(1.1)}
@@ -337,14 +308,14 @@ export default function ArtistPage() {
         .qa-btn-icon{background:transparent;border:1.5px solid rgba(255,255,255,0.28);color:var(--app-text-muted);padding:9px 13px;border-radius:50%;font-size:16px;line-height:1}
         .qa-btn-icon:hover{border-color:rgba(255,255,255,0.65);color:var(--app-text-main);transform:scale(1.05)}
 
-        /* ── Right panel stat card ── */
+        /* ── Stat card ── */
         .qa-stat-card{background:var(--app-surface);border:1px solid var(--app-border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px}
 
         /* ── Range inputs ── */
         input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;outline:none;cursor:pointer}
         input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--app-accent);cursor:pointer;box-shadow:0 0 6px rgba(var(--app-accent-rgb),0.5)}
 
-        /* ── Player bar — identical structure to hero ── */
+        /* ── Player bar ── */
         .player-bar{background:var(--app-shell-bg-alt);border-top:1px solid rgba(var(--app-accent-rgb),0.18);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-shrink:0;position:sticky;bottom:0;z-index:20;overflow:hidden}
         .player-progress-line{position:absolute;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--app-accent-strong),var(--app-accent));transition:width 0.5s linear;pointer-events:none}
         .player-wave{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -365,25 +336,18 @@ export default function ArtistPage() {
         .hamburger:hover{background:var(--app-surface)}
         @media(max-width:768px){.hamburger{display:flex;align-items:center;justify-content:center}}
 
-        /* ── Fade animations ── */
         .fade-up{animation:fadeUp 0.5s ease both}
         .fade-up-1{animation-delay:0.05s}
         .fade-up-2{animation-delay:0.12s}
         .fade-up-3{animation-delay:0.2s}
-
-        .h-scroll::-webkit-scrollbar{height:3px}
       `}</style>
 
       <DashboardNavbar />
-
-      {/* Mobile overlay */}
       <div className={`mob-overlay${sidebarOpen ? " visible" : ""}`} onClick={() => setSidebarOpen(false)} />
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
-        {/* ══════════════════════════════════════════════════════════
-            SIDEBAR — exact same as hero page
-        ══════════════════════════════════════════════════════════ */}
+        {/* ══ SIDEBAR — no now-playing mini at bottom ══ */}
         <div className={`qa-sidebar${sidebarOpen ? " open" : ""}`}>
           <div style={{ padding: "14px 12px 10px", borderBottom: "1px solid rgba(var(--app-accent-rgb),0.08)", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
             <img
@@ -396,6 +360,7 @@ export default function ArtistPage() {
               <span style={{ color: "var(--app-accent)", fontWeight: 600 }}>{displayName}</span>
             </div>
           </div>
+          {/* Nav — fills full remaining height, NO now-playing bar at bottom */}
           <nav style={{ flex: 1, padding: "10px 8px", overflowY: "auto" }}>
             {NAV_ITEMS.map(item => (
               <div
@@ -420,122 +385,113 @@ export default function ArtistPage() {
               </div>
             ))}
           </nav>
-          {/* Sidebar now-playing mini */}
-          {currentSong && (
-            <div style={{ padding: "10px 12px", borderTop: "1px solid var(--app-border)", display: "flex", alignItems: "center", gap: 9 }}>
-              <div style={{ width: 34, height: 34, borderRadius: 6, overflow: "hidden", background: "var(--app-surface)", flexShrink: 0, position: "relative" }}>
-                {currentSong.cover_url
-                  ? <img src={currentSong.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🎵</div>}
-                {isPlaying && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center" }}><MiniWave isPlaying /></div>}
-              </div>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 11.5, fontWeight: 600, color: "var(--app-text-main)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{currentSong.name}</div>
-                <div style={{ fontSize: 10.5, color: "var(--app-text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{currentSong.artist}</div>
-              </div>
-            </div>
-          )}
+          {/* ↑ No mini player bar here — removed */}
         </div>
 
-        {/* ── MAIN CONTENT ── */}
+        {/* ── MAIN ── */}
         <div style={{ flex: 1, display: "flex", overflow: "hidden", minWidth: 0 }}>
           <div style={{ flex: 1, overflowY: "auto", position: "relative", display: "flex", flexDirection: "column" }}>
 
-            {/* Mobile toolbar with hamburger */}
+            {/* Mobile toolbar */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 14px", background: "var(--app-shell-bg-alt)", borderBottom: "1px solid rgba(var(--app-accent-rgb),0.08)", flexShrink: 0 }}>
               <button className="hamburger" onClick={() => setSidebarOpen(v => !v)}>☰</button>
-              <span style={{ color: "var(--app-text-main)", fontSize: 14, fontWeight: 700, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{decodedName}</span>
+              <span style={{ color: "var(--app-text-main)", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{decodedName}</span>
             </div>
 
-            {/* ═══════════════════════════════════════════════════════
-                HERO — BG image, left 35% dark fade
-            ═══════════════════════════════════════════════════════ */}
-            <div style={{ position: "relative", minHeight: 290, overflow: "hidden", flexShrink: 0 }}>
+            {/* ══ HERO — taller BG, no portrait on the left ══ */}
+            <div style={{ position: "relative", height: 380, overflow: "hidden", flexShrink: 0 }}>
 
-              {/* Full-width background */}
+              {/* Full-width background — taller, object-position top so face shows */}
               {bgImage ? (
                 <img
                   src={bgImage} alt=""
                   onLoad={() => setBgLoaded(true)}
-                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", opacity: bgLoaded ? 1 : 0, transition: "opacity 0.7s ease" }}
+                  style={{
+                    position: "absolute", inset: 0, width: "100%", height: "100%",
+                    objectFit: "cover", objectPosition: "center 20%",
+                    opacity: bgLoaded ? 1 : 0, transition: "opacity 0.7s ease",
+                  }}
                 />
               ) : (
-                <div style={{ position: "absolute", inset: 0, background: "#0d0d0d" }} />
+                /* Fallback: show artist portrait as full-bleed background when no bg image */
+                <img
+                  src={artistImg} alt={decodedName}
+                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", filter: "blur(18px) brightness(0.45)", transform: "scale(1.08)" }}
+                />
               )}
 
-              {/* Left 35% dark fade */}
+              {/* Left 35% dark fade only */}
               <div style={{
-                position: "absolute", inset: 0,
-                background: "linear-gradient(to right, #0a0a0a 0%, #0a0a0a 20%, rgba(10,10,10,0.9) 28%, rgba(10,10,10,0.5) 38%, rgba(10,10,10,0.15) 50%, transparent 65%)",
-                zIndex: 1,
+                position: "absolute", inset: 0, zIndex: 1,
+                background: "linear-gradient(to right, #0a0a0a 0%, #0a0a0a 18%, rgba(10,10,10,0.88) 28%, rgba(10,10,10,0.45) 40%, rgba(10,10,10,0.1) 55%, transparent 68%)",
               }} />
 
-              {/* Bottom fade */}
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 90, background: "linear-gradient(to bottom, transparent, var(--app-shell-bg))", zIndex: 2 }} />
+              {/* Bottom fade into page */}
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 110, background: "linear-gradient(to bottom, transparent, var(--app-shell-bg))", zIndex: 2 }} />
 
-              {/* Hero content */}
-              <div className="fade-up" style={{ position: "relative", zIndex: 3, padding: "28px 28px 36px", display: "flex", alignItems: "flex-start", gap: 26 }}>
+              {/* Hero content — NO portrait image, just text & buttons */}
+              <div style={{ position: "absolute", inset: 0, zIndex: 3, display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: "0 32px 36px" }}>
 
-                {/* Artist portrait */}
-                <div style={{ width: 180, height: 200, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: "var(--app-surface)", boxShadow: "0 20px 60px rgba(0,0,0,0.7)" }}>
-                  <img src={artistImg} alt={decodedName} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+                <div className="fade-up fade-up-1" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.55)", letterSpacing: "0.14em" }}>ARTIST</span>
+                  <span style={{ color: "var(--app-accent)", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", width: 17, height: 17, background: "rgba(var(--app-accent-rgb),0.22)", borderRadius: "50%" }}>✔</span>
                 </div>
 
-                {/* Info */}
-                <div style={{ flex: 1, minWidth: 0, paddingTop: 8 }}>
-                  <div className="fade-up fade-up-1" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "var(--app-text-muted)", letterSpacing: "0.12em" }}>ARTIST</span>
-                    <span style={{ color: "var(--app-accent)", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", width: 17, height: 17, background: "rgba(var(--app-accent-rgb),0.22)", borderRadius: "50%" }}>✔</span>
+                <h1 className="fade-up fade-up-1" style={{
+                  fontSize: "clamp(36px,5.5vw,72px)", fontWeight: 900, color: "#fff",
+                  lineHeight: 1, letterSpacing: "-0.03em", margin: "0 0 8px",
+                  textShadow: "0 2px 32px rgba(0,0,0,0.7)",
+                }}>
+                  {decodedName}
+                </h1>
+
+                <div className="fade-up fade-up-1" style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: bio ? 10 : 18 }}>
+                  {loading ? "Loading…" : `${songs.length} song${songs.length !== 1 ? "s" : ""}`}
+                </div>
+
+                {bio && (
+                  <p className="fade-up fade-up-2" style={{
+                    color: "rgba(255,255,255,0.6)", fontSize: 13.5, lineHeight: 1.65,
+                    maxWidth: 520, margin: "0 0 16px",
+                    display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+                  }}>{bio}</p>
+                )}
+
+                {/* Stats */}
+                <div className="fade-up fade-up-2" style={{ display: "flex", alignItems: "center", gap: 28, marginBottom: 20, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                    <span style={{ fontSize: 16 }}>🎵</span>
+                    <div>
+                      <div style={{ color: "#fff", fontWeight: 800, fontSize: 14, lineHeight: 1.1 }}>{loading ? "—" : songs.length}</div>
+                      <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.09em" }}>SONGS</div>
+                    </div>
                   </div>
-
-                  <h1 className="fade-up fade-up-1" style={{ fontSize: "clamp(32px,4.5vw,62px)", fontWeight: 900, color: "#fff", lineHeight: 1.05, letterSpacing: "-0.025em", margin: "0 0 5px", textShadow: "0 2px 24px rgba(0,0,0,0.6)" }}>
-                    {decodedName}
-                  </h1>
-
-                  <div className="fade-up fade-up-1" style={{ color: "var(--app-text-muted)", fontSize: 12.5, marginBottom: 10 }}>
-                    {loading ? "Loading…" : `${songs.length} song${songs.length !== 1 ? "s" : ""}`}
-                  </div>
-
-                  {bio && (
-                    <p className="fade-up fade-up-2" style={{ color: "var(--app-text-muted)", fontSize: 13, lineHeight: 1.65, maxWidth: 480, margin: "0 0 16px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{bio}</p>
-                  )}
-
-                  {/* Stats */}
-                  <div className="fade-up fade-up-2" style={{ display: "flex", alignItems: "center", gap: 28, marginBottom: 18, flexWrap: "wrap" }}>
+                  {monthlyListeners && (
                     <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                      <span style={{ fontSize: 16 }}>🎵</span>
+                      <span style={{ fontSize: 16 }}>🎧</span>
                       <div>
-                        <div style={{ color: "var(--app-text-main)", fontWeight: 800, fontSize: 13.5, lineHeight: 1.1 }}>{loading ? "—" : songs.length}</div>
-                        <div style={{ color: "var(--app-text-muted)", fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.09em" }}>SONGS</div>
+                        <div style={{ color: "#fff", fontWeight: 800, fontSize: 14, lineHeight: 1.1 }}>{monthlyListeners}</div>
+                        <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.09em" }}>MONTHLY LISTENERS</div>
                       </div>
                     </div>
-                    {monthlyListeners && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                        <span style={{ fontSize: 16 }}>🎧</span>
-                        <div>
-                          <div style={{ color: "var(--app-text-main)", fontWeight: 800, fontSize: 13.5, lineHeight: 1.1 }}>{monthlyListeners}</div>
-                          <div style={{ color: "var(--app-text-muted)", fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.09em" }}>MONTHLY LISTENERS</div>
-                        </div>
+                  )}
+                  {location && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                      <span style={{ fontSize: 16 }}>📍</span>
+                      <div>
+                        <div style={{ color: "#fff", fontWeight: 800, fontSize: 14, lineHeight: 1.1 }}>{location}</div>
+                        <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.09em" }}>FROM</div>
                       </div>
-                    )}
-                    {location && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                        <span style={{ fontSize: 16 }}>📍</span>
-                        <div>
-                          <div style={{ color: "var(--app-text-main)", fontWeight: 800, fontSize: 13.5, lineHeight: 1.1 }}>{location}</div>
-                          <div style={{ color: "var(--app-text-muted)", fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.09em" }}>FROM</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
+                </div>
 
-                  {/* Action buttons */}
-                  <div className="fade-up fade-up-3" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                    <button className="qa-btn qa-btn-primary" onClick={playAll}><span style={{ fontSize: 11 }}>▶</span> PLAY ALL</button>
-                    <button className="qa-btn qa-btn-outline" onClick={shufflePlay}><span style={{ fontSize: 13 }}>⇄</span> SHUFFLE</button>
-                    <button className="qa-btn qa-btn-outline"><span style={{ fontSize: 14 }}>+</span> ADD TO PLAYLIST</button>
-                    <button className="qa-btn qa-btn-icon">···</button>
-                  </div>
+                {/* Action buttons */}
+                <div className="fade-up fade-up-3" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <button className="qa-btn qa-btn-primary" onClick={playAll}><span style={{ fontSize: 11 }}>▶</span> PLAY ALL</button>
+                  <button className="qa-btn qa-btn-outline" onClick={shufflePlay}><span style={{ fontSize: 13 }}>⇄</span> SHUFFLE</button>
+                  <button className="qa-btn qa-btn-outline"><span style={{ fontSize: 14 }}>+</span> ADD TO PLAYLIST</button>
+                  <button className="qa-btn qa-btn-icon">···</button>
                 </div>
               </div>
             </div>
@@ -552,7 +508,6 @@ export default function ArtistPage() {
             {/* ── TAB CONTENT ── */}
             <div style={{ flex: 1, overflowY: "auto" }}>
 
-              {/* SONGS */}
               {activeTab === "songs" && (
                 <div style={{ padding: "18px 20px 80px" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
@@ -622,14 +577,10 @@ export default function ArtistPage() {
                 </div>
               )}
 
-              {/* ALBUMS */}
               {activeTab === "albums" && (
-                <div style={{ padding: "48px 28px", textAlign: "center", color: "var(--app-text-muted)", fontSize: 13.5 }}>
-                  No albums available yet
-                </div>
+                <div style={{ padding: "48px 28px", textAlign: "center", color: "var(--app-text-muted)", fontSize: 13.5 }}>No albums available yet</div>
               )}
 
-              {/* ABOUT */}
               {activeTab === "about" && (
                 <div style={{ padding: "28px 24px", maxWidth: 620 }}>
                   {bio
@@ -653,13 +604,8 @@ export default function ArtistPage() {
             </div>
           </div>
 
-          {/* ══════════════════════════════════════════════════════════
-              RIGHT PANEL
-          ══════════════════════════════════════════════════════════ */}
+          {/* ══ RIGHT PANEL — Top Artists replaces Top Listeners, no ArtistsSection above ══ */}
           <div className="qa-right-panel">
-
-            {/* Artists section — same as hero */}
-            <ArtistsSection navigate={navigate} currentArtist={decodedName} />
 
             {/* About */}
             <div>
@@ -670,16 +616,8 @@ export default function ArtistPage() {
               }
             </div>
 
-            {/* Top Listeners */}
-            <div>
-              <div style={{ color: "var(--app-text-main)", fontWeight: 700, fontSize: 12.5, marginBottom: 10, letterSpacing: "0.05em" }}>Top Listeners</div>
-              <div style={{ display: "flex", alignItems: "center" }}>
-                {["A", "B", "C", "D"].map((l, i) => (
-                  <div key={l} style={{ width: 30, height: 30, borderRadius: "50%", background: `hsl(${i * 55 + 130},35%,28%)`, border: "2px solid var(--app-shell-bg-alt)", marginLeft: i === 0 ? 0 : -9, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10.5, fontWeight: 700, color: "var(--app-text-muted)", zIndex: 4 - i, position: "relative" }}>{l}</div>
-                ))}
-                {monthlyListeners && <div style={{ marginLeft: 10, color: "var(--app-text-muted)", fontSize: 11.5 }}>+{monthlyListeners}</div>}
-              </div>
-            </div>
+            {/* ── Top Artists (replaces Top Listeners) ── */}
+            <TopArtists navigate={navigate} currentArtist={decodedName} />
 
             {/* Stat cards */}
             {monthlyListeners && (
@@ -708,7 +646,7 @@ export default function ArtistPage() {
               </div>
             )}
 
-            {/* Quote card */}
+            {/* Quote */}
             {quote && (
               <div style={{ background: "rgba(var(--app-accent-rgb),0.05)", border: "1px solid rgba(var(--app-accent-rgb),0.14)", borderRadius: 12, padding: "15px 15px 13px" }}>
                 <div style={{ color: "var(--app-accent)", fontSize: 22, lineHeight: 1, marginBottom: 8 }}>"</div>
@@ -717,7 +655,7 @@ export default function ArtistPage() {
               </div>
             )}
 
-            {/* Now playing card */}
+            {/* Now playing */}
             {currentSong && (
               <div style={{ background: "rgba(var(--app-accent-rgb),0.06)", border: "1px solid rgba(var(--app-accent-rgb),0.2)", borderRadius: 12, padding: "12px", textAlign: "center" }}>
                 <div style={{ color: "var(--app-text-muted)", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", marginBottom: 8 }}>NOW PLAYING</div>
@@ -735,14 +673,10 @@ export default function ArtistPage() {
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════
-          PLAYER BAR — identical to hero page (live progress line + waveform)
-      ══════════════════════════════════════════════════════════ */}
+      {/* ══ PLAYER BAR ══ */}
       <div className="player-bar">
-        {/* Live progress line at very top of bar */}
         <div className="player-progress-line" style={{ width: `${progressPct}%` }} />
 
-        {/* Left: track info */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "0 0 auto", width: 200, minWidth: 0 }}>
           <div style={{ width: 42, height: 42, borderRadius: 9, overflow: "hidden", background: "var(--app-surface)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, boxShadow: currentSong ? "0 0 12px rgba(var(--app-accent-rgb),0.25)" : "none", position: "relative" }}>
             {currentSong?.cover_url ? <img src={currentSong.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🎵"}
@@ -758,50 +692,32 @@ export default function ArtistPage() {
           </div>
         </div>
 
-        {/* Center: waveform (hidden on small screens) */}
-        <div className="player-wave">
-          <Waveform isPlaying={isPlaying} />
-        </div>
+        <div className="player-wave"><Waveform isPlaying={isPlaying} /></div>
 
-        {/* Playback controls */}
         <div className="player-controls">
-          <button onClick={playPrev}
-            style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 18, padding: 4, transition: "color 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.color = "var(--app-text-main)"}
-            onMouseLeave={e => e.currentTarget.style.color = "var(--app-text-muted)"}>⏮</button>
-          <button
-            onClick={togglePlay}
+          <button onClick={playPrev} style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 18, padding: 4, transition: "color 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.color = "var(--app-text-main)"} onMouseLeave={e => e.currentTarget.style.color = "var(--app-text-muted)"}>⏮</button>
+          <button onClick={togglePlay}
             style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg,var(--app-accent-strong),var(--app-accent))", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#000", fontSize: 14, fontWeight: 700, flexShrink: 0, boxShadow: "0 4px 14px rgba(var(--app-accent-rgb),0.4)", transition: "transform 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.transform = "scale(1.08)"}
-            onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+            onMouseEnter={e => e.currentTarget.style.transform = "scale(1.08)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
           >{isPlaying ? "⏸" : "▶"}</button>
-          <button onClick={playNext}
-            style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 18, padding: 4, transition: "color 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.color = "var(--app-text-main)"}
-            onMouseLeave={e => e.currentTarget.style.color = "var(--app-text-muted)"}>⏭</button>
+          <button onClick={playNext} style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 18, padding: 4, transition: "color 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.color = "var(--app-text-main)"} onMouseLeave={e => e.currentTarget.style.color = "var(--app-text-muted)"}>⏭</button>
           <button style={{ background: "none", border: "none", color: "var(--app-text-muted)", cursor: "pointer", fontSize: 14, padding: 4 }}>🔁</button>
         </div>
 
-        {/* Seek bar */}
         <div className="player-seek">
-          <input
-            type="range" min={0} max={duration || 0} value={currentTime}
-            onChange={e => seekTo(Number(e.target.value))}
-            style={{ width: "100%", background: `linear-gradient(to right,var(--app-accent) ${progressPct}%,var(--app-border) 0%)` }}
-          />
+          <input type="range" min={0} max={duration || 0} value={currentTime} onChange={e => seekTo(Number(e.target.value))}
+            style={{ width: "100%", background: `linear-gradient(to right,var(--app-accent) ${progressPct}%,var(--app-border) 0%)` }} />
           <div style={{ display: "flex", justifyContent: "space-between", color: "var(--app-text-muted)", fontSize: 10 }}>
             <span>{fmt(currentTime)}</span><span>{fmt(duration)}</span>
           </div>
         </div>
 
-        {/* Volume */}
         <div className="player-vol">
           <span style={{ color: "var(--app-text-muted)", fontSize: 14, flexShrink: 0 }}>🔊</span>
-          <input
-            type="range" min={0} max={1} step={0.01} value={volume}
-            onChange={e => setVolume(Number(e.target.value))}
-            style={{ width: 70, background: `linear-gradient(to right,var(--app-accent) ${volume * 100}%,var(--app-border) 0%)` }}
-          />
+          <input type="range" min={0} max={1} step={0.01} value={volume} onChange={e => setVolume(Number(e.target.value))}
+            style={{ width: 70, background: `linear-gradient(to right,var(--app-accent) ${volume * 100}%,var(--app-border) 0%)` }} />
         </div>
       </div>
     </div>
