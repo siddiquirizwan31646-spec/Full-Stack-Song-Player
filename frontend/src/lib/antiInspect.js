@@ -5,3 +5,4 @@ export function initAntiInspect() {
       e.preventDefault();
   });
 }
+
