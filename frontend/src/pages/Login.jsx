@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
@@ -30,7 +31,7 @@ const Logo = () => (
 
 export default function Login() {
   const navigate = useNavigate();
-  const { loginWithEmail, loginWithGoogle, isAuthenticated, loading: authLoading, error: authError, setError } = useAuth();
+  const { loginWithEmail, loginWithGoogle, loginWithGoogleNative, isAuthenticated, loading: authLoading, error: authError, setError } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading]       = useState(false);
@@ -41,7 +42,21 @@ export default function Login() {
 
   useEffect(() => { if (isAuthenticated) navigate("/hero", { replace: true }); }, [isAuthenticated, navigate]);
   useEffect(() => { if (setError) setError(""); }, [setError]);
-
+useEffect(() => {
+    window.onGoogleSignInSuccess = async (googleIdToken) => {
+      try {
+        setGoogleLoading(true);
+        await loginWithGoogleNative(googleIdToken);
+        toast.success("Welcome back to QalbAudio!");
+        navigate("/hero", { replace: true });
+      } catch (err) {
+        toast.error(err.message || "Google login failed.");
+      } finally {
+        setGoogleLoading(false);
+      }
+    };
+    return () => { delete window.onGoogleSignInSuccess; };
+  }, [loginWithGoogleNative, navigate]);
   const validate = (name, value) => {
     if (name === "email") {
       if (!value.trim())            return "Email is required.";
@@ -92,6 +107,11 @@ export default function Login() {
 
   const handleGoogleLogin = async () => {
     if (googleLoading) return;
+    if (typeof Android !== "undefined" && Android.signInWithGoogle) {
+      setGoogleLoading(true);
+      Android.signInWithGoogle();
+      return;
+    }
     setGoogleLoading(true);
     try {
       await loginWithGoogle();

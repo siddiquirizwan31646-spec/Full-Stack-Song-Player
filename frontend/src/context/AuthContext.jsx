@@ -1,6 +1,6 @@
 // src/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { signInWithPopup, signOut as firebaseSignOut } from "firebase/auth";
+import { signInWithPopup, signInWithCredential, GoogleAuthProvider, signOut as firebaseSignOut } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
 import { API_URL } from "@/lib/config";
 
@@ -88,7 +88,41 @@ export function AuthProvider({ children }) {
       setLoading(false);
     }
   }, [persist]);
+// ── Google Sign-In (from native Android app) ───────────────────────────────
+  const loginWithGoogleNative = useCallback(async (googleIdToken) => {
+    setError("");
+    setLoading(true);
+    try {
+      const credential    = GoogleAuthProvider.credential(googleIdToken);
+      const result        = await signInWithCredential(auth, credential);
+      const firebaseUser  = result.user;
+      const idToken       = await firebaseUser.getIdToken();
 
+      const res = await fetch(`${API_URL}/user/google-login`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          idToken,
+          name:  firebaseUser.displayName,
+          email: firebaseUser.email,
+          photo: firebaseUser.photoURL,
+          uid:   firebaseUser.uid,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Backend authentication failed");
+
+      persist(data.user, data.accessToken, data.refreshToken);
+      await firebaseSignOut(auth);
+      return data.user;
+    } catch (err) {
+      setError(err.message || "Google sign-in failed.");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [persist]);
   // ── Email/Password Login ───────────────────────────────────────────────────
   const loginWithEmail = useCallback(async (email, password) => {
     setError("");
